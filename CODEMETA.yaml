@@ -32,13 +32,13 @@ categories:
   # - ai-ml
   # - performance-and-workflow
   - scientific-software
-  # - simulation
+   - simulation
   # - tools
   # - visualization
 
 themes:
-  - Information Technology
-    - Data and informatics
+  #- Information Technology
+  #  - Data and informatics
   # - Advanced communications
   #     - Optical communications
   #     - Quantum communications
@@ -94,10 +94,10 @@ themes:
   #     - Fuels
   #     - Sustainability
   #
-  # - Environment
+   - Environment
   #     - Air, soil and water quality
   #     - Environmental health
-  #     - Greenhouse gas measurements
+       - Greenhouse gas measurements
   #     - Marine science
   #
   # - Fire
