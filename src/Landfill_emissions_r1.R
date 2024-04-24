@@ -135,7 +135,7 @@ ghgrp[,c("latitude","longitude","ghg_quantity")] <- apply(ghgrp[,c("latitude","l
 
 #delete all tempfiles and clean up working environment
 unlink(outfile)
-rm(A,ghgrp_all_data,ghgrp_facility_info,ghgrp_landfill_emissions,
+rm(A,ghgrp_all_data,ghgrp_facility_info,
    nonreporting_landfill_data,nonreporting_facilities,nonreporting_landfills,
    outfile,state_list)
 ################################################################################
@@ -154,7 +154,7 @@ non_ghgrp_total <- EPA_total - ghgrp_national
 
 # Read in LMOP and remove those in GHGRP
 LMOP <- read_xlsx(file.path(Input_directory,LMOP_file),sheet="LMOP Database",col_names = T)
-LMOP_non_ghgrp <- LMOP[!(LMOP$`GHGRP ID` %in% ghgrp$facility_id),] 
+LMOP_non_ghgrp <- LMOP[!(LMOP$`GHGRP ID` %in% ghgrp_landfill_emissions$facility_id),] 
 
 #This has some nans in, remove those
 LMOP_filt <- subset(LMOP_non_ghgrp,!is.na(Latitude))
