@@ -30,8 +30,8 @@ vulcan_band <- 6
 #year of Vulcan data.  Assuming Vulcan v3.0, 1 - 6 corresponding to years 2010 -
 #2015
 
-state_list <- c("DE","MD","NY","NJ","PA")
-#States within the domain
+state_list <- c("DE","MD","NY","NJ","PA","US")
+#States within the domain + national
 
 SEDS_year <- 2019
 #year of SEDS data to rely on.  Will automatically download the data from
@@ -41,12 +41,13 @@ SEDS_year <- 2019
 #the code assumes that petroleum is the only fossil fuel with multiple columns,
 #and that the second table is in trillion btu.
 
-temp_location <- "~/../../Desktop/"
+# temp_location <- "~/../../Kristian/Desktop/"
 #a place to save a downloaded HTML temporarily.  Due to permission errors that
 #claim R is still using the file, it is unable to automatically delete it some
 #of the time...
 
-EPA_data <- data.frame("res_coal"=0,
+EPA_data <- data.frame("State"="US_EPA",
+                       #"res_coal"=0,
                        "com_coal"=17,
                        "ind_coal"=517,
                        "elec_coal"=10554,
@@ -54,7 +55,7 @@ EPA_data <- data.frame("res_coal"=0,
                        "com_petr"=801,
                        "ind_petr"=2062,
                        "elec_petr"=42,
-                       "res_gas"=5208,
+                       # "res_gas"=5208,
                        "com_gas"=3647,
                        "ind_gas"=9484,
                        "elec_gas"=11553,
@@ -65,7 +66,8 @@ EPA_data <- data.frame("res_coal"=0,
 #Data from table A-67 Fuel Consumption by Stationary Combustion for Calculating
 #CH4 and N2O Emissions (TBtu) for the same year as the SEDS data.  It's a PDF,
 #so no way to easily import automatically.  Names must be as such to match those
-#pulled from SEDS.
+#pulled from SEDS.  Res coal doesn't exist in US and res gas is dealt with
+#separately, so not included here.
 #EPA=https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks-1990-2020
 
 #res = residential
@@ -123,10 +125,11 @@ resolution <- 0.01
 #CRS.  Resolution in deg, bounding box in lat/long.  Only needed if using
 #projectraster
 
+API_key <- "1kLep4UApTZKwdOrDkW6J8qlO0niiw8ej0JPliyc"
 ################################################################################
 #load packages
 i <- 1
-packagecheck <- c("raster","ncdf4","readxl","sf","rvest")
+packagecheck <- c("raster","ncdf4","readxl","sf","rvest","httr","dplyr","jsonlite")
 
 while(i<=length(packagecheck)){
   if(length(find.package(packagecheck[i],quiet = TRUE))<1){
@@ -159,114 +162,141 @@ d03_rast <- raster(nrows=diff(range(d03_bounding_box[,2]))/resolution,
 
 rm(d03_bounding_box,resolution)
 ################################################################################
-# #automatically download and combine the data from the EIA SEDS database.  Also
-# #pull in the GHGI data from EPA.
+#download and prepare SEDS data
 
-state_list <- c(state_list,"US")
-#add the US total to the list
+#see https://www.eia.gov/opendata/browser/seds
+SEDS_URL <- paste0("https://api.eia.gov/v2/seds/data/?frequency=annual&data[0]=value&facets[seriesId][]=CLCCB",
+                   "&facets[seriesId][]=CLEIB&facets[seriesId][]=CLICB&facets[seriesId][]=NGCCB&facets[seriesId][]=NGEIB&facets[seriesId][]=NGICB&facets[seriesId][]=PACCB&facets[seriesId][]=PAEIB&facets[seriesId][]=PAICB&facets[seriesId][]=PARCB&facets[seriesId][]=WDRCB&facets[seriesId][]=WWCCB&facets[seriesId][]=WWEIB&facets[seriesId][]=WWICB",
+                   paste0("&facets[stateId][]=",state_list,collapse = ""),
+                   "&start=",SEDS_year,"&end=",SEDS_year,
+                   "&sort[0][column]=seriesId&sort[0][direction]=asc&offset=0&api_key=",API_key)
 
-sector_list <- c('res',"com",'ind',"eu")
-fuel_list <- c("Petroleum","Coal","NaturalGas","Biomass")
-#values as named in the SEDS tables
+#download directly into R and keep only the data table
+EIA_raw_data <- fromJSON(SEDS_URL)
+EIA_raw_data <- EIA_raw_data$response$data
 
-download_dest <- paste0(temp_location,"temp.html")
-#temporary file, will be overwritten many times as values are pulled and then
-#the next file downloaded
+#rearrange columns/rows to better mesh with EPA data
+EIA_data=(reshape(EIA_raw_data[,c("seriesId","stateId","value")],idvar="stateId",timevar = "seriesId",direction="wide"))
 
-stat_comb_data <- data.frame(matrix(ncol=16,nrow=length(state_list)))
-#initialize output
+#rename to be consistent with EPA (matches SEDS webpage)
+colnames(EIA_data) <- c("State",colnames(EPA_data)[c(2,4,3,9,11,10,6,8,7,5,12,13,15,14)])
+EIA_data$State <- gsub("US","US_SEDS",EIA_data$State)
 
-for(state in state_list){
-  for(sector in sector_list){
-    counter = 0
-    repeat{
-      counter=counter+1
-      info=tryCatch(
-        #the url is build from the GHGRP ID, the desired year, and a common url.
-        #This file contains more information about the facility that isn't in the
-        #downloaded file.
-        download.file(paste0("https://www.eia.gov/state/seds/data.php?incfile=/state/seds/sep_use/",sector,"/use_",sector,"_",state,".html&sid=",state),
-                      destfile=download_dest,quiet = T),
-        warning = function(w) {
-          Sys.sleep(1)
-          NA
-        },
-        error = function(e) {
-          Sys.sleep(1)
-          NA
-        }
-      )
-      if(!is.na(info)) {
-        break
-      }
-      if(counter>=10){
-        stop("Failed to download ",state,sector," from\n",
-             paste0("https://www.eia.gov/state/seds/data.php?incfile=/state/seds/sep_use/",sector,"/use_",sector,"_",state,".html&sid=",state),
-             "The links used may no longer be accurate.  Check the EIA SEDS website.")
-      }
-    }
-    #try to download the url, and retry up to 10x with 1s between runs as the link
-    #may fail on occasion.
-    #from https://stackoverflow.com/a/60880960
-    
-    HTML_data=read_html(download_dest)
-    HTML_data=html_table(HTML_data)
-    HTML_data <- HTML_data[[2]]
-    #load in the file and keep just the 2nd tibble (first and third are just
-    #footnotes)
-    
-    if(all(!HTML_data[,1]==SEDS_year)){
-      #there is no data for this year, quit
-      cat(paste0("https://www.eia.gov/state/seds/data.php?incfile=/state/seds/sep_use/",sector,"/use_",sector,"_",state,".html&sid=",state),"\n")
-      stop("There is no SEDS data for the specified year, or the links used are no longer accurate.  Check the website to see the latest data available.")
-    }
-    
-    state_number <- which(state==state_list)
-    sector_number <- which(sector==sector_list)
-    #need to know the number to set which row/column of output
-    for(fuel in fuel_list){
-      fuel_number <- which(fuel==fuel_list)
-      column <- grep(fuel,HTML_data[1,])
-      #which column(s) are this fuel?
-      if(fuel=="Petroleum"){
-        column <- column[grep("Total",HTML_data[2,column])]
-        #petroleum has several subcategories.  Find just the total column
-      }
-      stat_comb_data[state_number,fuel_number+(sector_number-1)*4] <-
-        HTML_data[which(HTML_data[,1]==SEDS_year)[2],column[1]]
-      #state = row, column = fuel-sector combo.  Just use the specified year and
-      #identified column.  Pull the 2nd row that is this year (first is in
-      #different units)
-    }#fuel loop
-  }#sector loop
-  cat("\nFinished downloading SEDS data for",state)
-}#state loop
+#make numeric rather than text, combine with EPA, and sort by state
+EIA_data[,-1] <- apply(EIA_data[,-1], 2, FUN=function(x){as.numeric(x)/1000})
+stat_comb_data <- rbind(EIA_data,EPA_data)
+stat_comb_data <- stat_comb_data[order(stat_comb_data$State),]
 
-state_list <- gsub('US','US_SEDS',state_list)
-state_list <- c(state_list,"US_EPA")
-sector_list <- gsub('eu','elec',sector_list)
-fuel_list <- c("petr","coal","gas","wood")
-#update the names to simpler ones for coding, and now include EPA in the state
-#list (will rbind that data to stat_comb)
-
-stat_comb_data[] <- lapply(stat_comb_data,FUN=function(x){as.numeric(gsub(",","",x))})
-#[] allows it to remain a dataframe.  convert all to numeric, remove 1,000 place
-#commas.
-
-colnames(stat_comb_data) <- paste0(rep(sector_list,each=length(fuel_list)),"_",fuel_list)
-#colnames = sector_fuel
-
-stat_comb_data <- rbind(stat_comb_data,EPA_data)
-stat_comb_data <- cbind(factor(state_list),stat_comb_data)
-colnames(stat_comb_data)[1] <- "State"
-#add EPA data and a columnn with the state for each row
-
-unlink(download_dest)
-#delete the temp file
-
-rm(state_list,sector_list,download_dest,fuel_list,state,sector,fuel,counter,
-   column,fuel_number,sector_number,state_number,HTML_data,temp_location,info,
-   SEDS_year,EPA_data)
+rm(EIA_raw_data,EIA_data)
+################################################################################
+# # #automatically download and combine the data from the EIA SEDS database.  Also
+# # #pull in the GHGI data from EPA.
+# 
+# state_list <- c(state_list,"US")
+# #add the US total to the list
+# 
+# sector_list <- c('res',"com",'ind',"eu")
+# fuel_list <- c("Petroleum","Coal","NaturalGas","Biomass")
+# #values as named in the SEDS tables
+# 
+# download_dest <- paste0(temp_location,"temp.html")
+# #temporary file, will be overwritten many times as values are pulled and then
+# #the next file downloaded
+# 
+# stat_comb_data <- data.frame(matrix(ncol=16,nrow=length(state_list)))
+# #initialize output
+# 
+# for(state in state_list){
+#   for(sector in sector_list){
+#     counter = 0
+#     repeat{
+#       counter=counter+1
+#       info=tryCatch(
+#         #the url is build from the GHGRP ID, the desired year, and a common url.
+#         #This file contains more information about the facility that isn't in the
+#         #downloaded file.
+#         download.file(paste0("https://www.eia.gov/state/seds/data.php?incfile=/state/seds/sep_use/",sector,"/use_",sector,"_",state,".html&sid=",state),
+#                       destfile=download_dest,quiet = T),
+#         warning = function(w) {
+#           Sys.sleep(1)
+#           NA
+#         },
+#         error = function(e) {
+#           Sys.sleep(1)
+#           NA
+#         }
+#       )
+#       if(!is.na(info)) {
+#         break
+#       }
+#       if(counter>=10){
+#         stop("Failed to download ",state,sector," from\n",
+#              paste0("https://www.eia.gov/state/seds/data.php?incfile=/state/seds/sep_use/",sector,"/use_",sector,"_",state,".html&sid=",state),
+#              "The links used may no longer be accurate.  Check the EIA SEDS website.")
+#       }
+#     }
+#     #try to download the url, and retry up to 10x with 1s between runs as the link
+#     #may fail on occasion.
+#     #from https://stackoverflow.com/a/60880960
+#     
+#     HTML_data=read_html(download_dest)
+#     HTML_data=html_table(HTML_data)
+#     HTML_data <- HTML_data[[2]]
+#     #load in the file and keep just the 2nd tibble (first and third are just
+#     #footnotes)
+#     
+#     if(all(!HTML_data[,1]==SEDS_year)){
+#       #there is no data for this year, quit
+#       cat(paste0("https://www.eia.gov/state/seds/data.php?incfile=/state/seds/sep_use/",sector,"/use_",sector,"_",state,".html&sid=",state),"\n")
+#       stop("There is no SEDS data for the specified year, or the links used are no longer accurate.  Check the website to see the latest data available.")
+#     }
+#     
+#     state_number <- which(state==state_list)
+#     sector_number <- which(sector==sector_list)
+#     #need to know the number to set which row/column of output
+#     for(fuel in fuel_list){
+#       fuel_number <- which(fuel==fuel_list)
+#       column <- grep(fuel,HTML_data[1,])
+#       #which column(s) are this fuel?
+#       if(fuel=="Petroleum"){
+#         column <- column[grep("Total",HTML_data[2,column])]
+#         #petroleum has several subcategories.  Find just the total column
+#       }
+#       stat_comb_data[state_number,fuel_number+(sector_number-1)*4] <-
+#         HTML_data[which(HTML_data[,1]==SEDS_year)[2],column[1]]
+#       #state = row, column = fuel-sector combo.  Just use the specified year and
+#       #identified column.  Pull the 2nd row that is this year (first is in
+#       #different units)
+#     }#fuel loop
+#   }#sector loop
+#   cat("\nFinished downloading SEDS data for",state)
+# }#state loop
+# 
+# state_list <- gsub('US','US_SEDS',state_list)
+# state_list <- c(state_list,"US_EPA")
+# sector_list <- gsub('eu','elec',sector_list)
+# fuel_list <- c("petr","coal","gas","wood")
+# #update the names to simpler ones for coding, and now include EPA in the state
+# #list (will rbind that data to stat_comb)
+# 
+# stat_comb_data[] <- lapply(stat_comb_data,FUN=function(x){as.numeric(gsub(",","",x))})
+# #[] allows it to remain a dataframe.  convert all to numeric, remove 1,000 place
+# #commas.
+# 
+# colnames(stat_comb_data) <- paste0(rep(sector_list,each=length(fuel_list)),"_",fuel_list)
+# #colnames = sector_fuel
+# 
+# stat_comb_data <- rbind(stat_comb_data,EPA_data)
+# stat_comb_data <- cbind(factor(state_list),stat_comb_data)
+# colnames(stat_comb_data)[1] <- "State"
+# #add EPA data and a columnn with the state for each row
+# 
+# unlink(download_dest)
+# #delete the temp file
+# 
+# rm(state_list,sector_list,download_dest,fuel_list,state,sector,fuel,counter,
+#    column,fuel_number,sector_number,state_number,HTML_data,temp_location,info,
+#    SEDS_year,EPA_data)
 ################################################################################
 #Prep EPA/SEDS data a little before use.  Scaling SEDS data to match national
 #data at the US scale.
@@ -275,7 +305,7 @@ rm(state_list,sector_list,download_dest,fuel_list,state,sector,fuel,counter,
 # - all post-meter residential NG emissions (leaks + combustion) are in a separate category, so are not considered here
 # - corrections need to be applied to avoid double counting emissions in multiple sectors. Assume the national factors apply here.
 
-stat_comb_data <- stat_comb_data[,-which(colnames(stat_comb_data) %in% c("res_coal","res_gas"))]
+# stat_comb_data <- stat_comb_data[,-which(colnames(stat_comb_data) %in% c("res_coal","res_gas"))]
 #we aren't using either of these in this code, so remove them now.  US has no
 #residential coal, and residential gas is dealt with in the NG distribution code
 
