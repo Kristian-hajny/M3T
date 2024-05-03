@@ -74,32 +74,68 @@ d03_rast <- raster(nrows=diff(range(d03_bounding_box[,2]))/resolution,
 
 rm(d03_bounding_box,resolution)
 ################################################################################
-#Download the relevant data using the API
+#Download the relevant emissions data using the API
 #(https://www.epa.gov/enviro/envirofacts-data-service-api) and combine the
 #facility and emission data appropriately
 
-#see https://www.eia.gov/opendata/browser/seds
-SEDS_URL <- paste0("https://api.eia.gov/v2/seds/data/?frequency=annual&data[0]=value&facets[seriesId][]=CLCCB",
-                   "&facets[seriesId][]=CLEIB&facets[seriesId][]=CLICB&facets[seriesId][]=NGCCB&facets[seriesId][]=NGEIB&facets[seriesId][]=NGICB&facets[seriesId][]=PACCB&facets[seriesId][]=PAEIB&facets[seriesId][]=PAICB&facets[seriesId][]=PARCB&facets[seriesId][]=WDRCB&facets[seriesId][]=WWCCB&facets[seriesId][]=WWEIB&facets[seriesId][]=WWICB",
-                   paste0("&facets[stateId][]=",state_list,collapse = ""),
-                   "&start=",SEDS_year,"&end=",SEDS_year,
-                   "&sort[0][column]=seriesId&sort[0][direction]=asc&offset=0&api_key=",API_key)
+#download the relevant landfill-sector data
+#(https://www.epa.gov/enviro/greenhouse-gas-model).  Must download the relevant
+#data for each possible sector separately as emissions are split by sector
+#(i.e., gas capture for electricity is subpart D, flaring is C, and landfill
+#emissions HH - all of which can occur at the same landfill)
+ghgrp_landfill_only_emissions <- fromJSON("https://data.epa.gov/efservice/HH_SUBPART_LEVEL_INFORMATION/JSON")
+# ghgrp_landfill_emissions2 <- fromJSON("https://data.epa.gov/dmapservice/ghg.hh_subpart_level_information/json")
+ghgrp_combustion_emissions <- fromJSON("https://data.epa.gov/efservice/C_SUBPART_LEVEL_INFORMATION/json")
+# ghgrp_electricity_emissions <- fromJSON("https://data.epa.gov/efservice/D_SUBPART_LEVEL_INFORMATION/json")
+# ghgrp_industrial_landfill_emissions <- fromJSON("https://data.epa.gov/efservice/tt_subpart_ghg_info/json")
 
-#download directly into R and keep only the data table
-EIA_raw_data <- fromJSON(SEDS_URL)
-EIA_raw_data <- EIA_raw_data$response$data
+#simple function to make sure gas names are limited to methane, and column names
+#are consistent
+make_consistent <- function(input){
+  colnames(input) <- gsub("ghg_gas_name","ghg_name",colnames(input))
+  colnames(input) <- gsub("reporting_year","year",colnames(input))
+  input$ghg_name <- tolower(input$ghg_name)
+  input$facility_name <- tolower(input$facility_name)
+  input <- input[input$ghg_name=="methane",]
+  return(input)
+}
 
-#rearrange columns/rows to better mesh with EPA data
-EIA_data=(reshape(EIA_raw_data[,c("seriesId","stateId","value")],idvar="stateId",timevar = "seriesId",direction="wide"))
+ghgrp_landfill_only_emissions <- make_consistent(ghgrp_landfill_only_emissions)
+ghgrp_combustion_emissions <- make_consistent(ghgrp_combustion_emissions)
+# ghgrp_electricity_emissions <- make_consistent(ghgrp_electricity_emissions)
+# ghgrp_industrial_landfill_emissions <- make_consistent(ghgrp_industrial_landfill_emissions)
 
-#rename to be consistent with EPA (matches SEDS webpage)
-colnames(EIA_data) <- c("State",colnames(EPA_data)[c(2,4,3,9,11,10,6,8,7,5,12,13,15,14)])
-EIA_data$State <- gsub("US","US_SEDS",EIA_data$State)
+#rename so the columns are different
+colnames(ghgrp_landfill_only_emissions) <- gsub("ghg_quantity","HH_emissions",colnames(ghgrp_landfill_only_emissions))
+colnames(ghgrp_combustion_emissions) <- gsub("ghg_quantity","C_emissions",colnames(ghgrp_combustion_emissions))
+# colnames(ghgrp_electricity_emissions) <- gsub("ghg_quantity","D_emissions",colnames(ghgrp_electricity_emissions))
+# colnames(ghgrp_industrial_landfill_emissions) <- gsub("ghg_quantity","TT_emissions",colnames(ghgrp_industrial_landfill_emissions))
 
-#make numeric rather than text, combine with EPA, and sort by state
-EIA_data[,-1] <- apply(EIA_data[,-1], 2, FUN=function(x){as.numeric(x)/1000})
-stat_comb_data <- rbind(EIA_data,EPA_data)
-stat_comb_data <- stat_comb_data[order(stat_comb_data$State),]
+#combine all 4 into 1 dataframe - using landfill emissions as the base to get
+#ID/year matches from
+ghgrp_landfill_emissions=Reduce(function(dtf1, dtf2){merge(dtf1, dtf2, by = c("facility_id","year","facility_name","ghg_name"), all.x = TRUE)},
+                                list(ghgrp_landfill_only_emissions,
+                                     ghgrp_combustion_emissions))#,
+                                     # ghgrp_electricity_emissions,
+                                     # ghgrp_industrial_landfill_emissions))
+
+#convert the relevant columns to numeric class
+ghgrp_landfill_emissions[,c("HH_emissions","C_emissions")] <- apply(ghgrp_landfill_emissions[,c("HH_emissions","C_emissions")],
+                                                                                                 2,FUN = function(x){as.numeric(x)})
+ghgrp_landfill_emissions$ghg_quantity <- rowSums(ghgrp_landfill_emissions[,c("HH_emissions","C_emissions")],na.rm=T)
+# ghgrp_landfill_emissions[,c("HH_emissions","C_emissions","D_emissions","TT_emissions")] <- apply(ghgrp_landfill_emissions[,c("HH_emissions","C_emissions","D_emissions","TT_emissions")],
+#                                                                                                  2,FUN = function(x){as.numeric(x)})
+# ghgrp_landfill_emissions$ghg_quantity <- rowSums(ghgrp_landfill_emissions[,c("HH_emissions","C_emissions","D_emissions","TT_emissions")],na.rm=T)
+
+
+# subpart d is only 1 facility and is NOT included in GHGRP flight.  
+# subpart C is many and IS included in GHGRP flight
+# subpart TT is only 1 facility and is NOT included in GHGRP flight.
+
+
+rm(ghgrp_landfill_only_emissions,ghgrp_combustion_emissions,make_consistent)
+################################################################################
+#Download the relevant facility (e.g., location) data using the API and merge
 
 #see https://www.epa.gov/enviro/envirofacts-data-service-api
 data_URLs <- paste0("https://data.epa.gov/efservice/PUB_DIM_FACILITY/STATE/=/",state_list,"/JSON")
@@ -107,24 +143,13 @@ data_URLs <- paste0("https://data.epa.gov/efservice/PUB_DIM_FACILITY/STATE/=/",s
 #initialize output
 ghgrp_facility_info <- data.frame()
 for(A in 1:length(state_list)){
-  #use HTTR to download data and read/combine them in an R dataframe
+  # download data and read/combine in an R dataframe
   ghgrp_facility_info <- rbind(ghgrp_facility_info,fromJSON(data_URLs[A]))
 }
 
-#download the relevant landfill-sector data (https://www.epa.gov/enviro/greenhouse-gas-model)
-ghgrp_landfill_emissions <- fromJSON("https://data.epa.gov/efservice/HH_SUBPART_LEVEL_INFORMATION/JSON")
-
-#force all names to be lowercase to allow matches even if case sometimes differs
-ghgrp_facility_info$facility_name <- tolower(ghgrp_facility_info$facility_name)
-ghgrp_landfill_emissions$facility_name <- tolower(ghgrp_landfill_emissions$facility_name)
-
-#facility info uses column name year, landfill data uses reporting_year, change
-#to be consistent
-colnames(ghgrp_landfill_emissions) <- gsub("reporting_","",colnames(ghgrp_landfill_emissions))
-
-#combine the datasets by ID, facility name, and year
+#combine the datasets by ID, and year
 ghgrp_all_data <- merge(ghgrp_facility_info,ghgrp_landfill_emissions,
-                        by=c("facility_id","facility_name","year"), all=F)
+                        by=c("facility_id","year"), all=F)
 
 #keep only data for the year of interest
 ghgrp <- ghgrp_all_data[ghgrp_all_data$year==year,]
@@ -154,7 +179,7 @@ ghgrp[,c("latitude","longitude","ghg_quantity")] <- apply(ghgrp[,c("latitude","l
 #delete all tempfiles and clean up working environment
 rm(A,ghgrp_all_data,ghgrp_facility_info,
    nonreporting_landfill_data,nonreporting_facilities,nonreporting_landfills,
-   outfile,state_list)
+   state_list)
 ################################################################################
 #Now convert to spatial and load/convert LMOP.  Assign GHGI_national -
 #GHGRP_national to all LMOP facilities equally.
