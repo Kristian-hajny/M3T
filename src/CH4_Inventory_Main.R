@@ -38,7 +38,7 @@
   
   #shouldn't be necessary in a package, all will be in the same folder, need to
   #update appropriately.
-  code_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Code and method/CH4 inventory package/src/"
+  code_directory="~/../../Kristian/Desktop/methane_inventory/src/"
   
   input_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Raw_data_rewrite/"
   output_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Processed_rewrite/"
@@ -134,15 +134,15 @@
 
   #Load in a function to disaggregate total emissions using ACES/Vulcan or both
   #within sub-domains (state, entire domain)
-  source("G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Code and method/Scripts/Inventory_based_disaggregation.R")
-  
+  source(paste0(code_directory,"Inventory_based_disaggregation.R"))
+
   #Load in a few functions for consistent, basic plotting
-  source("G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Code and method/CH4 inventory package/src/Plotting_individual_sectors.R")
-  
+  source(paste0(code_directory,"Plotting_individual_sectors.R"))
+
   #Load in the config file full of emission factors and other details needed for
   #processing some sectors
-  source("G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Code and method/CH4 inventory package/src/CH4_inventory_config.R")
-  
+  source(paste0(code_directory,"CH4_inventory_config.R"))
+
   #load in the functions for each sector (only run later if config set
   #accordingly)
   source(paste0(code_directory,"Landfill_emissions_r1.R"))
