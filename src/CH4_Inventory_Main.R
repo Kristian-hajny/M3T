@@ -21,6 +21,11 @@
 
 #Is there a better way to do a config file than a .R file like I did?
 
+#So far the ECHO API doesn't seem to provide similar NEI data, but only facility
+#locations without the emissions data.
+
+#Do we need the urban tigerlines, or just the focus city ones?  
+
 #some defaults for a Philly centered domain with NAD83 crs
 # CH4_inventory_build <- function(Input_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Raw data/",
 #                                 Output_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Processed/",
@@ -43,9 +48,17 @@
   input_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Raw_data_rewrite/"
   output_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Processed_rewrite/"
   plot_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Figures_rewrite/"
-  focus_city="Philadelphia"
+  #if desired.  Must either be UACE code entered as numeric or exact text match
+  #entered as character. Too many cities have similar/identical names otherwise.
+  #Can be > 1 city. These can be found here (see "List of 2020 Census Urban
+  #Areas")
+  #(https://www.census.gov/programs-surveys/geography/guidance/geo-areas/urban-rural.html)
+  #for 2020 - 2020 and here
+  #(https://www2.census.gov/geo/pdfs/maps-data/maps/reference/2010UAUC_List.pdf)
+  #for 2010 - 2019
+  focus_city="Philadelphia, PA--NJ--DE--MD"
+  
   inventory_year=2019
-  # domain
   domain_bbox=cbind(c(-76.65,-73.65),
                     c(38.97,40.97))
   domain_res=0.01
@@ -53,7 +66,6 @@
   ACES_directory="G:/My Drive/Shepson Group Drive/General Inventories and Shapefiles/Inventories/ACES_v2.0"
   vulcan_directory="G:/My Drive/Shepson Group Drive/General Inventories and Shapefiles/Inventories/Vulcan_v3.0"
   verbose=TRUE
-  
   
   #https://ccdsupport.com/confluence/display/help/Reporting+Latitude+and+Longitude
   ################################################################################
@@ -76,24 +88,24 @@
   #load all packages necessary throughout processsing
   
   packagecheck <- c("terra", "ncdf4", "readxl", "pracma", "jsonlite","dplyr")
-  
-  #install each package and library them.  Ensures all are up to date. 
-  lapply(packagecheck,install.packages,dependencies=T,quiet=T)
-  lapply(packagecheck,library,character.only=T)
-  
-  rm(packagecheck)
-  
-  # #quick way to install only packages that are not already installed
-  # i=1
-  # while(i<=length(packagecheck)){
-  #   if(length(find.package(packagecheck[i],quiet = TRUE))<1){
-  #     install.packages(packagecheck[i],repos="https://repo.miserver.it.umich.edu/cran/")
-  #   }
-  #   i <- i+1
-  # }
   # 
-  # suppressPackageStartupMessages(invisible(lapply(packagecheck, library, character.only=TRUE)))
-  # rm(packagecheck,i)
+  # #install each package and library them.  Ensures all are up to date. 
+  # lapply(packagecheck,install.packages,dependencies=T,quiet=T)
+  # lapply(packagecheck,library,character.only=T)
+  # 
+  # rm(packagecheck)
+  
+  #quick way to install only packages that are not already installed
+  i=1
+  while(i<=length(packagecheck)){
+    if(length(find.package(packagecheck[i],quiet = TRUE))<1){
+      install.packages(packagecheck[i],repos="https://repo.miserver.it.umich.edu/cran/")
+    }
+    i <- i+1
+  }
+
+  suppressPackageStartupMessages(invisible(lapply(packagecheck, library, character.only=TRUE)))
+  rm(packagecheck,i)
   
   #terra = raster dataclasses and processing functions
   #ncdf4 = .nc filetype functions
@@ -130,6 +142,16 @@
   }
   
   ################################################################################
+  #Get the years for ACES and Vulcan based on the input year.
+  
+  ACES_year <- (2012:2017)[which.min(abs(2012:2017 - inventory_year))]
+  #year of ACES data, will be part of the filename
+  
+  vulcan_band <- which.min(abs(2010:2015 - inventory_year))
+  #year of Vulcan data.  Assuming Vulcan v3.0, 1 - 6 corresponding to years 2010 -
+  #2015
+  
+  ################################################################################
   #load in the many relevant functions and the config file
 
   #Load in a function to disaggregate total emissions using ACES/Vulcan or both
@@ -146,6 +168,7 @@
   #load in the functions for each sector (only run later if config set
   #accordingly)
   source(paste0(code_directory,"Landfill_emissions_r1.R"))
+  source(paste0(code_directory,"stationary_combustion_r4.R"))
   
   ################################################################################
   #create the domain and set it to all NaN
@@ -206,9 +229,15 @@
   #save the states in the domain for use in some functions
   state_name_list <- State_Tigerlines$STUSPS
   
-  #grab the tigerlines name for just the focus city
-  focus_city_tigerlines <- Urban_Tigerlines[grep(focus_city, Urban_Tigerlines$NAME10),]
-  
+  #grab the urban area tigerlines for just the focus city
+  if(class(focus_city)=="numeric"){
+    #can't use $ for urban tigerlines as column name is UACE10 for 2010 Census,
+    #UACE20 for 2020 Census
+    focus_city_tigerlines <- terra::subset(Urban_Tigerlines,as.numeric(unlist(Urban_Tigerlines[[1]])) %in% focus_city)
+  }else{
+    focus_city_tigerlines <- terra::subset(Urban_Tigerlines,Urban_Tigerlines$NAME10 %in% focus_city)
+  }
+
   rm(UAC_year,Census_filenames)
   ################################################################################
   #Actually run the functions now, based on the config file
@@ -224,7 +253,9 @@
     
   }
   if(Process_stationary_combustion){
-    
+    Stationary_combustion()
+    rm(stationary_combustion_GHGI_data,stationary_combustion_emission_factors,
+       stationary_combustion_by_state,stationary_combustion_by_domain)
   }
   if(Process_wastewater){
     
@@ -238,8 +269,12 @@
   
   
 # }
-
-
+  
+  #example quick plots
+  # sf chloropleth
+  # plot(all_merge_sf_LCC_state["res_wood_ER"])
+  # terra chloropleth, same colorscale
+  # plot(all_merge_LCC_state,"res_wood_ER",col=sf.colors(13),breaks=13)
 
 
 
