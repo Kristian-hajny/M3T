@@ -16,7 +16,14 @@ Incorporate_remaining_sectors_from_gridded_EPA <- FALSE
 
 
 #Variations on the method
-	#Natural Gas Distribution
+  #Several sectors
+	  Use_ACES <- TRUE
+	  Use_Vulcan <- TRUE
+	  #use ACES and/or Vulcan to distribute certain sectors
+  #Stationary Combustion
+		stationary_combustion_by_state <- TRUE
+		stationary_combustion_by_domain <- TRUE
+  #Natural Gas Distribution
 		NG_distribution_by_LDC <- TRUE
 		NG_distribution_by_state <- TRUE
 		NG_distribution_by_domain <- TRUE
