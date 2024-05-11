@@ -24,6 +24,9 @@ Stationary_combustion <- function(){
   if(!(Use_Vulcan | Use_ACES)){
     stop("We need ACES, Vulcan or both to disaggregate emissions.")
   }
+  if(!(stationary_combustion_by_domain | stationary_combustion_by_state)){
+    stop("We need to disaggregate stationary combustion emissions by domain or by state, or both.")
+  }
   
   ################################################################################
   #download and prepare SEDS data
@@ -298,10 +301,7 @@ Stationary_combustion <- function(){
   merge_with_poly <- terra::merge(County_Tigerlines,df_wide,
                                   by.y=c('STATE_FIPS', 'COUNTY_FIPS'),
                                   by.x=c('STATEFP','COUNTYFP'),all.y=T)
-  # merge_with_poly <- terra::merge(df_wide,County_Tigerlines,
-  #                                 by.x=c('STATE_FIPS', 'COUNTY_FIPS'),
-  #                                 by.y=c('STATEFP','COUNTYFP'))
-  
+
   res_totals <- c('res_petr_ER',
                   'res_wood_ER')
   
@@ -322,7 +322,8 @@ Stationary_combustion <- function(){
   #the many subsectors
   
   if(Use_ACES){
-    #load in ACES files, pull crs for later, flip given how R loads it
+    #load in ACES files, flip given how R loads it, set crs as it's not loaded
+    #in properly
     aces_res <- rast(paste0(ACES_directory,"/Sectoral/",ACES_year,'_Annual_ACES_Residential.nc'))
     aces_res <- flip(aces_res)
     crs(aces_res) <- "+proj=lcc +lat_0=40 +lon_0=-97 +lat_1=33 +lat_2=45 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs"
@@ -338,35 +339,26 @@ Stationary_combustion <- function(){
     aces_elec <- rast(paste0(ACES_directory,"/Sectoral/",ACES_year,'_Annual_ACES_Elec.nc'))
     aces_elec <- flip(aces_elec)
     crs(aces_elec) <- "+proj=lcc +lat_0=40 +lon_0=-97 +lat_1=33 +lat_2=45 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs"
-    
-    crs_to_use <- crs(aces_res)
   }
   if(Use_Vulcan){
     vu_res <- rast(paste0(vulcan_directory,"/Sectoral/","Vulcan_v3_US_annual_1km_residential_mn.nc4"), subds='carbon_emissions', lyrs=vulcan_band)
     vu_com <- rast(paste0(vulcan_directory,"/Sectoral/",'Vulcan_v3_US_annual_1km_commercial_mn.nc4'), subds='carbon_emissions', lyrs=vulcan_band)
     vu_ind <- rast(paste0(vulcan_directory,"/Sectoral/",'Vulcan_v3_US_annual_1km_industrial_mn.nc4'), subds='carbon_emissions', lyrs=vulcan_band)
     vu_elec <- rast(paste0(vulcan_directory,"/Sectoral/",'Vulcan_v3_US_annual_1km_elec_prod_mn.nc4'), subds='carbon_emissions', lyrs=vulcan_band)
-    crs_to_use <- crs(vu_res)
   }
-  
-  if(Use_ACES & Use_Vulcan){
-    if(crs(vu_res,proj=T)!=crs(aces_res,proj=T)){
-      stop('Code assumes CO2 inventories have the same CRS')
-    }
-  }
-  # Going to assume that ACES and Vulcan have the same CRS - check that here.
-  # same.crs would work, but this requires them to agree to significantly
   
   # Transform to ACES/Vulcan CRS
-  all_merge_LCC <- project(merge_with_poly,crs(crs_to_use))
-  all_merge_LCC_state <- all_merge_LCC
-  names(all_merge_LCC_state) <- gsub("county_ch4_emiss_bystate.","",names(all_merge_LCC_state))
-  all_merge_LCC_domain <- all_merge_LCC
-  names(all_merge_LCC_domain) <- gsub("county_ch4_emiss_bydomain.","",names(all_merge_LCC_domain))
+  all_merge_state <- merge_with_poly
+  names(all_merge_state) <- gsub("county_ch4_emiss_bystate.","",names(all_merge_state))
+  all_merge_domain <- merge_with_poly
+  names(all_merge_domain) <- gsub("county_ch4_emiss_bydomain.","",names(all_merge_domain))
   #create a copy that has names for the bystate or bydomain version that exactly
   #match the totals.  Easier/more consistent to code.
   
   if(Use_ACES){
+    #convert state/domain scale versions to the proper crs
+    all_merge_LCC_state <- project(all_merge_state,aces_res)
+    all_merge_LCC_domain <- project(all_merge_domain,aces_res)
     #Calculate per-pixel coverage for each county separately.  First split by
     #unique state-county number, then calculate per-pixel coverage, output = list
     #of spatvectors
@@ -374,35 +366,37 @@ Stationary_combustion <- function(){
       split(f=paste0(all_merge_LCC_state$STATEFP,all_merge_LCC_state$COUNTYFP)) %>%
       lapply(function(x){extract(aces_res,x,weights=T,exact=T,cells=T)})
     if(stationary_combustion_by_state){
-      disaggregation(aces_res,res_totals,agg_level="state",NEI_input = all_merge_LCC_state)
-      disaggregation(aces_com,com_totals,agg_level="state",NEI_input=all_merge_LCC_state)
-      disaggregation(aces_ind,ind_totals,agg_level="state",NEI_input=all_merge_LCC_state)
-      disaggregation(aces_elec,elec_totals,agg_level="state",NEI_input=all_merge_LCC_state)
+      disaggregation(aces_res,res_totals,agg_level="state",NEI_input = all_merge_LCC_state,cover_all,out_envir=environment())
+      disaggregation(aces_com,com_totals,agg_level="state",NEI_input=all_merge_LCC_state,cover_all,out_envir=environment())
+      disaggregation(aces_ind,ind_totals,agg_level="state",NEI_input=all_merge_LCC_state,cover_all,out_envir=environment())
+      disaggregation(aces_elec,elec_totals,agg_level="state",NEI_input=all_merge_LCC_state,cover_all,out_envir=environment())
     }
     
     if(stationary_combustion_by_domain){
-      disaggregation(aces_res,res_totals,agg_level="domain",NEI_input=all_merge_LCC_domain)
-      disaggregation(aces_com,com_totals,agg_level="domain",NEI_input=all_merge_LCC_domain)
-      disaggregation(aces_ind,ind_totals,agg_level="domain",NEI_input=all_merge_LCC_domain)
-      disaggregation(aces_elec,elec_totals,agg_level="domain",NEI_input=all_merge_LCC_domain)
+      disaggregation(aces_res,res_totals,agg_level="domain",NEI_input=all_merge_LCC_domain,cover_all,out_envir=environment())
+      disaggregation(aces_com,com_totals,agg_level="domain",NEI_input=all_merge_LCC_domain,cover_all,out_envir=environment())
+      disaggregation(aces_ind,ind_totals,agg_level="domain",NEI_input=all_merge_LCC_domain,cover_all,out_envir=environment())
+      disaggregation(aces_elec,elec_totals,agg_level="domain",NEI_input=all_merge_LCC_domain,cover_all,out_envir=environment())
     }
   }
   if(Use_Vulcan){
+    all_merge_LCC_state <- project(all_merge_state,vu_res)
+    all_merge_LCC_domain <- project(all_merge_domain,vu_res)
     cover_all <- all_merge_LCC_state %>% 
       split(f=paste0(all_merge_LCC_state$STATEFP,all_merge_LCC_state$COUNTYFP)) %>%
       lapply(function(x){extract(vu_res,x,weights=T,exact=T,cells=T)})
     if(stationary_combustion_by_state){
-      disaggregation(vu_res,res_totals,agg_level="state",NEI_input=all_merge_LCC_state)
-      disaggregation(vu_com,com_totals,agg_level="state",NEI_input=all_merge_LCC_state)
-      disaggregation(vu_ind,ind_totals,agg_level="state",NEI_input=all_merge_LCC_state)
-      disaggregation(vu_elec,elec_totals,agg_level="state",NEI_input=all_merge_LCC_state)
+      disaggregation(vu_res,res_totals,agg_level="state",NEI_input=all_merge_LCC_state,cover_all,out_envir=environment())
+      disaggregation(vu_com,com_totals,agg_level="state",NEI_input=all_merge_LCC_state,cover_all,out_envir=environment())
+      disaggregation(vu_ind,ind_totals,agg_level="state",NEI_input=all_merge_LCC_state,cover_all,out_envir=environment())
+      disaggregation(vu_elec,elec_totals,agg_level="state",NEI_input=all_merge_LCC_state,cover_all,out_envir=environment())
     }
     
     if(stationary_combustion_by_domain){
-      disaggregation(vu_res,res_totals,agg_level="domain",NEI_input=all_merge_LCC_domain)
-      disaggregation(vu_com,com_totals,agg_level="domain",NEI_input=all_merge_LCC_domain)
-      disaggregation(vu_ind,ind_totals,agg_level="domain",NEI_input=all_merge_LCC_domain)
-      disaggregation(vu_elec,elec_totals,agg_level="domain",NEI_input=all_merge_LCC_domain)
+      disaggregation(vu_res,res_totals,agg_level="domain",NEI_input=all_merge_LCC_domain,cover_all,out_envir=environment())
+      disaggregation(vu_com,com_totals,agg_level="domain",NEI_input=all_merge_LCC_domain,cover_all,out_envir=environment())
+      disaggregation(vu_ind,ind_totals,agg_level="domain",NEI_input=all_merge_LCC_domain,cover_all,out_envir=environment())
+      disaggregation(vu_elec,elec_totals,agg_level="domain",NEI_input=all_merge_LCC_domain,cover_all,out_envir=environment())
     }
   }
   rm(all_merge_LCC_state,all_merge_LCC_domain)
@@ -467,7 +461,7 @@ Stationary_combustion <- function(){
       }
     }
   }
-  
+
   for(total in com_totals){
     if(Use_ACES){
       if(stationary_combustion_by_state){
@@ -486,7 +480,7 @@ Stationary_combustion <- function(){
       }
     }
   }
-  
+
   for(total in ind_totals){
     if(Use_ACES){
       if(stationary_combustion_by_state){
@@ -505,7 +499,7 @@ Stationary_combustion <- function(){
       }
     }
   }
-  
+
   for(total in elec_totals){
     if(Use_ACES){
       if(stationary_combustion_by_state){
@@ -532,7 +526,7 @@ Stationary_combustion <- function(){
   res_data_objects <- as.list(ls(pattern=glob2rx("*_res_ch4*")))
   #get the length, convert from a list of the names to the actual rasters
   res_data_length <- length(res_data_objects)
-  res_data_list <- sapply(as.list(res_data_objects),get)
+  res_data_list <- sapply(res_data_objects,get,envir=environment())
   #get the domain total for each raster, put into an organized df
   res_data <- as.data.frame(matrix(sapply(res_data_list,global,sum),
                                    ncol=res_data_length))
@@ -542,7 +536,7 @@ Stationary_combustion <- function(){
   
   com_data_objects <- as.list(ls(pattern=glob2rx("*_com_ch4*")))
   com_data_length <- length(com_data_objects)
-  com_data_list <- sapply(as.list(com_data_objects),get)
+  com_data_list <- sapply(com_data_objects,get,envir=environment())
   com_data <- as.data.frame(matrix(sapply(com_data_list,global,sum),
                                    ncol=com_data_length))
   names(com_data) <- gsub("com_ch4","by",unlist(com_data_objects))
@@ -550,7 +544,7 @@ Stationary_combustion <- function(){
   
   ind_data_objects <- as.list(ls(pattern=glob2rx("*_ind_ch4*")))
   ind_data_length <- length(ind_data_objects)
-  ind_data_list <- sapply(as.list(ind_data_objects),get)
+  ind_data_list <- sapply(ind_data_objects,get,envir=environment())
   ind_data <- as.data.frame(matrix(sapply(ind_data_list,global,sum),
                                    ncol=ind_data_length))
   names(ind_data) <- gsub("ind_ch4","by",unlist(ind_data_objects))
@@ -558,7 +552,7 @@ Stationary_combustion <- function(){
   
   elec_data_objects <- as.list(ls(pattern=glob2rx("*_elec_ch4*")))
   elec_data_length <- length(elec_data_objects)
-  elec_data_list <- sapply(as.list(elec_data_objects),get)
+  elec_data_list <- sapply(elec_data_objects,get,envir=environment())
   elec_data <- as.data.frame(matrix(sapply(elec_data_list,global,sum),
                                     ncol=elec_data_length))
   names(elec_data) <- gsub("elec_ch4","by",unlist(elec_data_objects))
@@ -569,7 +563,7 @@ Stationary_combustion <- function(){
   
   #original data that was distributed in the rasters.  The totals should still
   #match.
-  input_totals <- values(all_merge_LCC[,grep(glob2rx("county_ch4_emiss*"),names(all_merge_LCC))])
+  input_totals <- values(merge_with_poly[,grep(glob2rx("county_ch4_emiss*"),names(merge_with_poly))])
   input_totals <- colSums(input_totals)
   input_totals_state <- input_totals[grep("bystate",names(input_totals))]
   input_totals_domain <- input_totals[grep("bydomain",names(input_totals))]
