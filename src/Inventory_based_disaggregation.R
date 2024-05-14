@@ -32,7 +32,7 @@ disaggregation <- function(input_inventory,totals,agg_level,NEI_input,cover_all,
       #polygon to 1 (i.e., equally distribute emissions across the polygon)
     }else{
       input_inventory_frac <- input_inventory_temp/unlist(global(input_inventory_temp, sum))
-      # Calculate the fraction of the polygon-total CO2 emission within each cell
+      # Calculate the fraction of the polygon-total CO emission within each cell
     }
     
     for(total in totals){
