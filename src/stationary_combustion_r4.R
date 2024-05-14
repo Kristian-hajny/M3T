@@ -347,6 +347,9 @@ Stationary_combustion <- function(){
     vu_elec <- rast(paste0(vulcan_directory,"/Sectoral/",'Vulcan_v3_US_annual_1km_elec_prod_mn.nc4'), subds='carbon_emissions', lyrs=vulcan_band)
   }
   
+  #organize it by state-county ID for consistency with later analysis
+  merge_with_poly <- merge_with_poly[order(paste0(merge_with_poly$STATEFP,merge_with_poly$COUNTYFP)),]
+  
   # Transform to ACES/Vulcan CRS
   all_merge_state <- merge_with_poly
   names(all_merge_state) <- gsub("county_ch4_emiss_bystate.","",names(all_merge_state))
