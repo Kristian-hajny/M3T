@@ -1072,22 +1072,62 @@ NG_distribution <- function(){
       disaggregation_level <- substring(text = input_name,regexpr("by",input_name),
                                         regexpr("\\[",input_name)-1)
       inventory_name <- strsplit(input_name,"_")[[1]][1]
-      input <- project(input,domain)
       #project to a grid with the exact right resolution, extent and origin.
+      input <- project(input,domain)
+      #convert from mol/km2s to nmol/m2s
+      input <- input*1000
+      
+      #grab some text for the longname
+      if(grepl("_res",total)){
+        sector_name <- "residential"
+      }else if(grepl("_com",total)){
+        sector_name <- "commercial"
+      }
+      
+      if(grepl("mains",total)){
+        subsector_name <- "mains pipelines"
+      }else if(grepl("serv",total)){
+        subsector_name <- "service pipelines"
+      }else if(grepl("MnR",total)){
+        subsector_name <- "metering and regulating stations"
+      }else if(grepl("^meter",total)){
+        subsector_name <- "consumer meters"
+      }else if(grepl("upset",total)){
+        subsector_name <- "upsets and maintenance"
+      }else if(grepl("post_meter",total)){
+        subsector_name <- "post-meter residential leakage and usage"
+      }
+      
+      if(grepl("ldc",disaggregation_level)){
+        disaggregation_name <- "local distribution company"
+      }else if(grepl("state",disaggregation_level)){
+        disaggregation_name <- "individual-state"
+      }else if(grepl("domain",disaggregation_level)){
+        disaggregation_name <- "domain"
+      }
+      
+      if("aces"==inventory_name){
+        inventory_name <- "aces"
+      }else if("vu"==inventory_name){
+        inventory_name <- "vulcan"
+      }
+      
+
       writeCDF(input,
-               paste0(output_directory,'/',inventory_name,'_',disaggregation_level,'_NG_dist_',total,'_regridded.nc'),
+               paste0(output_directory,'/',"NG_dist_",sub("_ER_total","",total),
+                      "_",disaggregation_level,"_",inventory_name,'.nc'),
                force_v4=TRUE,
                varname='methane_emissions',
-               unit='mol/km2/s',
-               longname=paste0(inventory_name,'_',disaggregation_level,'_NG_dist_',total),
+               unit='nmol/m2/s',
+               longname=paste0('Methane emissions from natural gas distribution ',subsector_name,
+                               ', spatially allocated from ',disaggregation_name,
+                               ' totals using ',inventory_name,' ',sector_name,' CO2 emissions'),
                missval=-9999,
                overwrite=TRUE)
     }
   }
   ################################################################################
   #Save the output
-  
-  dir.create(output_directory,showWarnings = F)
   
   # Now save the rasters for each subsector
   for(total in res_totals){
