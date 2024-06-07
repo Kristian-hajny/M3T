@@ -206,6 +206,17 @@
 #Joe did this via XESMF.  No need to do this now, and this should be
 #reincorporated into the individual scripts.
 
+#GEPA - the new versions no longer include forest fire CH4.  From the 2012
+#version's paper "National forest fire emissions from the GHGI are distributed
+#on a daily basis at 0.1° × 0.1° resolution using the Quick Fire Emissions Data
+#set (QFED v2.4) for 2012".  QFED is available via FTP
+#(http://ftp.as.harvard.edu/gcgrid/data/ExtData/HEMCO/QFED/v2018-07/), but the
+#Harvard host site suggests GFED4 may be preferred now (at least for GEOS-CHEM).
+#That's available through here (https://www.globalfiredata.org/index.html).
+
+#GEPA - do we want visuals of the industrial landfills, non-fossil GEPA sectors,
+#and fossil GEPA sectors?
+
 #some defaults for a Philly centered domain with NAD83 crs
 # CH4_inventory_build <- function(Input_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Raw data/",
 #                                 Output_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Processed/",
@@ -353,6 +364,7 @@
   source(paste0(code_directory,"WWTP_emissions_r3.R"))
   source(paste0(code_directory,"NG_transmission_emissions_r1.R"))
   source(paste0(code_directory,"NG_distribution_emissions_r4.R"))
+  source(paste0(code_directory,""))
   
   ################################################################################
   #create the domain and set it to all NaN
@@ -460,7 +472,8 @@
     rm(Process_wetlands_and_inland_waters)
   }
   if(Incorporate_remaining_sectors_from_gridded_EPA){
-    
+    Prepare_GEPA()
+    rm(Incorporate_remaining_sectors_from_gridded_EPA,Prepare_GEPA)
   }
   if(Combine_sectors){
     
