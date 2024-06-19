@@ -40,7 +40,7 @@ log_plot <- function(input,title,zlim_min=NULL,zlim_max=NULL,
        zlim=c(zlim_min,zlim_max))
   plot(County_Tigerlines,add=T,border="dimgrey",col=NA)
   plot(State_Tigerlines,add=T,border="white",lwd=2,col=NA)
-  if(exists("focus_city_tigerlines")){
+  if(class(focus_city_tigerlines)=="SpatVector"){
     plot(focus_city_tigerlines,add=T,border="darkgrey",col=NA)
   }
   dev.off()
@@ -77,7 +77,7 @@ not_log_plot <- function(input,title,zlim_min=NULL,zlim_max=NULL,
        zlim=c(zlim_min,zlim_max))
   plot(County_Tigerlines,add=T,border="dimgrey",col=NA)
   plot(State_Tigerlines,add=T,border="white",lwd=2,col=NA)
-  if(exists("focus_city_tigerlines")){
+  if(class(focus_city_tigerlines)=="SpatVector"){
     plot(focus_city_tigerlines,add=T,border="darkgrey",col=NA)
   }
   dev.off()
