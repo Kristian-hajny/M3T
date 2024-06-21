@@ -81,6 +81,9 @@
 #'  The GHGI is available at
 #'  \url{https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks}
 #'  The GHGRP is available at \url{https://www.epa.gov/ghgreporting}
+#'  
+#'  See references \href{https://doi.org/10.1016/j.isprsjprs.2020.02.019}{Homer et
+#'  al.} and \href{https://doi.org/10.1021/acs.est.2c05373}{Moore et al.}
 #'@param domain SpatRaster providing the desired output grid, including the
 #'  desired resolution and coordinate reference system
 #'@param state_name_list Character vector listing all states within the desired

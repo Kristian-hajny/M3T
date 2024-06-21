@@ -123,9 +123,9 @@ Vulcan must be used, though both can be.</p>
 <p>Character providing the full path to a folder containing
 the ACES sectoral CO2 inventories.  Must include the residential,
 commercial, electric (elec), and industrial sectors.  ACES v2.0 is available
-at <a href="https://doi.org/10.3334/ORNLDAAC/1943">https://doi.org/10.3334/ORNLDAAC/1943</a>, though the hourly file should be
-averaged across hours to create an annually averaged inventory.  Code to do
-this on a linux-based HPC system is available as the script
+at <a href="https://doi.org/10.3334/ORNLDAAC/1943">https://doi.org/10.3334/ORNLDAAC/1943</a>, though the hourly file
+should be averaged across hours to create an annually averaged inventory.
+Code to do this on a linux-based HPC system is available as the script
 &quot;Annualize_ACES_seawulf.R&quot; and the accompanying batch script
 &quot;Annualize_ACES.sh&quot;.  The year closest to &quot;inventory_year&quot; is used, but
 those further from that year are considered if the closest is unavailable.</p>
@@ -135,10 +135,10 @@ those further from that year are considered if the closest is unavailable.</p>
 <p>Character providing the full path to a folder
 containing the Vulcan sectoral CO2 inventories.  Must include the
 residential, commercial, electric (elec_prod), and industrial sectors.
-Vulcan v3.0 is available at <a href="https://doi.org/10.3334/ORNLDAAC/1741">https://doi.org/10.3334/ORNLDAAC/1741</a>, and the
-annual mean files should be used.  The year closest to &quot;inventory_year&quot; is
-used.  As all years are contained in the same file, it does not search for
-other years.</p>
+Vulcan v3.0 is available at <a href="https://doi.org/10.3334/ORNLDAAC/1741">https://doi.org/10.3334/ORNLDAAC/1741</a>, and
+the annual mean files should be used.  The year closest to &quot;inventory_year&quot;
+is used.  As all years are contained in the same file, it does not search
+for other years.</p>
 </td></tr>
 <tr><td><code id="ACES_year">ACES_year</code></td>
 <td>
@@ -186,17 +186,19 @@ file.  1 by 14 data frame with emission factors for each sector-fuel
 combination from the IPCC.  Built equivalently to the GHGI_data, but without
 an entry for the state.  Emission factors are in g/GJ, equivalent to kg/TJ.
 Default emission factors are available in IPCC 2006 volume 2: Energy, tables
-2.2 through 2.5 <a href="https://www.ipcc-nggip.iges.or.jp/public/2006gl/vol2.html">https://www.ipcc-nggip.iges.or.jp/public/2006gl/vol2.html</a>.
-The natural gas electric sector emission factor is instead pulled from Hajny
-et al., 2019 <a href="https://doi.org/10.1021/acs.est.9b01875">https://doi.org/10.1021/acs.est.9b01875</a>.  This is 5.7 kg/TJ,
+2.2 through 2.5
+<a href="https://www.ipcc-nggip.iges.or.jp/public/2006gl/vol2.html">https://www.ipcc-nggip.iges.or.jp/public/2006gl/vol2.html</a>. The natural
+gas electric sector emission factor is instead pulled from Hajny et al.,
+2019 <a href="https://doi.org/10.1021/acs.est.9b01875">https://doi.org/10.1021/acs.est.9b01875</a>.  This is 5.7 kg/TJ,
 within uncertainties of the GHGI value of 4.1 kg/TJ, both of which are
 larger than the IPCC default of 1 kg/TJ.</p>
 </td></tr>
 <tr><td><code id="EIA_API_key">EIA_API_key</code></td>
 <td>
 <p>Character.  Pulled from config file.  API key to access
-SEDS data API.  The API is described at <a href="https://www.eia.gov/opendata/">https://www.eia.gov/opendata/</a> and
-one can register for a key with a link on the right hand side of this page.</p>
+SEDS data API.  The API is described at <a href="https://www.eia.gov/opendata/">https://www.eia.gov/opendata/</a>
+and one can register for a key with a link on the right hand side of this
+page.</p>
 </td></tr>
 <tr><td><code id="plot_directory">plot_directory</code></td>
 <td>
@@ -271,11 +273,17 @@ national scale.
 <p>The GHGI is available at
 <a href="https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks">https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks</a>
 The SEDS is available at
-<a href="https://www.eia.gov/state/seds/seds-data-complete.php?sid=US">https://www.eia.gov/state/seds/seds-data-complete.php?sid=US</a> The NEI is
-available at
+<a href="https://www.eia.gov/state/seds/seds-data-complete.php?sid=US">https://www.eia.gov/state/seds/seds-data-complete.php?sid=US</a> The NEI
+is available at
 <a href="https://www.epa.gov/air-emissions-inventories/national-emissions-inventory-nei">https://www.epa.gov/air-emissions-inventories/national-emissions-inventory-nei</a>
+ACES is available at <a href="https://doi.org/10.3334/ORNLDAAC/1943">https://doi.org/10.3334/ORNLDAAC/1943</a> and Vulcan
+is available at <a href="https://doi.org/10.3334/ORNLDAAC/1741">https://doi.org/10.3334/ORNLDAAC/1741</a>.
 </p>
 <p>Each fuel-sector-inventory-variation combination is saved separately.
+</p>
+<p>See references
+<a href="https://doi.org/10.1029/2020JD032974">Vulcan</a> and
+<a href="https://doi.org/10.1002/2017JD027359">ACES</a>
 </p>
 
 

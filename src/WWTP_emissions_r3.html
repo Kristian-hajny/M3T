@@ -24,7 +24,8 @@ and septic systems</h2>
 <p>'Wastewater' writes 4 netcdf files of gridded methane emissions -
 1 for municipal wastewater treatment facilities, 1 for industrial wastewater
 treatment facilities, and 2 for septic systems.   Also writes 5 csvs, 2 for
-municipal facilities, 2 for industrial facilities, and 1 for septic systems.
+municipal facilities, 2 for industrial facilities, and 1 for septic systems
+with all but the septic systems file being optional.
 </p>
 
 
@@ -61,9 +62,9 @@ municipal facilities, 2 for industrial facilities, and 1 for septic systems.
 <td>
 <p>Character providing the full filepath to the discharge
 monitoring report data available at
-<a href="https://echo.epa.gov/trends/loading-tool/water-pollution-search">https://echo.epa.gov/trends/loading-tool/water-pollution-search</a>.  Set the
-industry type to Publicly Owned Treatment Works in the search tool, set the
-year, and select wastewater flow under the pollutant categories.  After
+<a href="https://echo.epa.gov/trends/loading-tool/water-pollution-search">https://echo.epa.gov/trends/loading-tool/water-pollution-search</a>.  Set
+the industry type to Publicly Owned Treatment Works in the search tool, set
+the year, and select wastewater flow under the pollutant categories.  After
 searching, scroll to the bottom table where flow separated by facility is
 shown and select download all data.  This will produce a csv with 3 rows as
 header, columns as different variables and rows as different facilities. The
@@ -257,19 +258,19 @@ Clean Watershed Needs Survey (CWNS), available at
 or the National Pollutant Discharge Elimination System (NPDES) Discharge
 Monitoring Reports (DMR) available through the Enforcement and Compliance
 History Online (ECHO) tool at
-<a href="https://echo.epa.gov/trends/loading-tool/water-pollution-search">https://echo.epa.gov/trends/loading-tool/water-pollution-search</a>.  The CWNS
-is produced infrequently while DMR data is regularly updated, though the
-products do differ.  Facility locations and total effluent flow is used from
-these files.  The calculation method can then either be set to disaggregate
-the EPA Greenhouse Gas Inventory (GHGI) national total emissions to these
-facilities, scaled by flow, or calculate emissions for each facility using a
-log-linear relationship between flow and emissions (log10(CH4 emissions in
-g/s) = 1.2*log10(flow in m3/s)+1) as determined by Moore et al.  Moore et
-al. measured emission rates at 63 wastewater treatment facilities to develop
-this relationship, which using DMR flow rates suggests nearly 2x the
-emissions as the GHGI as of 2023 when their paper was written.  Note the
-authors actually used emission factors with organic loading rather than this
-log-linear relationship to scale emissions.
+<a href="https://echo.epa.gov/trends/loading-tool/water-pollution-search">https://echo.epa.gov/trends/loading-tool/water-pollution-search</a>.  The
+CWNS is produced infrequently while DMR data is regularly updated, though
+the products do differ.  Facility locations and total effluent flow is used
+from these files.  The calculation method can then either be set to
+disaggregate the EPA Greenhouse Gas Inventory (GHGI) national total
+emissions to these facilities, scaled by flow, or calculate emissions for
+each facility using a log-linear relationship between flow and emissions
+(log10(CH4 emissions in g/s) = 1.2*log10(flow in m3/s)+1) as determined by
+Moore et al.  Moore et al. measured emission rates at 63 wastewater
+treatment facilities to develop this relationship, which using DMR flow
+rates suggests nearly 2x the emissions as the GHGI as of 2023 when their
+paper was written.  Note the authors actually used emission factors with
+organic loading rather than this log-linear relationship to scale emissions.
 </p>
 <p>GHGRP data is used for any and all industrial wastewater treatment
 facilities.  The necessary GHGRP data will be automatically downloaded.
@@ -314,6 +315,9 @@ at national scale.
 <p>The GHGI is available at
 <a href="https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks">https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks</a>
 The GHGRP is available at <a href="https://www.epa.gov/ghgreporting">https://www.epa.gov/ghgreporting</a>
+</p>
+<p>See references <a href="https://doi.org/10.1016/j.isprsjprs.2020.02.019">Homer et
+al.</a> and <a href="https://doi.org/10.1021/acs.est.2c05373">Moore et al.</a>
 </p>
 
 
@@ -362,7 +366,7 @@ grid &lt;- rast(nrows=diff(range(grid_bbox[,2]))/grid_res,
             ncols=diff(range(grid_bbox[,1]))/grid_res, xmin=min(grid_bbox[,1]),
             xmax=max(grid_bbox[,1]), ymin=min(grid_bbox[,2]), ymax=max(grid_bbox[,2]),
             crs=grid_crs)
-            
+
 Urban_Tigerlines &lt;- vect("~/../Desktop/Urban_Tigerlines/tl_2018_us_uac10.shp")
 focus_city &lt;- terra::subset(Urban_Tigerlines,Urban_Tigerlines$NAME10 %in% "Philadelphia, PA--NJ--DE--MD")
 

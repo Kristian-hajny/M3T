@@ -86,7 +86,7 @@ ACES_directory: Character providing the full path to a folder
           sectors.  ACES v2.0 is available at
           <https://doi.org/10.3334/ORNLDAAC/1943>, though the hourly
           file should be averaged across hours to create an annually
-          averaged inventory.  Code to do this on a linux-based HPC
+          averaged inventory. Code to do this on a linux-based HPC
           system is available as the script "Annualize_ACES_seawulf.R"
           and the accompanying batch script "Annualize_ACES.sh".  The
           year closest to "inventory_year" is used, but those further
@@ -224,9 +224,13 @@ Details:
      <https://www.eia.gov/state/seds/seds-data-complete.php?sid=US> The
      NEI is available at
      <https://www.epa.gov/air-emissions-inventories/national-emissions-inventory-nei>
+     ACES is available at <https://doi.org/10.3334/ORNLDAAC/1943> and
+     Vulcan is available at <https://doi.org/10.3334/ORNLDAAC/1741>.
 
      Each fuel-sector-inventory-variation combination is saved
      separately.
+
+     See references Vulcan and ACES
 
 Value:
 

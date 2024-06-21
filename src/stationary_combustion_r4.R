@@ -53,11 +53,17 @@
 #'  The GHGI is available at
 #'  \url{https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks}
 #'  The SEDS is available at
-#'  \url{https://www.eia.gov/state/seds/seds-data-complete.php?sid=US} The NEI is
-#'  available at
+#'  \url{https://www.eia.gov/state/seds/seds-data-complete.php?sid=US} The NEI
+#'  is available at
 #'  \url{https://www.epa.gov/air-emissions-inventories/national-emissions-inventory-nei}
+#'  ACES is available at \url{https://doi.org/10.3334/ORNLDAAC/1943} and Vulcan
+#'  is available at \url{https://doi.org/10.3334/ORNLDAAC/1741}.
 #'
 #'  Each fuel-sector-inventory-variation combination is saved separately.
+#'
+#'  See references
+#'  \href{https://doi.org/10.1029/2020JD032974}{Vulcan} and
+#'  \href{https://doi.org/10.1002/2017JD027359}{ACES}
 #'@param NEI_file Character providing the full filepath to the NEI county level
 #'  CO data for the states within the domain. This data is available at
 #'  \url{https://www.epa.gov/air-emissions-inventories/2017-national-emissions-inventory-nei-data}.
@@ -95,19 +101,19 @@
 #'@param ACES_directory Character providing the full path to a folder containing
 #'  the ACES sectoral CO2 inventories.  Must include the residential,
 #'  commercial, electric (elec), and industrial sectors.  ACES v2.0 is available
-#'  at \url{https://doi.org/10.3334/ORNLDAAC/1943}, though the hourly file should be
-#'  averaged across hours to create an annually averaged inventory.  Code to do
-#'  this on a linux-based HPC system is available as the script
+#'  at \url{https://doi.org/10.3334/ORNLDAAC/1943}, though the hourly file
+#'  should be averaged across hours to create an annually averaged inventory.
+#'  Code to do this on a linux-based HPC system is available as the script
 #'  "Annualize_ACES_seawulf.R" and the accompanying batch script
 #'  "Annualize_ACES.sh".  The year closest to "inventory_year" is used, but
 #'  those further from that year are considered if the closest is unavailable.
 #'@param vulcan_directory Character providing the full path to a folder
 #'  containing the Vulcan sectoral CO2 inventories.  Must include the
 #'  residential, commercial, electric (elec_prod), and industrial sectors.
-#'  Vulcan v3.0 is available at \url{https://doi.org/10.3334/ORNLDAAC/1741}, and the
-#'  annual mean files should be used.  The year closest to "inventory_year" is
-#'  used.  As all years are contained in the same file, it does not search for
-#'  other years.
+#'  Vulcan v3.0 is available at \url{https://doi.org/10.3334/ORNLDAAC/1741}, and
+#'  the annual mean files should be used.  The year closest to "inventory_year"
+#'  is used.  As all years are contained in the same file, it does not search
+#'  for other years.
 #'@param ACES_year Numeric providing the year of ACES data to use
 #'@param vulcan_band Numeric providing the band of Vulcan data to use (1-6 =
 #'  2010 - 2015)
@@ -137,20 +143,16 @@
 #'  combination from the IPCC.  Built equivalently to the GHGI_data, but without
 #'  an entry for the state.  Emission factors are in g/GJ, equivalent to kg/TJ.
 #'  Default emission factors are available in IPCC 2006 volume 2: Energy, tables
-#'  2.2 through 2.5 \url{https://www.ipcc-nggip.iges.or.jp/public/2006gl/vol2.html}.
-#'  The natural gas electric sector emission factor is instead pulled from Hajny
-#'  et al., 2019 \url{https://doi.org/10.1021/acs.est.9b01875}.  This is 5.7 kg/TJ,
+#'  2.2 through 2.5
+#'  \url{https://www.ipcc-nggip.iges.or.jp/public/2006gl/vol2.html}. The natural
+#'  gas electric sector emission factor is instead pulled from Hajny et al.,
+#'  2019 \url{https://doi.org/10.1021/acs.est.9b01875}.  This is 5.7 kg/TJ,
 #'  within uncertainties of the GHGI value of 4.1 kg/TJ, both of which are
 #'  larger than the IPCC default of 1 kg/TJ.
 #'@param EIA_API_key Character.  Pulled from config file.  API key to access
-#'  SEDS data API.  The API is described at \url{https://www.eia.gov/opendata/} and
-#'  one can register for a key with a link on the right hand side of this page.
-#'@returns Nothing is returned from the function, but the main outputs are up to
-#'  56 netcdf files of the methane emissions from stationary combustion.  They
-#'  are titled as "stat_comb_sector_fuel_variation_inventory.nc" where sector is
-#'  abbreviated as com (commercial), res (residential), elec (electric), and ind
-#'  (industrial); fuel is abbreviated as wood, petr (petroleum), gas (natural
-#'  gas), and coal; and variation is bystate or bydomain.
+#'  SEDS data API.  The API is described at \url{https://www.eia.gov/opendata/}
+#'  and one can register for a key with a link on the right hand side of this
+#'  page.
 #'@param plot_directory Character providing the full filepath to save figures.
 #'  Only relevant if verbose = TRUE.
 #'@param State_Tigerlines SpatVector.  United States Census Bureau county
@@ -161,6 +163,12 @@
 #'  shapefile.  Available at
 #'  \url{https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html}.
 #'  Only relevant if a focus city was set in main and verbose=TRUE.
+#'@returns Nothing is returned from the function, but the main outputs are up to
+#'  56 netcdf files of the methane emissions from stationary combustion.  They
+#'  are titled as "stat_comb_sector_fuel_variation_inventory.nc" where sector is
+#'  abbreviated as com (commercial), res (residential), elec (electric), and ind
+#'  (industrial); fuel is abbreviated as wood, petr (petroleum), gas (natural
+#'  gas), and coal; and variation is bystate or bydomain.
 #'@examples
 #'library(terra)
 #'user_key = "__user_EIA_API_key__"

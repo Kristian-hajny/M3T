@@ -1,3 +1,329 @@
+#'@title Create gridded natural gas distribution methane emissions maps
+#'
+#'@description `NG_distribution` writes up to 63 netcdf files of gridded methane
+#'  emissions from natural gas distribution sources, as well as optional visuals
+#'
+#'@details This function calculates and grids methane emissions from natural gas
+#'  distribution.  It uses a Homeland Infrastructure Foundation-Level Data
+#'  (HIFLD) dataset titled Natural Gas Local Distribution Company Service
+#'  Territories, Environmental Protection Agency's (EPA) Greenhouse Gas
+#'  Inventory (GHGI), the EPA Greenhouse Gas Reporting Program (GHGRP), the
+#'  Pipeline and Hazardous Materials Safety Administration (PHMSA) gas
+#'  distribution annual report, the Energy Information Administration (EIA) Form
+#'  176 - Annual Report of Natural and Supplemental Gas Supply and Disposition,
+#'  and either the Vulcan or Anthropogenic Carbon Emission System (ACES) CO2
+#'  inventory.  This can be done at the Local Distribution Company (LDC) level,
+#'  State level, or Domain level.  As several of the input datasets have no
+#'  common LDC identifier, they must be carefully matched to run this function
+#'  at the LDC level.  If running at the state or domain level, data can be
+#'  aggregated and applied between datasets without any manual matching needed.
+#'
+#'  First all of the input data excluding the GHGI are loaded in and filtered to
+#'  only the states within the domain.  The GHGRP data is used to calculate the
+#'  typical number of stations per mile of pipeline for each LDC.  Stations
+#'  include transmission and distribution transfer stations and metering and
+#'  regulating stations.  This is calculated for all stations combined, as well
+#'  as separately for above grade and below grade stations.  If calculating by
+#'  LDC, the PHMSA miles of pipeline per LDC is used in the calculation of
+#'  stations per mile, rather than the GHGRP, though the miles of pipeline for
+#'  each LDC in GHGRP and PHMSA are compared and if any LDC differs by > 5 miles
+#'  an error will be flagged.
+#'
+#'  The GHGI Annex data is then pulled and includes emission factors and
+#'  activity data for metering an regulating stations separated by inlet
+#'  pressure, and just the emission factors for pipeline services separated by
+#'  pipeline material, meters separated by customer type (residential,
+#'  commercial, industrial), and different maintenance events (pressure relief
+#'  valve release, blow-downs, accidental dig-ins).
+#'
+#'  PHMSA data on miles of pipeline separated by material is then combined with
+#'  the input "GHGI_natural_gas_pipeline_emission_factors", which by default are
+#'  the emission factors from Table 2 of Weller et al. who used research
+#'  equipped Google Street View cars to measure > 4000 leaks in the U.S.  PHMSA
+#'  data on pipeline services, separated by pipeline material, are combined with
+#'  the GHGI emission factors to get emissions for each LDC.
+#'
+#'  GHGRP data is aggregated to the state level to get the average number of
+#'  above or below grade stations per mile.  If not calculating emission by LDC,
+#'  this is combined with the PHMSA miles of pipeline to get an estimate of the
+#'  number of above and below grade stations for each LDC in the PHMSA dataset.
+#'
+#'  The combined miles of pipeline including services is calculated from the
+#'  PHMSA and the various input datasets are subset to only the necessary
+#'  variables, aggregated to the state level and merged.  The variables kept
+#'  differ slightly if calculating by LDC.
+#'
+#'  If not calculating by LDC, then there is no HIFLD csv file necessary,
+#'  leaving the HIFLD shapefile, the PHMSA pipeline activity and emissions data,
+#'  the EIA sales data, and the GHGRP pipeline activity data.
+#'
+#'  If calculating by LDC a HIFLD csv (containing the same information as the
+#'  shapefile) is also included.  The residuals (LDCs that could not be matched
+#'  across datasets) are assigned to an "OTHER" LDC that includes all territory
+#'  in the state not already accounted for by an LDC.  The number of stations
+#'  for each LDC is now overwritten to be the values for that specific LDC from
+#'  the GHGRP.  State average stations per mile (calculated from the GHGRP) are
+#'  then applied only to LDCs that did not report to the GHGRP.
+#'
+#'  Service and pipeline emissions are then split into residential and
+#'  commercial fractions.  This is calculated for residential as the sum of all
+#'  emissions * N residential customers / N total residential and commercial
+#'  customers.  The calculation would be equivalent for commercial customers.
+#'
+#'  Emissions for metering and regulating stations are then calculated as a
+#'  function of pressure.  The number of stations of a grade (above or below)
+#'  are multiplied with the national fraction of metering and regulating
+#'  stations of that grade that are a certain pressure window and then
+#'  multiplied by the emission factor for that pressure window.  E.g., N Above
+#'  grade (by LDC or state) * national type fraction * national type emission
+#'  factor.  These emissions are then split into residential and commercial in
+#'  the same manner as service and pipeline emissions were.
+#'
+#'  Meter emissions are calculated separately for each customer type
+#'  (residential, commercial, industrial) using the corresponding GHGI emission
+#'  factors.  These emissions are then split into residential and commercial,
+#'  incorporating industrial emissions into residential and commercial
+#'  proportionally.  This was done as the industrial sectors of ACES/Vulcan are
+#'  dominated by point sources, many of which don't even rely on natural gas. It
+#'  was chosen to split by emissions rather than number of customers as this was
+#'  considered more representative (e.g., there may be many residential
+#'  customers, yet the commercial ones consume more natural gas overall).
+#'
+#'  Maintenance and upsets are calculated using national GHGI emission factors
+#'  and split into residential and commercial in the same manner as service and
+#'  pipeline emissions were.
+#'
+#'  Post-meter emissions are calculated, strictly for residential, using the
+#'  volume of gas delivered to residential customers and the
+#'  natural_gas_post_meter_emission_factor, which is based on Fischer et al. by
+#'  default.  Fischer et al. measured whole-house emissions from 75 homes in
+#'  California using mass balance.
+#'
+#'  Finally, ACES and/or Vulcan residential and commercial gridded CO2 emission
+#'  maps are loaded in.  The emissions for each subsector are then distributed
+#'  using the ACES or Vulcan CO2 inventory.  This can be done at the LDC, state,
+#'  or domain level.  Emissions at this point are at the state level if not
+#'  calculating by LDC and can then be aggregated to the domain level. Otherwise
+#'  emissions are at the LDC level and can be aggregated to the state or domain
+#'  level.  As such, producing output at the state and LDC level will result in
+#'  slightly different output than running only at the state level.
+#'
+#'  GHGRP data is available starting in 2010 and generally is about 2 years
+#'  behind present day, the GHGI is available starting in 1990 and is updated
+#'  approximately in sync with the GHGRP.  The HIFLD dataset is updated
+#'  infrequently and is available for 2019 and 2017.  The EIA form is annually
+#'  reported and is available starting in 1997 and is generally updated in
+#'  September to the previous year (i.e., Sept 2024 adds 2023 data).  The PHMSA
+#'  data is annual and is available starting in 1970 and is available up to the
+#'  most recent year.  The GHGRP includes only facilities that emit at least
+#'  25,000 metric tons of carbon dioxide equivalent while the GHGI is intended
+#'  to capture all national emissions. All other datasets are meant to be
+#'  inclusive of national facilities. All data is annual.  The GHGI is national
+#'  totals while all other datasets are at the facility scale.
+#'
+#'  GHGRP data and the HIFLD shapefile will be automatically downloaded.
+#'
+#'  The GHGRP is available at \url{https://ghgdata.epa.gov/ghgp/main.do}. The
+#'  GHGI is available at
+#'  \url{https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks}.
+#'  For individual LDC metering and regulating station counts, among other
+#'  variables, one must filter to the natural gas local distribution companies
+#'  sector, select an individual facility and select "View reported data".  The
+#'  HIFLD dataset is available at
+#'  \url{https://hifld-geoplatform.hub.arcgis.com/datasets/geoplatform::natural-gas-service-territories/about}
+#'  and can be donwloaded as both a shapefile or a csv. EIA form 176 is
+#'  available at
+#'  \url{https://www.eia.gov/naturalgas/ngqs/#?report=RP4&year1=2020&year2=2020&company=Name}
+#'  and can be downloaded as an excel file.  The PHMSA Gas Distribution Annual
+#'  Data can be download at
+#'  \url{https://www.phmsa.dot.gov/data-and-statistics/pipeline/gas-distribution-gas-gathering-gas-transmission-hazardous-liquids}
+#'  as a zip file with an excel file for each year. ACES is available at
+#'  \url{https://doi.org/10.3334/ORNLDAAC/1943} and Vulcan is available at
+#'  \url{https://doi.org/10.3334/ORNLDAAC/1741}.
+#'
+#'  See references \href{https://doi.org/10.1021/acs.est.0c00437}{Weller et al.}
+#'  and \href{https://doi.org/10.1021/acs.est.8b03217}{Fischer et al.}
+#'@param domain SpatRaster providing the desired output grid, including the
+#'  desired resolution and coordinate reference system
+#'@param state_name_list Character vector listing all states within the desired
+#'  domain
+#'@param output_directory Character providing the full filepath to save
+#'  processed data
+#'@param inventory_year Character indicating the desired year of data to use.
+#'@param verbose Logical indicating whether to save additional output.  This
+#'  includes plots of the gridded methane emissions for each
+#'  fuel-sector-inventory-variation combination as well as 2 summed plots for
+#'  each inventory-variation combination - one for wood and one for all other
+#'  sectors.
+#'@param HIFLD_file \strong{Optional} character providing the full filepath to
+#'  the HIFLD natural gas service territory csv file available at
+#'  \url{https://hifld-geoplatform.hub.arcgis.com/datasets/geoplatform::natural-gas-service-territories/about}.
+#'  On the left of the page is a download button with multiple file types.  This
+#'  is only needed if running at the LDC level.  The file must be edited such
+#'  that there is a consistent identifier with other input data (EIA, PHMSA,
+#'  GHGRP).  There is an example file in the package's datasets folder that has
+#'  been successfully used in this code available for reference.
+#'@param GHGRP_file \strong{Optional} character providing the full filepath to
+#'  the GHGRP xls file available at \url{https://ghgdata.epa.gov/ghgp/main.do}.
+#'  \itemize{
+#'    \item Filter greenhouse gases to CH4
+#'    \item filter sectors to Natural Gas Local Distribution Companies
+#'    \item set "browse to a State" to "choose state" to get data for all states
+#'    \item apply search and then export data for all years
+#'  }
+#'  This is only needed if running at the LDC level.  The file must be edited
+#'  such that there is a consistent identifier with other input data (HIFLD,
+#'  PHMSA, HIFLD). There is an example file in the package's datasets folder
+#'  that has been successfully used in this code available for reference.
+#'@param EIA_file Character providing the full filepath to the EIA Form 176 -
+#'  Annual Report of Natural and supplemental Gas Supply and Disposition xlsx
+#'  file available at
+#'  \url{https://www.eia.gov/naturalgas/ngqs/#?report=RP4&year1=2020&year2=2020&company=Name}.
+#'  The year can be set to just the desired year.  Then all data can be
+#'  downloaded to an xlsx file using a button to the topright of the data table.
+#'  If running at the LDC level, the file must be edited such that there is a
+#'  consistent identifier with other input data (HIFLD, PHMSA, GHGRP).  There is
+#'  an example file in the package's datasets folder that has been successfully
+#'  used in this code available for reference.
+#'@param PHMSA_file Character providing the full filepath to the PHMSA Gas
+#'  Distribution Annual Data xlsx file available at
+#'  \url{https://www.phmsa.dot.gov/data-and-statistics/pipeline/gas-distribution-gas-gathering-gas-transmission-hazardous-liquids}.
+#'  Zip files for groups of years are available via links at the bottom of the
+#'  page.  If running at the LDC level the file must be edited such that there
+#'  is a consistent identifier with other input data (EIA, HIFLD, GHGRP).  There
+#'  is an example file in the package's datasets folder that has been
+#'  successfully used in this code available for reference.
+#'@param GHGI_file Character providing the full filepath to the GHGI Annex 3.6
+#'  excel file. This data is available at
+#'  \url{https://www.epa.gov/ghgemissions/natural-gas-and-petroleum-systems-ghg-inventory-additional-information-1990-2020-ghg}
+#'  for the 2022 GHGI.  In the GHGI Annexes, available at
+#'  \url{https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks-1990-2020},
+#'  there is a link to the file in Section 3.6: "Methodology for Estimating CH4,
+#'  CO2, and N2O Emissions from Natural Gas Systems".  The excel file has
+#'  multiple sheets, each of which has a separate layout.  There is an example
+#'  file in the package's datasets folder that has been successfully used in
+#'  this code available for reference.
+#'@param GHGI_EF_sheet Character providing the sheet name in "GHGI_file" that
+#'  provides the "Average CH4 Emission Factors (kg/unit activity) for Natural
+#'  Gas Systems Sources, for All Years".  The sheet name as of the 2022 GHGI is
+#'  "3.6-2".
+#'@param GHGI_Activity_sheet Character providing the sheet name in "GHGI_file"
+#'  that provides the "Activity Data for Natural Gas Systems Sources, for All
+#'  Years".  The sheet name as of the 2022 GHGI is "3.6-7".
+#'@param State_Tigerlines SpatVector.  United States Census Bureau county
+#'  shapefile.  Available at
+#'  \url{https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html}.
+#'@param NG_distribution_by_LDC Logical.  Pulled from config file.  Indicating
+#'  whether emissions should be calculated at the Local Distribution Company
+#'  level.
+#'@param NG_distribution_by_state Logical.  Pulled from config file.  Indicating
+#'  whether emissions should be calculated at the state level.
+#'@param NG_distribution_by_domain Logical.  Pulled from config file. Indicating
+#'  whether emissions should be calculated at the domain level.
+#'@param GHGI_natural_gas_pipeline_emission_factors Data frame.  Pulled from
+#'  config file.  2 columns by 4 rows.  Columns are "Leaks_per_mile" and
+#'  "Avg_emissions_mol_per_s".  Rownames are "Bare_Steel", "Cast_Iron",
+#'  "Coated_steel", and "Plastic".  Default is from Weller et al.
+#'@param natural_gas_post_meter_emission_factor Numeric.  Pulled from config
+#'  file.  Emission factor for whole-house residential emissions in mol/s.
+#'  Default is from Fischer et al.
+#'@param Use_ACES Logical indicating whether or not to use ACES to disaggregate
+#'  from county-level to pixel level emissions.  Either ACES or Vulcan must be
+#'  used, though both can be.
+#'@param Use_Vulcan Logical indicating whether or not to use Vulcan to
+#'  disaggregate from county-level to pixel level emissions.  Either ACES or
+#'  Vulcan must be used, though both can be.
+#'@param ACES_directory \strong{Optional} character providing the full path to a
+#'  folder containing the ACES sectoral CO2 inventories.  Must include the
+#'  residential and commercial sectors.  ACES v2.0 is available at
+#'  \url{https://doi.org/10.3334/ORNLDAAC/1943}, though the hourly file should
+#'  be averaged across hours to create an annually averaged inventory. Code to
+#'  do this on a linux-based HPC system is available as the script
+#'  "Annualize_ACES_seawulf.R" and the accompanying batch script
+#'  "Annualize_ACES.sh".  The year closest to "inventory_year" is used, but
+#'  those further from that year are considered if the closest is unavailable.
+#'  Only needed if Use_ACES = TRUE.  At least one of Use_Vulcan or Use_ACES must
+#'  be TRUE.
+#'@param vulcan_directory \strong{Optional} character providing the full path to
+#'  a folder containing the Vulcan sectoral CO2 inventories.  Must include the
+#'  residential and commercial sectors. Vulcan v3.0 is available at
+#'  \url{https://doi.org/10.3334/ORNLDAAC/1741}, and the annual mean files
+#'  should be used.  The year closest to "inventory_year" is used.  As all years
+#'  are contained in the same file, it does not search for other years.  Only
+#'  needed if Use_Vulcan = TRUE.  At least one of Use_Vulcan or Use_ACES must be
+#'  TRUE.
+#'@param ACES_year \strong{Optional} numeric providing the year of ACES data to
+#'  use. Only needed if Use_ACES = TRUE.  At least one of Use_Vulcan or Use_ACES
+#'  must be TRUE.
+#'@param vulcan_band \strong{Optional} numeric providing the band of Vulcan data
+#'  to use (1-6 = 2010 - 2015).  Only needed if Use_Vulcan = TRUE.  At least one
+#'  of Use_Vulcan or Use_ACES must be TRUE.
+#'@param County_Tigerlines \strong{Optional} spatVector.  United States Census
+#'  Bureau county shapefile downloaded in Main.  Only needed if verbose = TRUE.
+#'@param plot_directory \strong{Optional} character providing the full filepath
+#'  to save figures. Only needed if verbose = TRUE.
+#'@param focus_city_tigerlines \strong{Optional} spatVector.  United States
+#'  Census Bureau county shapefile.  Available at
+#'  \url{https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html}.
+#'  Only needed if a focus city was set in main and verbose=TRUE.
+#'@returns Nothing is returned from the function, but the main outputs are up to
+#'  63 netcdf files of the methane emissions from natural gas distribution. They
+#'  are titled as "NG_dist_type_sector_variation.nc" where type is upset, serv
+#'  (services), post_meter, MnR (metering and regulating stations), and mains;
+#'  sector is abbreviated as res (residential) or com (commercial); and
+#'  variation is byLDC, bystate, or bydomain.
+#'@examples
+#'library(terra)
+#' grid_bbox=cbind(c(-76.65,-73.65),c(38.97,40.97))
+#' grid_res=0.01
+#' grid_crs="epsg:4326"
+#' grid <- rast(nrows=diff(range(grid_bbox[,2]))/grid_res,
+#'              ncols=diff(range(grid_bbox[,1]))/grid_res, xmin=min(grid_bbox[,1]),
+#'              xmax=max(grid_bbox[,1]), ymin=min(grid_bbox[,2]), ymax=max(grid_bbox[,2]),
+#'              crs=grid_crs)
+#' Urban_Tigerlines <- vect("~/../Desktop/Urban_Tigerlines/tl_2018_us_uac10.shp")
+#' focus_city <- terra::subset(Urban_Tigerlines,Urban_Tigerlines$NAME10 %in% "Philadelphia, PA--NJ--DE--MD")
+#' GHGI_EF_dataframe <- data.frame("Leaks_per_mile"=
+#'                                   c(0.51,1,0.61,0.43),
+#'                                 "Avg_emissions_mol_per_s"=
+#'                                   c(2.24,1.72,2,2.03)/(16.043*60)) #converting from g/min to mol/s
+#' rownames(GHGI_EF_dataframe) <- c("Bare_Steel",
+#'                                  "Cast_Iron",
+#'                                  "Coated_steel",
+#'                                  "Plastic")
+#' NG_distribution(domain=grid,
+#'                 state_name_list=c("DE","MD","NJ","NY","PA"),
+#'                 output_directory="~/../Desktop/",
+#'                 inventory_year=2018,
+#'                 verbose=TRUE,
+#'                 EIA_file = "~/../Desktop/176 Type of Operations and Sector Items.xlsx",
+#'                 PHMSA_file = "~/../Desktop/annual_gas_distribution_2010_present/annual_gas_distribution_2019.xlsx",
+#'                 GHGI_file = "~/../Desktop/2022_ghgi_natural_gas_systems_annex36_tables.xlsx",
+#'                 GHGI_EF_sheet = "3.6-2",
+#'                 GHGI_Activity_sheet = "3.6-7",
+#'                 State_Tigerlines=vect("~/../Desktop/State_Tigerlines/tl_2018_us_state.shp"),
+#'                 NG_distribution_by_LDC = FALSE,
+#'                 NG_distribution_by_state = TRUE,
+#'                 NG_distribution_by_domain = TRUE,
+#'                 GHGI_natural_gas_pipeline_emission_factors=GHGI_EF_dataframe,
+#'                 natural_gas_post_meter_emission_factor=7850/401*0.005/(16.043*60*60*24*365),
+#'                 Use_ACES=TRUE,
+#'                 Use_Vulcan=TRUE,
+#'                 ACES_directory="~/../Desktop/Inventories/ACES_v2.0",
+#'                 vulcan_directory="~/../Desktop/Inventories/Vulcan_v3.0",
+#'                 ACES_year=2017,
+#'                 vulcan_band=6,
+#'                 County_Tigerlines=vect("~/../Desktop/County_Tigerlines/tl_2018_us_county.shp"),
+#'                 focus_city_tigerlines=focus_city,
+#'                 plot_directory="~/../Desktop/plots/")
+#'@author Joe Pitt, \email{madeup@@wisc.edu}
+#'@author Kris Hajny, \email{blank@@fake.edu}
+#'@author Israel Lopez-Coto, \email{test@@test.edu}
+#'@reference \href{https://doi.org/10.1021/acs.est.0c00437}{Weller et al.}
+#'@reference \href{https://doi.org/10.1021/acs.est.8b03217}{Fischer et al.}
+#'@export
+
+
 ## NG_distribution_emissions_r3.R
 ## In use: 2022-01-28 17:00
 #
@@ -8,146 +334,34 @@
 #     - state total
 #     - domain total
 
-NG_distribution <- function(){
-  ################################################################################
-  #User input
-  
-  # NG_distribution_by_LDC <- TRUE
-  # #TRUE or FALSE, just whether to calculate everything at the local distribution
-  # #company scale, or only the state and domain scale.  LDC scale calculations
-  # #require manually matching facilities between the input files (EIA, PHMSA,
-  # #HIFLD, GHGRP)
-  # 
-  # input_directory <- "G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Raw data/"
-  # output_directory <- 'G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Processed/'
-  # HIFLD_shapefile <- file.path(input_directory,"Natural__Gas__Service__Territories/NG_Service_Terr.shp")
-  if(NG_distribution_by_LDC){
-    HIFLD_file <- file.path(input_directory,"Natural__Gas__Service__Territories_edit.xlsx")
-    EIA_file <- file.path(input_directory,"176 Type of Operations and Sector Items_edit.xlsx")
-    PHMSA_file <- file.path(input_directory,"annual_gas_distribution_2010_present/annual_gas_distribution_2019_edit.xlsx")
-    GHGRP_file <- file.path(input_directory,"US_GHGRP_NG_Local_Distribution_Companies_only_all_years_edit.xls")
-  }else{
-    # HIFLD_file <- file.path(input_directory,"Natural__Gas__Service__Territories.csv")
-    EIA_file <- file.path(input_directory,"176 Type of Operations and Sector Items.xlsx")
-    PHMSA_file <- file.path(input_directory,"annual_gas_distribution_2010_present/annual_gas_distribution_2019.xlsx")
-    # GHGRP_file <- file.path(input_directory,"US_GHGRP_NG_Local_Distribution_Companies_only_all_years.xls")
-  }
-  # #GHGRP data was subset to only CH4 and only the NG local distribution companies
-  # 
-  # #Note the code assumes the filetypes are as above (all xlsx or xls, except HIFLD
-  # #if not calculating by LDC)
-  # 
-  # #all 4 files (HIFLD, PHMSA, EIA, GHGRP) were edited to ensure the ID's were
-  # #consistent and named as below if calculating by LDC
-  # 
-  # # HIFLD=https://hifld-geoplatform.opendata.arcgis.com/datasets/geoplatform::natural-gas-service-territories/explore?location=38.521197%2C-86.048965%2C7.00
-  # # PHMSA=https://www.phmsa.dot.gov/data-and-statistics/pipeline/gas-distribution-gas-gathering-gas-transmission-hazardous-liquids
-  # # EIA=https://www.eia.gov/naturalgas/ngqs/#?report=RP4&year1=2020&year2=2020&company=Name
-  # # GHGRP=https://ghgdata.epa.gov/ghgp/main.do
-  
-  EPA_file <- file.path(input_directory,"2022_ghgi_natural_gas_systems_annex36_tables.xlsx")
-  EPA_EF_sheet <- "3.6-2"
-  EPA_Activity_sheet <- "3.6-7"
-  #which sheets are the needed ones in the EPA file.  We want Average CH4 Emission
-  #Factors (kg/unit activity) for Natural Gas Systems Sources, for All Years
-  #AND Activity Data for Natural Gas Systems Sources, for All Years
-  
-  # # EPA=https://www.epa.gov/ghgemissions/natural-gas-and-petroleum-systems-ghg-inventory-additional-information-1990-2020-ghg
-  # 
-  # #Several emission factors (meter and regulating stations, services, meters, and
-  # #maintenance) are pulled from the EPA file in a section on line 420.
-  # 
-  # Vulcan_residential_file <- 'G:/My Drive/Shepson Group Drive/General Inventories and Shapefiles/Inventories/Vulcan_v3.0/Sectoral/Vulcan_v3_US_annual_1km_residential_mn.nc4'
-  # Vulcan_commercial_file <- 'G:/My Drive/Shepson Group Drive/General Inventories and Shapefiles/Inventories/Vulcan_v3.0/Sectoral/Vulcan_v3_US_annual_1km_commercial_mn.nc4'
-  # 
-  # ACES_residential_file <- 'G:/My Drive/Shepson Group Drive/General Inventories and Shapefiles/Inventories/ACES_v2.0/Sectoral/2017_Annual_ACES_Residential.nc'
-  # ACES_commercial_file <- 'G:/My Drive/Shepson Group Drive/General Inventories and Shapefiles/Inventories/ACES_v2.0/Sectoral/2017_Annual_ACES_Commercial.nc'
-  # 
-  # vulcan_band <- 6
-  # #year of Vulcan data.  Assuming Vulcan v3.0, 1 - 6 corresponding to years 2010 -
-  # #2015
-  # 
-  # Use_Vulcan <- TRUE
-  # Use_ACES <- TRUE
-  # #which inventory to use in the spatial disaggregation?  Can be both, has to be
-  # #at least 1 to finish processing.
-  # 
-  # year="2019"
-  # county_outline_file <- "G:/My Drive/Shepson Group Drive/General Inventories and Shapefiles/Shapefiles/tl_2022_us_county/tl_2022_us_county.shp"
-  # #census outlines for states
-  # Cartographic_boundary_file <- "G:/My Drive/Shepson Group Drive/General Inventories and Shapefiles/Shapefiles/cb_2021_us_state_500k/cb_2021_us_state_500k.shp"
-  # #Slightly different census outlines for states, excluding water areas
-  # state_name_list <- c("DE","MD","NJ","NY","PA")
-  # #which states to process
-  # 
-  temp_location <- "~/../../Desktop/"
-  # #a place to save a downloaded HTML temporarily.  Due to permission errors that
-  # #claim R is still using the file, it is unable to automatically delete it some
-  # #of the time...
-  # 
-  # pipeline_emission_factors <- data.frame("Leaks_per_mile"=
-  #                                           c(0.51,1,0.61,0.43),
-  #                                         "Avg_emissions_mol_per_s"=
-  #                                           c(2.24,1.72,2,2.03)/(16.043*60)) #converting from g/min to mol/s
-  # rownames(pipeline_emission_factors) <- c("Bare_Steel",
-  #                                          "Cast_Iron",
-  #                                          "Coated_steel",
-  #                                          "Plastic")
-  # #pipeline emission factors and activity data from Weller et al., 2020 (doi:
-  # #10.1021/acs.est.0c00437)
-  # 
-  # post_meter_emission_factor <- 7850/401*0.005/(16.043*60*60*24*365) 
-  # #whole-house residential post-meter emission factor from Fischer et al., 2018
-  # #(doi:https://doi.org/10.1021/acs.est.8b03217).  Reported as 0.5% of residential
-  # #consumption in a region with 401 Giga cubic feet ~= 7850 giga grams NG consumed
-  # #/ yr.  This is used as a conversion factor from cubic feet to grams here.  Then
-  # #convert from g/yr to mol/s.
-  # 
-  # source("G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Code and method/Scripts/Inventory_based_disaggregation.R")
-  # #Load in a function to disaggregate total emissions using ACES/Vulcan or both
-  # #within sub-domains (LDC, state, entire domain)
-  # 
-  # XESMF_check <- TRUE
-  # #use xesmf to reproject (TRUE), or projectraster (FALSE)
-  # 
-  # d03_bounding_box <- cbind(c(-76.65,-73.65),c(38.97,40.97))
-  # resolution <- 0.01
-  # #Will be used to generate a blank raster for the output to be built onto, WGS84
-  # #CRS.  Resolution in deg, bounding box in lat/long.  Only needed if using
-  # #projectraster
-  # 
-  # #Important manual notes - 
-  # 
-  # #line 210 is a section to manually compare the HIFLD shapefile to the GHGRP one
-  # #to identify any changes needed
-  # 
-  # #line 373 also has a manually defined value for a single PA utility (UGI
-  # #Utilities) that should be removed if no longer relevant
-  # 
-  # #line 860 has manual adjustments for several LDCs in NY and PA that had
-  # #different shapefiles in HFILD and the GHGRP.  These should be commented out if
-  # #no longer relevant.
-  # 
-  # ################################################################################
-  # #load packages
-  # i <- 1
-  # packagecheck <- c("raster","ncdf4","sf","readxl","ggplot2","fBasics")
-  # 
-  # while(i<=length(packagecheck)){
-  #   if(length(find.package(packagecheck[i],quiet = TRUE))<1){
-  #     install.packages(packagecheck[i],repos="https://repo.miserver.it.umich.edu/cran/")
-  #   }
-  #   i <- i+1
-  # }
-  # 
-  # invisible(suppressPackageStartupMessages(lapply(packagecheck, require, character.only=TRUE)))
-  # rm(packagecheck,i)
-  # 
-  # #raster + ncdf4 = raster and .nc filetype functionalities
-  # #sf = spatial dataset functionalities
-  # #readxl = better excel reading/writing
-  # #ggplot2 = plotting options
-  # #fbasics = timpallete colorscale (matlab-style rainbow, broader than R's rainbow) and rowprods function
+NG_distribution <- function(domain,
+                            state_name_list,
+                            output_directory,
+                            inventory_year,
+                            verbose,
+                            HIFLD_file,
+                            EIA_file,
+                            PHMSA_file,
+                            GHGRP_file,
+                            GHGI_file,
+                            GHGI_EF_sheet,
+                            GHGI_Activity_sheet,
+                            State_Tigerlines,
+                            NG_distribution_by_LDC,
+                            NG_distribution_by_state,
+                            NG_distribution_by_domain,
+                            GHGI_natural_gas_pipeline_emission_factors,
+                            natural_gas_post_meter_emission_factor,
+                            Use_ACES,
+                            Use_Vulcan,
+                            ACES_directory,
+                            vulcan_directory,
+                            ACES_year,
+                            vulcan_band,
+                            plot_directory,
+                            County_Tigerlines,
+                            focus_city_tigerlines){
+  XESMF=F
   ################################################################################
   #Quit ASAP if neither ACES or Vulcan are set to be used.  Need one of them
   if(!(Use_Vulcan | Use_ACES)){
@@ -158,7 +372,7 @@ NG_distribution <- function(){
   }
   
   ################################################################################
-  #load in and filter the various files, excluding the EPA one for now
+  #load in and filter the various files, excluding the GHGI one for now
   
   # Load in HIFLD shapefile containing the LDC service territories
   HIFLD_shp <- vect("https://services1.arcgis.com/Hp6G80Pky0om7QvQ/arcgis/rest/services/Natural_Gas_Service_Territories/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson")
@@ -401,13 +615,13 @@ NG_distribution <- function(){
   
   rm(A,B,text_loc,answer,download_dest,sub_answer,HTML_data,text,info,counter)
   ################################################################################
-  #Pull the EPA data we'll need later and save it to a few dataframes
+  #Pull the GHGI data we'll need later and save it to a few dataframes
   
-  first_col <- which(read_xlsx(EPA_file,sheet = EPA_Activity_sheet,.name_repair = "minimal")[,1]=="Segment/Source")
-  EPA_p1 <- read_xlsx(EPA_file,sheet = EPA_Activity_sheet,skip=first_col,col_names = T)
+  first_col <- which(read_xlsx(GHGI_file,sheet = GHGI_Activity_sheet,.name_repair = "minimal")[,1]=="Segment/Source")
+  GHGI_p1 <- read_xlsx(GHGI_file,sheet = GHGI_Activity_sheet,skip=first_col,col_names = T)
   
-  first_col <- which(read_xlsx(EPA_file,sheet = EPA_EF_sheet,.name_repair = "minimal")[,1]=="Segment/Source")
-  EPA_p2 <- read_xlsx(EPA_file,sheet = EPA_EF_sheet,skip=first_col,col_names = T)
+  first_col <- which(read_xlsx(GHGI_file,sheet = GHGI_EF_sheet,.name_repair = "minimal")[,1]=="Segment/Source")
+  GHGI_p2 <- read_xlsx(GHGI_file,sheet = GHGI_EF_sheet,skip=first_col,col_names = T)
   #p2 = emission factors, p1 = activity data.  Columns = year, rows = various
   #types of sources.  First col is just to identify the first column of useable
   #data
@@ -415,13 +629,13 @@ NG_distribution <- function(){
   Data_list <- c("M&R >300","M&R 100-300","M&R <100","Reg >300","R-Vault >300",
                  "Reg 100-300","R-Vault 100-300","Reg 40-100","R-Vault 40-100",
                  "Reg <40")
-  #all the sources we're looking for, written exactly as in the EPA file
+  #all the sources we're looking for, written exactly as in the GHGI file
   
-  EPA_MnR <- data.frame("Type"=Data_list,
-                        "EF"=as.numeric(unlist(sapply(Data_list,FUN=function(x){EPA_p2[EPA_p2[,1]==x,as.character(inventory_year)]})))*
-                          1000/(16.043*60*60*24*365),#convert from kg/yr to mol/s
-                        "Total_stations"=as.numeric(unlist(sapply(Data_list,FUN=function(x){EPA_p1[EPA_p1[,1]==x,as.character(inventory_year)]}))),
-                        row.names = NULL)
+  GHGI_MnR <- data.frame("Type"=Data_list,
+                         "EF"=as.numeric(unlist(sapply(Data_list,FUN=function(x){GHGI_p2[GHGI_p2[,1]==x,as.character(inventory_year)]})))*
+                           1000/(16.043*60*60*24*365),#convert from kg/yr to mol/s
+                         "Total_stations"=as.numeric(unlist(sapply(Data_list,FUN=function(x){GHGI_p1[GHGI_p1[,1]==x,as.character(inventory_year)]}))),
+                         row.names = NULL)
   #use sapply to find the row using data list, specify the column as the year and
   #grab the relevant EF and activity data into a dataframe.
   
@@ -431,39 +645,39 @@ NG_distribution <- function(){
                  "Services - Plastic",
                  "Services - Copper")
   
-  EPA_Services <- data.frame("Type"=Data_list,
-                             "EF"=as.numeric(unlist(sapply(Data_list,FUN=function(x){EPA_p2[EPA_p2[,1]==x,as.character(inventory_year)]})))*
-                               1000/(16.043*60*60*24*365),#convert from kg/yr to mol/s
-                             row.names = NULL)
+  GHGI_Services <- data.frame("Type"=Data_list,
+                              "EF"=as.numeric(unlist(sapply(Data_list,FUN=function(x){GHGI_p2[GHGI_p2[,1]==x,as.character(inventory_year)]})))*
+                                1000/(16.043*60*60*24*365),#convert from kg/yr to mol/s
+                              row.names = NULL)
   
   Data_list <- c("Residential",
                  "Commercial",
                  "Industrial")
   
-  EPA_meters <- data.frame("Type"=Data_list,
-                           "EF"=as.numeric(unlist(sapply(Data_list,FUN=function(x){EPA_p2[which(EPA_p2[,1]==x)[1],as.character(inventory_year)]})))*
-                             1000/(16.043*60*60*24*365),#convert from kg/yr to mol/s
-                           row.names = NULL)
+  GHGI_meters <- data.frame("Type"=Data_list,
+                            "EF"=as.numeric(unlist(sapply(Data_list,FUN=function(x){GHGI_p2[which(GHGI_p2[,1]==x)[1],as.character(inventory_year)]})))*
+                              1000/(16.043*60*60*24*365),#convert from kg/yr to mol/s
+                            row.names = NULL)
   
   Data_list <- c("Pressure Relief Valve Releases",
                  "Pipeline Blowdown",
                  "Mishaps (Dig-ins)")
   
-  EPA_maintenance <- data.frame("Type"=Data_list,
-                                "EF"=as.numeric(unlist(sapply(Data_list,FUN=function(x){EPA_p2[EPA_p2[,1]==x,as.character(inventory_year)]})))*
-                                  1000/(16.043*60*60*24*365),#convert from kg/yr to mol/s
-                                row.names = NULL)
+  GHGI_maintenance <- data.frame("Type"=Data_list,
+                                 "EF"=as.numeric(unlist(sapply(Data_list,FUN=function(x){GHGI_p2[GHGI_p2[,1]==x,as.character(inventory_year)]})))*
+                                   1000/(16.043*60*60*24*365),#convert from kg/yr to mol/s
+                                 row.names = NULL)
   
   Data_list <- c("Pressure Relief Valve Releases",
                  "Pipeline Blowdown",
                  "Mishaps (Dig-ins)")
   
-  EPA_maintenance <- data.frame("Type"=Data_list,
-                                "EF"=as.numeric(unlist(sapply(Data_list,FUN=function(x){EPA_p2[EPA_p2[,1]==x,as.character(inventory_year)]})))*
-                                  1000/(16.043*60*60*24*365),#convert from kg/yr to mol/s
-                                row.names = NULL)
+  GHGI_maintenance <- data.frame("Type"=Data_list,
+                                 "EF"=as.numeric(unlist(sapply(Data_list,FUN=function(x){GHGI_p2[GHGI_p2[,1]==x,as.character(inventory_year)]})))*
+                                   1000/(16.043*60*60*24*365),#convert from kg/yr to mol/s
+                                 row.names = NULL)
   
-  rm(EPA_p1,EPA_p2,Data_list,EPA_file,first_col)
+  rm(GHGI_p1,GHGI_p2,Data_list,GHGI_file,first_col)
   ################################################################################
   ## Calculate emissions (all in mol/s):
   
@@ -486,21 +700,21 @@ NG_distribution <- function(){
   
   PHMSA_csv_NG$UNP_steel_serv_ER <- (rowSums(PHMSA_csv_NG[,c("NUM_SRVS_STEEL_UNP_COATED","NUM_SRVS_STEEL_UNP_BARE")],
                                              na.rm=T)*
-                                       EPA_Services$EF[1])
+                                       GHGI_Services$EF[1])
   PHMSA_csv_NG$CP_steel_serv_ER <- (rowSums(PHMSA_csv_NG[,c("NUM_SRVS_STEEL_CP_BARE","NUM_SRVS_STEEL_CP_COATED","NUM_SRVS_OTHER")],
                                             na.rm=T)*
-                                      EPA_Services$EF[2])
+                                      GHGI_Services$EF[2])
   PHMSA_csv_NG$plastic_serv_ER <- (PHMSA_csv_NG$NUM_SRVS_PLASTIC*
-                                     EPA_Services$EF[3])
+                                     GHGI_Services$EF[3])
   PHMSA_csv_NG$copper_serv_ER <- (rowSums(PHMSA_csv_NG[,c("NUM_SRVS_CU","NUM_SRVS_CI","NUM_SRVS_DI","NUM_SRVS_RCI")],
                                           na.rm=T)*
-                                    EPA_Services$EF[4])
-  # Services using EFs from the EPA national inventory report
+                                    GHGI_Services$EF[4])
+  # Services using EFs from the EPA GHGI, or national inventory report
   
   # M&R stations - can't use GHGRP data without matching facilities, so estimate
   # based on avg stations per mile for reporters in each state. Then split by
   # pressure and function assuming the same split as at the national level (from
-  # the EPA national inventory report).
+  # the GHGI national inventory report).
   
   main_miles_ghgrp <- aggregate(GHGRP_csv$Miles_of_Mains,
                                 list(State=GHGRP_csv$state),
@@ -529,7 +743,7 @@ NG_distribution <- function(){
   # calculating by LDC
   
   ################################################################################
-  #prep to merge the many files, excluding the EPA for now, calculate a few
+  #prep to merge the many files, excluding the GHGI for now, calculate a few
   #additional variables
   
   PHMSA_csv_NG$Miles_main_and_serv <- PHMSA_csv_NG$MMILES_TOTAL + PHMSA_csv_NG$NUM_SRVCS_TOTAL*PHMSA_csv_NG$AVERAGE_LENGTH/5280
@@ -645,7 +859,7 @@ NG_distribution <- function(){
     
     # M&R stations - can use GHGRP data for those stations that report, otherwise estimate based on avg stations per mile
     # for reporters in each state. Then split by pressure and function assuming the same split as at the national level
-    # (from the EPA national inventory report).
+    # (from the EPA national inventory report, also called GHGI).
     
     # Use the original GHGRP_csv df here - it includes UGI data in PA, which we had to exclude from all_merge_clean because there
     # was no good shapefile for it, but the underlying activity data is fine.
@@ -729,50 +943,50 @@ NG_distribution <- function(){
   ################################################################################
   #Calculate a few additional emissions
   
-  EPA_MnR_above <- sum(EPA_MnR$Total_stations[-grep('Vault', EPA_MnR$Type)])
-  EPA_MnR_below <- sum(EPA_MnR$Total_stations[grep('Vault', EPA_MnR$Type)])
+  GHGI_MnR_above <- sum(GHGI_MnR$Total_stations[-grep('Vault', GHGI_MnR$Type)])
+  GHGI_MnR_below <- sum(GHGI_MnR$Total_stations[grep('Vault', GHGI_MnR$Type)])
   #split by function/pressure
   
   # Estimate emissions by function/pressure
   all_merge_clean$MnR_HiP_ER <- (all_merge_clean$MnR_above*                                                    # Abv grade stations
-                                   EPA_MnR$Total_stations[which(EPA_MnR$Type == 'M&R >300')]/EPA_MnR_above* # Type fraction
-                                   EPA_MnR$EF[which(EPA_MnR$Type == 'M&R >300')]) # Emission factor
+                                   GHGI_MnR$Total_stations[which(GHGI_MnR$Type == 'M&R >300')]/GHGI_MnR_above* # Type fraction
+                                   GHGI_MnR$EF[which(GHGI_MnR$Type == 'M&R >300')]) # Emission factor
   
   all_merge_clean$MnR_MidP_ER <- (all_merge_clean$MnR_above*
-                                    EPA_MnR$Total_stations[which(EPA_MnR$Type == 'M&R 100-300')]/EPA_MnR_above*
-                                    EPA_MnR$EF[which(EPA_MnR$Type == 'M&R 100-300')])
+                                    GHGI_MnR$Total_stations[which(GHGI_MnR$Type == 'M&R 100-300')]/GHGI_MnR_above*
+                                    GHGI_MnR$EF[which(GHGI_MnR$Type == 'M&R 100-300')])
   
   all_merge_clean$MnR_LoP_ER <- (all_merge_clean$MnR_above*
-                                   EPA_MnR$Total_stations[which(EPA_MnR$Type == 'M&R <100')]/EPA_MnR_above*
-                                   EPA_MnR$EF[which(EPA_MnR$Type == 'M&R <100')])
+                                   GHGI_MnR$Total_stations[which(GHGI_MnR$Type == 'M&R <100')]/GHGI_MnR_above*
+                                   GHGI_MnR$EF[which(GHGI_MnR$Type == 'M&R <100')])
   
   all_merge_clean$Reg_HiP_ER <- (all_merge_clean$MnR_above*
-                                   EPA_MnR$Total_stations[which(EPA_MnR$Type == 'Reg >300')]/EPA_MnR_above*
-                                   EPA_MnR$EF[which(EPA_MnR$Type == 'Reg >300')])
+                                   GHGI_MnR$Total_stations[which(GHGI_MnR$Type == 'Reg >300')]/GHGI_MnR_above*
+                                   GHGI_MnR$EF[which(GHGI_MnR$Type == 'Reg >300')])
   
   all_merge_clean$Reg_MidP_ER <- (all_merge_clean$MnR_above*
-                                    EPA_MnR$Total_stations[which(EPA_MnR$Type == 'Reg 100-300')]/EPA_MnR_above*
-                                    EPA_MnR$EF[which(EPA_MnR$Type == 'Reg 100-300')])
+                                    GHGI_MnR$Total_stations[which(GHGI_MnR$Type == 'Reg 100-300')]/GHGI_MnR_above*
+                                    GHGI_MnR$EF[which(GHGI_MnR$Type == 'Reg 100-300')])
   
   all_merge_clean$Reg_LoP_ER <- (all_merge_clean$MnR_above*
-                                   EPA_MnR$Total_stations[which(EPA_MnR$Type == 'Reg 40-100')]/EPA_MnR_above*
-                                   EPA_MnR$EF[which(EPA_MnR$Type == 'Reg 40-100')])
+                                   GHGI_MnR$Total_stations[which(GHGI_MnR$Type == 'Reg 40-100')]/GHGI_MnR_above*
+                                   GHGI_MnR$EF[which(GHGI_MnR$Type == 'Reg 40-100')])
   
   all_merge_clean$Reg_VLP_ER <- (all_merge_clean$MnR_above*
-                                   EPA_MnR$Total_stations[which(EPA_MnR$Type == 'Reg <40')]/EPA_MnR_above*
-                                   EPA_MnR$EF[which(EPA_MnR$Type == 'Reg <40')])
+                                   GHGI_MnR$Total_stations[which(GHGI_MnR$Type == 'Reg <40')]/GHGI_MnR_above*
+                                   GHGI_MnR$EF[which(GHGI_MnR$Type == 'Reg <40')])
   
   all_merge_clean$RegV_HiP_ER <- (all_merge_clean$MnR_below*
-                                    EPA_MnR$Total_stations[which(EPA_MnR$Type == 'R-Vault >300')]/EPA_MnR_below*
-                                    EPA_MnR$EF[which(EPA_MnR$Type == 'R-Vault >300')])
+                                    GHGI_MnR$Total_stations[which(GHGI_MnR$Type == 'R-Vault >300')]/GHGI_MnR_below*
+                                    GHGI_MnR$EF[which(GHGI_MnR$Type == 'R-Vault >300')])
   
   all_merge_clean$RegV_MidP_ER <- (all_merge_clean$MnR_below*
-                                     EPA_MnR$Total_stations[which(EPA_MnR$Type == 'R-Vault 100-300')]/EPA_MnR_below*
-                                     EPA_MnR$EF[which(EPA_MnR$Type == 'R-Vault 100-300')])
+                                     GHGI_MnR$Total_stations[which(GHGI_MnR$Type == 'R-Vault 100-300')]/GHGI_MnR_below*
+                                     GHGI_MnR$EF[which(GHGI_MnR$Type == 'R-Vault 100-300')])
   
   all_merge_clean$RegV_LoP_ER <- (all_merge_clean$MnR_below*
-                                    EPA_MnR$Total_stations[which(EPA_MnR$Type == 'R-Vault 40-100')]/EPA_MnR_below*
-                                    EPA_MnR$EF[which(EPA_MnR$Type == 'R-Vault 40-100')])
+                                    GHGI_MnR$Total_stations[which(GHGI_MnR$Type == 'R-Vault 40-100')]/GHGI_MnR_below*
+                                    GHGI_MnR$EF[which(GHGI_MnR$Type == 'R-Vault 40-100')])
   
   all_merge_clean$MnR_ER_total_res <- ((all_merge_clean$MnR_HiP_ER + 
                                           all_merge_clean$MnR_MidP_ER +
@@ -800,10 +1014,10 @@ NG_distribution <- function(){
                                          all_merge_clean$"Commercial Total Customers"/
                                          (all_merge_clean$"Residential Total Customers" + all_merge_clean$"Commercial Total Customers"))
   
-  # Consumer meters - use emission factors from the EPA national inventory report
-  all_merge_clean$Res_meter_ER <- all_merge_clean$"Residential Total Customers"*EPA_meters$EF[1]
-  all_merge_clean$Com_meter_ER <- all_merge_clean$"Commercial Total Customers"*EPA_meters$EF[2]
-  all_merge_clean$Ind_meter_ER <- all_merge_clean$"Industrial Total Customers"*EPA_meters$EF[3]
+  # Consumer meters - use emission factors from the EPA national inventory report, also known as the GHGI
+  all_merge_clean$Res_meter_ER <- all_merge_clean$"Residential Total Customers"*GHGI_meters$EF[1]
+  all_merge_clean$Com_meter_ER <- all_merge_clean$"Commercial Total Customers"*GHGI_meters$EF[2]
+  all_merge_clean$Ind_meter_ER <- all_merge_clean$"Industrial Total Customers"*GHGI_meters$EF[3]
   
   # We could allocate the industrial meter emissions by ACES and Vulcan industrial sector
   # But this sector is dominated by a handful of large point sources, many of which don't even use natural gas
@@ -822,9 +1036,9 @@ NG_distribution <- function(){
                                            (all_merge_clean$Res_meter_ER + all_merge_clean$Com_meter_ER))
   
   # Maintenance and upsets
-  all_merge_clean$Relief_valve_ER <- all_merge_clean$MMILES_TOTAL*EPA_maintenance$EF[1]
-  all_merge_clean$Blowdown_ER <- all_merge_clean$Miles_main_and_serv*EPA_maintenance$EF[2]
-  all_merge_clean$Mishap_ER <- all_merge_clean$Miles_main_and_serv*EPA_maintenance$EF[3]
+  all_merge_clean$Relief_valve_ER <- all_merge_clean$MMILES_TOTAL*GHGI_maintenance$EF[1]
+  all_merge_clean$Blowdown_ER <- all_merge_clean$Miles_main_and_serv*GHGI_maintenance$EF[2]
+  all_merge_clean$Mishap_ER <- all_merge_clean$Miles_main_and_serv*GHGI_maintenance$EF[3]
   
   all_merge_clean$upset_ER_total_res <- ((all_merge_clean$Relief_valve_ER + 
                                             all_merge_clean$Blowdown_ER +
@@ -1034,7 +1248,7 @@ NG_distribution <- function(){
     #convert domain scale version to the proper crs
     all_merge_LCC_domain <- project(all_merge_domain_poly,aces_res)
     cover_all <- list(extract(aces_res,all_merge_LCC_domain,weights=T,exact=T,cells=T))
-
+    
     disaggregation(aces_res,res_totals,agg_level="domain",NEI_input=all_merge_LCC_domain,cover_all,out_envir=environment())
     disaggregation(aces_com,com_totals,agg_level="domain",NEI_input=all_merge_LCC_domain,cover_all,out_envir=environment())
   }
@@ -1112,7 +1326,7 @@ NG_distribution <- function(){
         inventory_name <- "vulcan"
       }
       
-
+      
       writeCDF(input,
                paste0(output_directory,'/',"NG_dist_",sub("_ER_total","",total),
                       "_",disaggregation_level,"_",inventory_name,'.nc'),

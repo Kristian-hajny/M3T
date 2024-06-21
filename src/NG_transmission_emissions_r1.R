@@ -1,17 +1,156 @@
+#'@title Create gridded natural gas transmission methane emissions maps
+#'
+#'@description `Transmission` writes 2 netcdf files of gridded methane emissions
+#'  from natural gas transmission, as well as optional visuals and 2 optional
+#'  csv files.
+#'
+#'@details This function calculates and grids methane emissions from natural gas
+#'  transmission systems. It uses the Homeland Infrastructure Foundation-Level
+#'  Data (HIFLD), Environmental Protection Agency's (EPA) Greenhouse Gas
+#'  Inventory (GHGI), EPA Greenhouse Gas Reporting Program (GHGRP) and Energy
+#'  Information Administration (EIA) Energy Atlas data.  First the relevant data
+#'  is pulled from the GHGI Annex file.
+#'
+#'  For pipelines the GHGI data includes the emissions and activity data for
+#'  pipeline leaks, meter and regulating stations, and venting.  An emission
+#'  factor in mols of methane per meter of pipeline per second can then be
+#'  calculated.  This emission factor is then applied to the EIA
+#'  inter/intrastate pipeline data.
+#'
+#'  For compressors the GHGI data includes the emissions and activity data for
+#'  compressor station fugitive emissions, dehydrator vents, flaring, engines,
+#'  turbines, generators, pneumatic devices, and venting.  For generators they
+#'  are split into engine and turbine emissions so the ratio between
+#'  transmission/storage emissions for engines and turbines are applied to the
+#'  generator values to get the transmission component of generator emissions.
+#'  An national average emission rate in mols of methane per station per second
+#'  can then be calculated.  This emission rate is then assigned to all HIFLD
+#'  compressors.  GHGRP data is then used to overwrite this default emission
+#'  rate.  Note most compressor stations do not report their emissions to the
+#'  GHGRP, so only a subset will be overwritten using GHGRP data.  The GHGRP
+#'  compressor emissions are scaled so that the average emissions within the
+#'  domain are equal to the national average calculated from the GHGI.  As their
+#'  is not a common identifier between the GHGRP and HIFLD datasets, the nearest
+#'  facility is considered the matching facility, though an error is flagged if
+#'  a GHGRP compressor has no matching HIFLD compressor within 1 km.
+#'
+#'  The necessary GHGRP compressor location/emissions data, EIA pipeline data
+#'  and HIFLD compressor location data will be automatically downloaded.
+#'
+#'  The GHGRP includes only facilities that emit at least 25,000 metric tons of
+#'  carbon dioxide equivalent while the GHGI is intended to capture all national
+#'  emissions.  GHGRP data is available starting in 2010 and generally is about
+#'  2 years behind present day, the GHGI is available starting in 1990 and is
+#'  updated approximately in sync with the GHGRP.  Both datasets are annual. The
+#'  GHGRP is at the facility scale while the GHGI is national totals.
+#'
+#'  The EIA pipeline data being used was last updated January 2020.  The HIFLD
+#'  compressor data being used was last updated December 2022.
+#'
+#'  The GHGI is available at
+#'  \url{https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks},
+#'  the GHGRP is available at \url{https://ghgdata.epa.gov/ghgp/main.do}, the
+#'  HIFLD data is available at
+#'  \url{https://hifld-geoplatform.hub.arcgis.com/datasets/geoplatform::natural-gas-compressor-stations/about},
+#'  and the EIA data is available at
+#'  \url{https://atlas.eia.gov/datasets/eia::natural-gas-interstate-and-intrastate-pipelines/about}.
+#'@param GHGI_file Character providing the full filepath to the GHGI Annex 3.6
+#'  excel file. This data is available at
+#'  \url{https://www.epa.gov/ghgemissions/natural-gas-and-petroleum-systems-ghg-inventory-additional-information-1990-2020-ghg}
+#'  for the 2022 GHGI.  In the GHGI Annexes, available at
+#'  \url{https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks-1990-2020},
+#'  there is a link to the file in Section 3.6: "Methodology for Estimating CH4,
+#'  CO2, and N2O Emissions from Natural Gas Systems".  The excel file has
+#'  multiple sheets, each of which has a separate layout.  There is an example
+#'  file in the package's datasets folder that has been successfully used in
+#'  this code available for reference.
+#'@param GHGI_Emissions_sheet Character providing the sheet name in "GHGI_file"
+#'  that provides the "CH4 Emissions for Natural Gas Systems, by Segment and
+#'  Source, for All Years".  The sheet name as of the 2022 GHGI is "3.6-1".
+#'@param GHGI_Activity_sheet Character providing the sheet name in "GHGI_file"
+#'  that provides the "Activity Data for Natural Gas Systems Sources, for All
+#'  Years".  The sheet name as of the 2022 GHGI is "3.6-7".
+#'@param domain SpatRaster providing the desired output grid, including the
+#'  desired resolution and coordinate reference system
+#'@param state_name_list Character vector listing all states within the desired
+#'  domain
+#'@param output_directory Character providing the full filepath to save
+#'  processed data
+#'@param inventory_year Character indicating the desired year of data to use.
+#'@param verbose Logical indicating whether to save additional output.  This
+#'  includes plots of the gridded methane emissions for each
+#'  fuel-sector-inventory-variation combination as well as 2 summed plots for
+#'  each inventory-variation combination - one for wood and one for all other
+#'  sectors.
+#'@param County_Tigerlines SpatVector.  United States Census Bureau county
+#'  shapefile downloaded in Main.
+#'@param plot_directory Character providing the full filepath to save figures.
+#'  Only relevant if verbose = TRUE.
+#'@param State_Tigerlines SpatVector.  United States Census Bureau county
+#'  shapefile.  Available at
+#'  \url{https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html}.
+#'  Only relevant if verbose=TRUE.
+#'@param focus_city_tigerlines SpatVector.  United States Census Bureau county
+#'  shapefile.  Available at
+#'  \url{https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html}.
+#'  Only relevant if a focus city was set in main and verbose=TRUE.
+#'@returns Nothing is returned from the function, but the main outputs are 2
+#'  netcdf files of the methane emissions from natural gas transmission.  They
+#'  are titled "NG_trans_compressors.nc" and "NG_trans_pipes.nc" where
+#'  NG=natural gas and trans=transmission.   The first file is for transmission
+#'  compressor emissions and the second is for transmission pipeline emissions.
+#'
+#'  2 csv files are also optionally saved.  These are "NG_trans_compressors.csv"
+#'  and "NG_trans_compressors_all.csv".  The simpler csv includes only the name,
+#'  location, and assigned emissions for compressors within the domain that were
+#'  pulled from the GHGRP  The _all files include all variables that were in the
+#'  corresponding input file for the same compressors.
+#'@examples
+#'library(terra)
+#' grid_bbox=cbind(c(-76.65,-73.65),c(38.97,40.97))
+#' grid_res=0.01
+#' grid_crs="epsg:4326"
+#' grid <- rast(nrows=diff(range(grid_bbox[,2]))/grid_res,
+#'              ncols=diff(range(grid_bbox[,1]))/grid_res, xmin=min(grid_bbox[,1]),
+#'              xmax=max(grid_bbox[,1]), ymin=min(grid_bbox[,2]), ymax=max(grid_bbox[,2]),
+#'              crs=grid_crs)
+#' Urban_Tigerlines <- vect("~/../Desktop/Urban_Tigerlines/tl_2018_us_uac10.shp")
+#' focus_city <- terra::subset(Urban_Tigerlines,Urban_Tigerlines$NAME10 %in% "Philadelphia, PA--NJ--DE--MD")
+#' Transmission(GHGI_file="~/../Desktop/2022_ghgi_natural_gas_systems_annex36_tables.xlsx",
+#'                       GHGI_Emissions_sheet="3.6-1",
+#'                       GHGI_Activity_sheet="3.6-7",
+#'                       domain=grid,
+#'                       state_name_list=c("DE","MD","NJ","NY","PA"),
+#'                       output_directory="~/../Desktop/",
+#'                       inventory_year=2018,
+#'                       verbose=TRUE,
+#'                       State_Tigerlines=vect("~/../Desktop/State_Tigerlines/tl_2018_us_state.shp"),
+#'                       County_Tigerlines=vect("~/../Desktop/County_Tigerlines/tl_2018_us_county.shp"),
+#'                       focus_city_tigerlines=focus_city,
+#'                       plot_directory="~/../Desktop/plots/")
+#'@author Joe Pitt, \email{madeup@@wisc.edu}
+#'@author Kris Hajny, \email{blank@@fake.edu}
+#'@author Israel Lopez-Coto, \email{test@@test.edu}
+#'@export
+
 ## NG_transmission_emissions_r1.R
 ## In use: 2021-11-02 20:00
 ## Finalized: 2023-02-03
 #
 # Calculate NG transmission emissions for d03 domain
 
-Transmission <- function(){
-  
-  ################################################################################
-  #User Input
-  
-  GHGI_file <- file.path(input_directory,"2022_ghgi_natural_gas_systems_annex36_tables.xlsx")
-  GHGI_Emissions_sheet <- "3.6-1"
-  GHGI_Activity_sheet <- "3.6-7"
+Transmission <- function(GHGI_file,
+                         GHGI_Emissions_sheet,
+                         GHGI_Activity_sheet,
+                         domain,
+                         state_name_list,
+                         output_directory,
+                         inventory_year,
+                         verbose,
+                         plot_directory,
+                         County_Tigerlines,
+                         State_Tigerlines,
+                         focus_city_tigerlines){
   
   ################################################################################
   #checked and all input data matches the old equivalent
@@ -126,11 +265,11 @@ Transmission <- function(){
   ################################################################################
   #process the transmission pipeline data
   
-  first_col <- which(read_xlsx(GHGI_file,sheet = GHGI_Activity_sheet,.name_repair = "minimal")[,1]=="Segment/Source")
-  GHGI_p1 <- read_xlsx(GHGI_file,sheet = GHGI_Activity_sheet,skip=first_col,col_names = T)
+  first_row <- which(read_xlsx(GHGI_file,sheet = GHGI_Activity_sheet,.name_repair = "minimal")[,1]=="Segment/Source")
+  GHGI_p1 <- read_xlsx(GHGI_file,sheet = GHGI_Activity_sheet,skip=first_row,col_names = T)
   
-  first_col <- which(read_xlsx(GHGI_file,sheet = GHGI_Emissions_sheet,.name_repair = "minimal")[,1]=="Segment/Source")
-  GHGI_p2 <- read_xlsx(GHGI_file,sheet = GHGI_Emissions_sheet,skip=first_col,col_names = T)
+  first_row <- which(read_xlsx(GHGI_file,sheet = GHGI_Emissions_sheet,.name_repair = "minimal")[,1]=="Segment/Source")
+  GHGI_p2 <- read_xlsx(GHGI_file,sheet = GHGI_Emissions_sheet,skip=first_row,col_names = T)
   #p2 = emissions, p1 = activity data.  Columns = year, rows = various types of
   #sources.  First col is just to identify the first column of useable data
   
@@ -176,14 +315,14 @@ Transmission <- function(){
   GHGI_transmission_compressors[8,2] <- Engine_transmission_fraction*GHGI_transmission_compressors[8,2]
   GHGI_transmission_compressors[9,2] <- Turbine_transmission_fraction*GHGI_transmission_compressors[9,2]
   #apply those ratios to the Generators for engines or turbines since they're not
-  #sGHGIrated into transmission and storage
+  #separated into transmission and storage
   
   GHGI_transmission_compressors <- GHGI_transmission_compressors[c(1:5,8:11),]
   #remove the storage data
   compressor_avg_emissions <- sum(GHGI_transmission_compressors[,2])/GHGI_transmission_compressors[3,3] #mol/station/s
   #sum of emissions / N stations (activity data from flaring entry)
   
-  rm(GHGI_transmission_compressors,GHGI_Pipeline,GHGI_p1,GHGI_p2,first_col,Data_list,
+  rm(GHGI_transmission_compressors,GHGI_Pipeline,GHGI_p1,GHGI_p2,first_row,Data_list,
      Engine_transmission_fraction,Turbine_transmission_fraction)
   ################################################################################
   #process the transmission pipeline data

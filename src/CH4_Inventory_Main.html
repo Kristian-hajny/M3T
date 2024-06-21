@@ -1,0 +1,173 @@
+<!DOCTYPE html><html><head><title>R: Main function to calculate gridded methane emissions.  Runs...</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.css">
+<script type="text/javascript">
+const macros = { "\\R": "\\textsf{R}", "\\code": "\\texttt"};
+function processMathHTML() {
+    var l = document.getElementsByClassName('reqn');
+    for (let e of l) { katex.render(e.textContent, e, { throwOnError: false, macros }); }
+    return;
+}</script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.js"
+    onload="processMathHTML();"></script>
+<link rel="stylesheet" type="text/css" href="R.css" />
+</head><body><div class="container"><main>
+
+<table style="width: 100%;"><tr><td>code_directory</td><td style="text-align: right;">R Documentation</td></tr></table>
+
+<h2>Main function to calculate gridded methane emissions.  Runs sector by
+sector according to the config file.</h2>
+
+<h3>Description</h3>
+
+<p>'CH4_inventory_build' runs multiple other functions to calculate
+the gridded methane emissions sector-by-sector using information provided in
+the config file and inputs.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class='language-R'>code_directory
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr><td><code id="focus_city">focus_city</code></td>
+<td>
+<p>Character or numeric or a vector of characters or numerics.
+Each character must exactly match the Census name, which can be found at
+<a href="https://www.census.gov/programs-surveys/geography/guidance/geo-areas/urban-rural.html">https://www.census.gov/programs-surveys/geography/guidance/geo-areas/urban-rural.html</a>
+for the 2020 census and at
+<a href="https://www2.census.gov/geo/pdfs/maps-data/maps/reference/2010UAUC_List.pdf">https://www2.census.gov/geo/pdfs/maps-data/maps/reference/2010UAUC_List.pdf</a>
+for the 2010 census.  Years rely on the naming scheme of the most recent
+census, so e.g., 2018 would rely on the 2010 names.
+</p>
+<p>Each numeric must exactly match the code given to the urban area, also
+detailed in the above documents.
+</p>
+<p>This will be used to subset the urban area census outlines and used in any
+visualizations.</p>
+</td></tr>
+<tr><td><code id="domain">domain</code></td>
+<td>
+<p>SpatRaster providing the desired output grid, including the
+desired resolution and coordinate reference system or a 2x2 data frame.  For
+the data frame, the first column would be x values, the second column y
+values, and the first row would be the minima, the second row the maxima.
+This is used to build a SpatRaster.</p>
+</td></tr>
+<tr><td><code id="domain_res">domain_res</code></td>
+<td>
+<p>Numeric providing the resolution for the domain.  Can be
+length 1 or 2 (x,y).</p>
+</td></tr>
+<tr><td><code id="domain_crs">domain_crs</code></td>
+<td>
+<p>Character providing the projection of the domain</p>
+</td></tr>
+<tr><td><code id="input_directory">input_directory</code></td>
+<td>
+<p>Character providing the full filepath to load/save
+input data</p>
+</td></tr>
+<tr><td><code id="plot_directory">plot_directory</code></td>
+<td>
+<p>Character providing the full filepath to save figures.
+Only relevant if verbose = TRUE.</p>
+</td></tr>
+<tr><td><code id="code_directory">code_directory</code></td>
+<td>
+<p>Character providing the full filepath to source all
+other functions and the config.</p>
+</td></tr>
+<tr><td><code id="ACES_directory">ACES_directory</code></td>
+<td>
+<p>Character providing the full filepath to a folder with
+sectoral Anthropogenic Carbon Emission System (ACES) inventory files that
+have been averaged into annual files.  ACES is available at
+<a href="https://doi.org/10.3334/ORNLDAAC/1943">https://doi.org/10.3334/ORNLDAAC/1943</a>.</p>
+</td></tr>
+<tr><td><code id="vulcan_directory">vulcan_directory</code></td>
+<td>
+<p>Character providing the full filepath to a folder with
+annual, sectoral Vulcan inventory files.  Vulcan v3.0 is available at
+<a href="https://doi.org/10.3334/ORNLDAAC/1741">https://doi.org/10.3334/ORNLDAAC/1741</a>.</p>
+</td></tr>
+<tr><td><code id="inventory_year">inventory_year</code></td>
+<td>
+<p>Numeric indicating the desired year of data to use.</p>
+</td></tr>
+<tr><td><code id="verbose">verbose</code></td>
+<td>
+<p>Logical indicating whether to save additional output.  This
+includes easier to read csv files of the data that has been gridded for
+multiple sectors as well as sector and subsector visuals.</p>
+</td></tr>
+</table>
+
+
+<h3>Format</h3>
+
+<p>An object of class <code>character</code> of length 1.
+</p>
+
+
+<h3>Details</h3>
+
+<p>This function will source all other functions and the config, create
+the domain from the input data in the case that a SpatRaster was not
+provided, and download some files (Census tigerlines) that will be needed
+for multiple sectors.  It will then use the information in the config file
+and inputs to run every relevant sector.  As such, the inputs to this
+function and the config may require user editing.
+</p>
+<p>See references
+<a href="https://doi.org/10.1029/2020JD032974">Vulcan</a> and
+<a href="https://doi.org/10.1002/2017JD027359">ACES</a>
+</p>
+
+
+<h3>Value</h3>
+
+<p>Nothing is returned from the function, but there will be frequent
+user updates as multiple other functions are run and output files created
+for the various sectors.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Joe Pitt, <a href="mailto:madeup@wisc.edu">madeup@wisc.edu</a>
+</p>
+<p>Kris Hajny, <a href="mailto:blank@fake.edu">blank@fake.edu</a>
+</p>
+<p>Israel Lopez-Coto, <a href="mailto:test@test.edu">test@test.edu</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class='language-R'>CH4_inventory_build(input_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Raw_data_rewrite/",
+                    output_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Processed_rewrite/",
+                    code_directory="~/../../Kristian/Desktop/methane_inventory/src/",
+                    plot_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Figures_rewrite/",
+                    focus_city="Philadelphia, PA--NJ--DE--MD",
+                    inventory_year=2019,
+                    domain=as.data.frame(cbind(c(-76.65,-73.65),
+                                               c(38.97,40.97))),
+                    domain_res=0.01,
+                    domain_crs="epsg:4326",
+                    ACES_directory="G:/My Drive/Shepson Group Drive/General Inventories and Shapefiles/Inventories/ACES_v2.0",
+                    vulcan_directory="G:/My Drive/Shepson Group Drive/General Inventories and Shapefiles/Inventories/Vulcan_v3.0",
+                    verbose=TRUE)
+</code></pre>
+
+</main>
+
+</div>
+</body></html>
+
