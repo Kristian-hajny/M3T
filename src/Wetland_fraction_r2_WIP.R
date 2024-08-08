@@ -123,9 +123,11 @@ NWI_Wetland_fraction <- function(input_directory,
     colnames(cover) <- c("cell","weight")
     output_rast=state_template
     output_rast[cover[,'cell']] <- cover[,'weight']
+    output_rast[is.na(output_rast)] <- 0
     
-    #extend to the full domain and save
-    output_rast <- extend(output_rast,domain,fill=0)
+    #extend to the domain + some buffer, crop out any other excess and save
+    output_rast <- extend(output_rast,ext(domain)+res(domain)*5,fill=0)
+    output_rast <- crop(output_rast,ext(domain)+res(domain)*5)
     writeRaster(output_rast,
                 paste0(NWI_output_directory,state_name_list[i],'_',input_name,'.tiff'),
                 overwrite=T)
@@ -195,8 +197,12 @@ NWI_Wetland_fraction <- function(input_directory,
       ################################################################################
       #split them into the relevant parts and rasterize/save them
       
+      #reproject and create a template for output, slightly larger than the
+      #wetland shapefile to avoid losing any data
       wetlands <- project(wetlands,crs(domain))
-      state_template <- rast(wetlands,vals=0)
+      state_template <- domain
+      values(state_template) <- 0
+      state_template <- extend(state_template,ext(wetlands)+0.5,snap="out")
       
       #split the wetlands file into the relevant wetland types
       Attribute_text <- wetlands$ATTRIBUTE
