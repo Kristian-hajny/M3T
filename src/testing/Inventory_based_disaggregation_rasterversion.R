@@ -1,0 +1,54 @@
+#Write a function to disaggregate total emissions using ACES/Vulcan or both
+#within sub domain bounds (states, Local Distribution Companies, Counties)
+
+disaggregation <- function(input_inventory,totals,agg_level,NEI_input,cover_all,out_envir){
+  input_name <- deparse(substitute(input_inventory))
+  #pull the input name (aces_res/com or vu_res/com) for naming later.  Note -
+  #this must be done before input_inventory is edited
+  #(https://stackoverflow.com/a/23563587)
+  
+  input_inventory[is.na(input_inventory)] <- 0
+  # Change nans to zeros otherwise they could mess with the regridding later
+  
+  template <- raster(input_inventory)
+  template[] <- 0
+  
+  input_inventory_ch4 <- replicate(length(totals), template)
+  names(input_inventory_ch4) <- totals
+  # Set up lists of rasters for calculating ch4 emissions, with one raster for
+  # each subsector
+  
+  for(i in 1:length(cover_all)){
+    cover <- raster::extract(input_inventory,NEI_input[i,],weights=T,
+                             cellnumbers=T,normalizeWeights=F,exact=T)[[1]]
+
+    input_inventory_temp <- template
+    input_inventory_temp[cover[,'cell']] <- input_inventory[cover[,'cell']]*cover[,'weight']
+    # Starting with a raster of zeros, set cells within polygon i equal to their cover-weighted CO2 emission
+    
+    if(cellStats(input_inventory_temp,sum) == 0){
+      input_inventory_temp[cover[,'cell']] <- cover[,'weight']
+      input_inventory_frac <- input_inventory_temp/cellStats(input_inventory_temp, sum)
+      #if there are no inventory emissions in this polygon, set the entire
+      #polygon to 1 (i.e., equally distribute emissions across the polygon)
+    }else{
+      input_inventory_frac <- input_inventory_temp/cellStats(input_inventory_temp, sum)
+      # Calculate the fraction of the polygon-total CO2 emission within each cell
+    }
+    
+    for(total in totals){
+      new_addition <- as.numeric(as.data.frame(NEI_input[i, total]))
+      if(!is.na(new_addition)){
+        input_inventory_ch4[[total]][] <- input_inventory_ch4[[total]][] + input_inventory_frac[]*new_addition
+      }
+    }
+    # Loop through the different subsectors, and add the CH4 emissions map to
+    # the relevant raster
+    
+    cat("\rFinished mapping",input_name,agg_level,"level entry",i,"of",length(cover_all),"        ")
+  }#cover loop
+  assign(x=paste0(input_name,"_ch4_by",agg_level),input_inventory_ch4,envir = out_envir)
+  #save this output to the global environment, as it'll be needed later.
+  #E.g., aces_res_ch4_state or vu_com_ch4_domain
+  
+}#function
