@@ -113,10 +113,15 @@ inventory_year=2019
 domain=as.data.frame(cbind(c(-76.65,-73.65),
                            c(38.97,40.97)))
 domain_res=0.01
-domain_crs="epsg:4326"
+domain_crs="epsg:4326" #lat/long
 ACES_directory="G:/My Drive/Shepson Group Drive/General Inventories and Shapefiles/Inventories/ACES_v2.0"
 vulcan_directory="G:/My Drive/Shepson Group Drive/General Inventories and Shapefiles/Inventories/Vulcan_v3.0"
 verbose=TRUE
+
+#an easy way to switch to stress-testing code.  Changes year to 2016, resolution
+#to 0.1 and reprojects to a cylindrical projection to make sure functions still
+#run without failing.  ALWAYS REVERT TO F after running to avoid confusion!
+testmode <- FALSE 
 
 ################################################################################
 #User input
@@ -232,6 +237,10 @@ source(paste0(code_directory,"Wetland_emissions_r2.R"))
 main_config()
 ################################################################################
 #create the domain and set it to all NaN
+if(testmode){
+  domain_res <- domain_res*10
+  inventory_year <- 2016
+}
 if(length(domain_res)==1){
   domain_res <- rep(domain_res,2)
 }
@@ -245,6 +254,9 @@ if(class(domain)=="SpatRaster"){
                  ymin=min(domain[,2]), ymax=max(domain[,2]), 
                  crs=domain_crs)
   rm(domain_res,domain_crs)
+}
+if(testmode){
+  domain <- project(domain,"epsg:4087") #Equidistant Cylindrical - nothing we use has this, significantly different spatially, good test option
 }
 
 ################################################################################
@@ -281,6 +293,11 @@ if(!all(file.exists(Census_filenames))){
 State_Tigerlines <- vect(Census_filenames[1])
 Urban_Tigerlines <- vect(Census_filenames[2])
 County_Tigerlines <- vect(Census_filenames[3])
+
+#project to match the domain (crs)
+State_Tigerlines <- project(State_Tigerlines,domain)
+Urban_Tigerlines <- project(Urban_Tigerlines,domain)
+County_Tigerlines <- project(County_Tigerlines,domain)
 
 #subset to just those relevant for the domain (speedier)
 State_Tigerlines <- mask(State_Tigerlines,mask=as.polygons(domain))
@@ -471,8 +488,7 @@ if(Process_wastewater){
   # source(paste0(code_directory,"NLCD_fractions_by_state.R"))
   # main_config()
   # rm(code_directory)
-  NLCD_open_and_low_int(nlcd_file <- file.path("G:/My Drive/Shepson Group Drive/General Inventories and Shapefiles/Shapefiles",
-                                               "nlcd_2019_land_cover_l48_20210604/nlcd_2019_land_cover_l48_20210604.img"),
+  NLCD_open_and_low_int(NLCD_file=file.path("G:/My Drive/Shepson Group Drive/General Inventories and Shapefiles/Shapefiles/nlcd_2019_land_cover_l48_20210604/nlcd_2019_land_cover_l48_20210604.img"),
                         domain=domain,
                         state_name_list=state_name_list,
                         State_Tigerlines=State_Tigerlines,
