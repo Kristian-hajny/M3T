@@ -86,6 +86,7 @@ main_config <- function(){
                                         "Population"=c(1018396,6164660,9261699,19677151,12972008),
                                         "Septic_Fraction"=c(0.257,0.181,0.116,0.159,0.245),
                                         "Method"=c("scaled","scaled","scaled","reported","scaled"))
+    Wastewater_State_info[,4] <- tolower(Wastewater_State_info[,4]) #just in case manually entered with caps
     #Pulled from census data.  method is either scaled - i.e., from an old
     #census report, or reported, i.e., use as is from a relatively recent census
     #report.  Only used if state_septic=TRUE
