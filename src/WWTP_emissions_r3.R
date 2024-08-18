@@ -5,7 +5,7 @@
 #'  1 for municipal wastewater treatment facilities, 1 for industrial wastewater
 #'  treatment facilities, and 2 for septic systems.   Also writes 5 csvs, 2 for
 #'  municipal facilities, 2 for industrial facilities, and 1 for septic systems
-#'  with all but the septic systems file being optional.
+#'  with all csvs being optional.
 #'
 #'@details This function calculates and grids methane emissions from wastewater
 #'  treatment and septic systems. It takes the total flow through municipal
@@ -43,8 +43,8 @@
 #'
 #'  For septic emissions the output from `NLCD_open_and_low_int` is used.  This
 #'  provides the fractional coverage of the 2 landcover types (developed, open
-#'  space and developed, low intensity) the domain, separated by state.  Their
-#'  are 2 approaches to calculate methane emissions from these.
+#'  space and developed, low intensity) for the domain, separated by state.
+#'  Their are 2 approaches to calculate methane emissions from these.
 #'
 #'  Option 1 - we know that as of 2016 the national total landcover of these 2
 #'  landcover types was 352,032 km2 according to Homer et al.  As such, we can
@@ -81,7 +81,7 @@
 #'  The GHGI is available at
 #'  \url{https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks}
 #'  The GHGRP is available at \url{https://www.epa.gov/ghgreporting}
-#'  
+#'
 #'  See references \href{https://doi.org/10.1016/j.isprsjprs.2020.02.019}{Homer et
 #'  al.} and \href{https://doi.org/10.1021/acs.est.2c05373}{Moore et al.}
 #'@param domain SpatRaster providing the desired output grid, including the
@@ -185,11 +185,14 @@
 #'  Only relevant if a focus city was set in main and verbose=TRUE.
 #'@returns Nothing is returned from the function, but the main outputs are 4
 #'  netcdf files of the methane emissions from wastewater.  They are titled
-#'  "Wastewater_ind.nc" for industrial wastewater, "Wastewater_dom_central.nc"
-#'  for municipal wastewater, "Wastewater_dom_septic_bystate.nc" for septic
-#'  emissions using state-specific septic fractions, and
-#'  "Wastewater_dom_septic_national.nc" for septic emissions using GHGI national
-#'  emissions.
+#'  "Wastewater_ind.nc" for industrial wastewater,
+#'  "Wastewater_X_Y_dom_central.nc" for municipal wastewater,
+#'  "Wastewater_dom_septic_byZ.nc" for septic emissions.  X is the input data
+#'  used for the wastewater treatment plants - CWNS or DMR, Y is the method of
+#'  converting to emissions - GHGI for downscaling GHGI totals proportionally
+#'  with flow or ML for applying the moore et al. log-linear relationship
+#'  between flow and emissions, and Z is the approach used for septic emissions
+#'  - bystate or national.
 #'
 #'  The csv "WWTP_septic_method_comparison.csv" is also saved and provides the
 #'  population, septic fraction, method (scaled or reported) total emissions,
@@ -323,7 +326,7 @@ Wastewater <- function(DMR_file,
                        verbose){
   
   starttime <- Sys.time()
-  cat("Starting wastewater sector")
+  cat("Starting wastewater sector: Wastewater\n")
   ################################################################################
   # First load in and prep the flow data
   
@@ -379,16 +382,18 @@ Wastewater <- function(DMR_file,
   # Take total emissions for each category from the 2021 EPA report (values for 2019 in kt)
   central_EPA_emiss <- GHGI_national_wastewater_nonseptic*1e9/(16.043*365*24*60*60)   #kt/y to mol/s
   
+  cat("Finished loading in municipal treatment plant data at",difftime(Sys.time(),starttime,units = "min"),"minutes since start\n")
   ################################################################################
   #write a small helper function.  Creates a raster of emissions, cropped to the
   #domain, converted to proper units, and saved as 2 csvs.
   rasterize_plus <- function(input,outputname){
     input_crop <- project(input,domain)
-    input_crop <- crop(input,domain)
+    input_crop <- crop(input_crop,domain)
     input_crop_filt <- subset(input_crop,!is.na(input_crop$emiss))
     rast <- rasterize(input_crop_filt, domain, "emiss", fun=sum)
     
-    rast_flux <- rast*1e9/(cellSize(rast,unit="m"))  # Calculate flux in nmol/m2/s
+    # Calculate flux in nmol/m2/s
+    rast_flux <- rast*1e9/(cellSize(rast,unit="m"))  
     rast_flux[is.na(rast_flux)]<-0
     
     if(verbose){
@@ -404,7 +409,6 @@ Wastewater <- function(DMR_file,
     assign(x = outputname,rast_flux,envir = parent.env(environment()))
   }
   
-  cat("Finished loading in municipal treatment plant data in",difftime(Sys.time(),starttime,units = "sec")," seconds")
   ################################################################################
   #distribute EPA Municipal Wastewater Treatment Plant emissions from the GHGI
   #using the CWNS or DMR municipal flow
@@ -454,101 +458,106 @@ Wastewater <- function(DMR_file,
     exp(-4.1+(1.2^2)/2)
     exp(-3.4+(1^2)/2)
   }
-  cat("Finished calculating municipal treamtent plant emissions in",difftime(Sys.time(),starttime,units = "sec")," seconds")
-  
+  cat("Finished calculating municipal treatment plant emissions at",difftime(Sys.time(),starttime,units = "min"),"minutes since start\n")
   ################################################################################
   #Now septic systems.  First load in output from NLCD_fractions_by_state
   
   #output from NLCD_fractions_by_state after reprojecting
-  low_int_rasterfile <- list.files(pattern=glob2rx("*low_int_regridded.nc"),path=output_directory,full.names = T)
-  open_rasterfile <- list.files(pattern=glob2rx("*open_regridded.nc"),path=output_directory,full.names = T)
+  Suburbia_rasterfile <- list.files(pattern=glob2rx("*NLCD_suburban.nc"),path=output_directory,full.names = T)
   
   #output from NLCD_fractions_by_state.R
   nlcd_state_total_areas <- read.table(file.path(output_directory,"nlcd_state_total_areas.csv"),header=T,sep=",")
   
   #quickly ensure that the state data is all in the same order, alphabetical
-  low_int_rasterfile <- sort(low_int_rasterfile)
-  open_rasterfile <- sort(open_rasterfile)
+  Suburbia_rasterfile <- sort(Suburbia_rasterfile)
   Wastewater_State_info <- Wastewater_State_info[order(Wastewater_State_info$State),]
   nlcd_state_total_areas <- nlcd_state_total_areas[order(nlcd_state_total_areas$X),]
   ################################################################################
-  #Now septic systems.  Load reprojected output  - this is divided by state and
-  #open vs low intensity land use.
+  #Calculate septic emissions using emission factors and the land cover data
+  #from NLCD_fractions_by_state.R
   
   septic_EPA_emiss <- GHGI_national_wastewater_septic*1e9/(16.043*365*24*60*60)   #kt/y to mol/s
   tot_nlcd_area <- Total_national_open_or_low_int_area  # all states in km2
   
   # blank output to combine the states
-  domain_nlcd_frac <- rast(open_rasterfile[1])
-  septic_emiss2 <- rast(open_rasterfile[1])
-  values(septic_emiss2) <- 0
-  values(domain_nlcd_frac) <- 0
+  septic_flux <- rast(Suburbia_rasterfile[1])
+  septic_flux2 <- rast(Suburbia_rasterfile[1])
+  values(septic_flux2) <- 0
+  values(septic_flux) <- 0
   
-  for(A in 1:length(open_rasterfile)){
-    open <- rast(open_rasterfile[A])
-    low_int <- rast(low_int_rasterfile[A])
+  septic_flux_bystate <- vector()
+  septic_flux2_bystate <- vector()
+  
+  for(A in 1:length(Suburbia_rasterfile)){
+    #from NLCD_fraction_by_state.  The fractional coverage of NLCD open or low
+    #intensity urban land cover per pixel.
+    Suburbia <- rast(Suburbia_rasterfile[A])
     
     if(Wastewater_national_septic){
-      # Calculate fractional area (of national total) in each grid cell
-      nlcd_frac <- open + low_int
-      domain_nlcd_frac <- mosaic(nlcd_frac,domain_nlcd_frac,fun=sum)
+      #Calculate state-by-state totals by equally distributing GHGI totals
+      #to developed, open and developed low intensity land cover nationally.
+      
+      state_flux <- septic_EPA_emiss*Suburbia/tot_nlcd_area  # in mol/s/km2
+      
+      #save within-domain state emissions for csv
+      septic_flux_bystate <- c(septic_flux_bystate,
+                               as.numeric(global(state_flux*cellSize(state_flux,unit="km"),sum,na.rm=T)))
+      
+      # Combine across states
+      septic_flux <- mosaic(septic_flux,state_flux,fun=sum)
     }
     
     
     if(Wastewater_state_septic){
-      # Calculate state-by-state totals and disaggregate within each state
-      # states_trans <- project(State_Tigerlines,crs(nlcd_frac))
-      # 
-      # state_poly <- subset(states_trans, states_trans$STUSPS==Wastewater_State_info[A,1])
-      Tot_area <- sum(nlcd_state_total_areas[which(Wastewater_State_info[A,1]==nlcd_state_total_areas[,1]),c(2,3)]) # total area of both classes in km2 from nlcd_state_total_areas.csv
+      # Calculate state-by-state totals using state-specific septic fraction data
+      Tot_area <- nlcd_state_total_areas[A,2] # total area of both classes in km2 from nlcd_state_total_areas.csv
       pop <- Wastewater_State_info[A,2]
       
       if(Wastewater_State_info[A,4]=="scaled"){
         septic_frac <- Wastewater_State_info[A,3]*National_wastewater_info[2,2]/National_wastewater_info[1,2]
       }else if(Wastewater_State_info[A,4]=="reported"){
         septic_frac <- Wastewater_State_info[A,3]
-      }else{
-        stop("State info's method needs to be \"scaled\" or \"reported\" ")
       }
       state_tot_emiss <- pop*septic_frac*GHGI_septic_EF/(16.043*24*60*60)  #in mol/s (EF is in g/capita/day)
-      state_emiss <- state_tot_emiss*nlcd_frac*cellSize(nlcd_frac,unit="km")/Tot_area #gridded and distributed equally in mol/s
+      state_flux <- state_tot_emiss*Suburbia/Tot_area #gridded and distributed equally in mol/s/km2
       
-      septic_emiss2 <- mosaic(septic_emiss2,state_emiss,fun=sum)
-      #add this state's emissions in
+      #save within-domain state emissions for csv
+      septic_flux2_bystate <- c(septic_flux2_bystate,
+                                as.numeric(global(state_flux*cellSize(state_flux,unit="km"),sum,na.rm=T)))
       
-      Wastewater_State_info$total_emissions_mol_per_s[A] <- state_tot_emiss
+      # Combine across states
+      septic_flux2 <- mosaic(septic_flux2,state_flux,fun=sum)
     }
-    
-    cat("Finished processing septic for",Wastewater_State_info[A,1],"\n")
+    cat("Finished processing septic for",Wastewater_State_info[A,1],"at",difftime(Sys.time(),starttime,units = "min"),"minutes since start\n")
   }
   
   if(Wastewater_national_septic){
-    # Now multiply by total EPA emissions
-    septic_emiss <- septic_EPA_emiss*domain_nlcd_frac*cellSize(domain_nlcd_frac,unit="km")/tot_nlcd_area  # in mol/s
-    septic_flux <- septic_emiss*1e9/(cellSize(septic_emiss,unit="km")*1e6)  # Calculate flux in nmol/m2/s
+    # Now multiply by total EPA emissions and convert to flux (per area)
+    septic_flux <- septic_flux*1e9*1E-6  # Calculate flux in nmol/m2/s
     septic_flux[is.na(septic_flux)]<-0
-    septic_flux <- project(septic_flux,domain)
   }
   
   if(Wastewater_state_septic){
-    # Now converting the totals to a per/area gridded product
-    septic_flux2 <- septic_emiss2*1e9/(cellSize(septic_emiss2,unit="km")*1e6)  # Calculate flux in nmol/m2/s
+    # Now converting the totals to flux (per area)
+    septic_flux2 <- septic_flux2*1e9*1E-6  # Calculate flux in nmol/m2/s
     septic_flux2[is.na(septic_flux2)]<-0
-    septic_flux2 <- project(septic_flux2,domain)
   }
   
   if(Wastewater_state_septic & Wastewater_national_septic){
-    #calculate some info to compare the 2 methods.  The actual calculation is the
-    #same, it's just the emissions per area that changes.
-    Wastewater_State_info$total_septic_area_km2 <- rowSums(nlcd_state_total_areas[,c(2,3)])
-    Wastewater_State_info$emission_per_area <- Wastewater_State_info$total_emissions/Wastewater_State_info$total_septic_area_km2
-    Wastewater_State_info$State_to_national_method_ratio <- Wastewater_State_info$emission_per_area/(septic_EPA_emiss/tot_nlcd_area)
+    #convert back to emissions and calculate the total emissions in each state
+    #(using extract to account for pixels partially in state bounds
+    #appropriately)
+    
+    Wastewater_State_info$State_based_septic_emissions_mol_per_s <- septic_flux2_bystate
+    Wastewater_State_info$National_based_septic_emissions_mol_per_s <- septic_flux_bystate
+    Wastewater_State_info$total_septic_area_km2 <- nlcd_state_total_areas[,2]
+    Wastewater_State_info$State_to_national_method_ratio <- Wastewater_State_info$State_based_septic_emissions_mol_per_s/Wastewater_State_info$National_based_septic_emissions_mol_per_s
     if(verbose){
       #now save the comparison across the methods
       write.csv(Wastewater_State_info, file.path(output_directory,"WWTP_septic_method_comparison.csv"),row.names = F)
     }
   }
-  cat("Finished calculating septic emissions in",difftime(Sys.time(),starttime,units = "sec")," seconds")
+  cat("Finished calculating septic emissions at",difftime(Sys.time(),starttime,units = "min"),"minutes since start\n")
   ################################################################################
   #Download the relevant emissions data using the API
   #(https://www.epa.gov/enviro/envirofacts-data-service-api) and combine the
@@ -587,7 +596,7 @@ Wastewater <- function(DMR_file,
   ghgrp <- vect(ghgrp,geom=c("longitude","latitude"))
   crs(ghgrp) <- "epsg:4326"
   ghgrp_crop <- project(ghgrp,domain)
-  ghgrp_crop <- crop(ghgrp,domain)
+  ghgrp_crop <- crop(ghgrp_crop,domain)
   ghgrp_crop$emiss <- ghgrp_crop$ghg_quantity*1e6/(16.043*365*24*60*60) #MT CH4/yr to mol/s
   
   # Now rasterise
@@ -606,7 +615,7 @@ Wastewater <- function(DMR_file,
     names(ghgrp_crop_output) <- c('Site_Name','Longitude','Latitude','Emission_mol_per_s')
     write.csv(ghgrp_crop_output, file.path(output_directory,"WWTP_industrial.csv"),row.names = F)
   }
-  cat("Finished calculating industrial treamtent plant emissions at",difftime(Sys.time(),starttime,units = "sec")," seconds")
+  cat("Finished calculating industrial treamtent plant emissions at",difftime(Sys.time(),starttime,units = "min"),"minutes since start\n")
   ################################################################################
   # Write the rasters
   
@@ -684,29 +693,161 @@ Wastewater <- function(DMR_file,
            missval=-9999,
            overwrite=TRUE)
   ################################################################################
-  #Finally, load up some functions/datasets and plot up this output nicely
+  #Finally, plot up this output nicely
   
   if(verbose){
     not_log_plot(septic_flux2,filename="Wastewater_dom_septic_bystate",
                  "Domestic Wastewater - Septic v2\n estimated state septic distributed using \ndeveloped open space/low intensity land cover",
-                 global(min(septic_flux,septic_flux2),min),
-                 global(max(septic_flux,septic_flux2),max))
+                 as.numeric(global(min(septic_flux,septic_flux2),min)),
+                 as.numeric(global(max(septic_flux,septic_flux2),max)))
     
     not_log_plot(septic_flux,filename="Wastewater_dom_septic_national",
                  "Domestic Wastewater - Septic\n national EPA septic distributed using \ndeveloped open space/low intensity land cover",
-                 global(min(septic_flux,septic_flux2),min),
-                 global(max(septic_flux,septic_flux2),max))
-    
-    log_plot(central_flux,filename="Wastewater_dom_central",
-             "Domestic Wastewater -\n EPA total distributed using \nClean Watersheds Needs Survey")
+                 as.numeric(global(min(septic_flux,septic_flux2),min)),
+                 as.numeric(global(max(septic_flux,septic_flux2),max)))
     
     log_plot(ghgrp_flux,filename="Wastewater_ind",
              "Industrial Wastewater -\n GHGRP Reporters")
     
-    Summed_wastewater_treatment = central_flux+septic_flux+ghgrp_flux
     
-    log_plot(Summed_wastewater_treatment,
-             "Wastewater Treatment Sector\nGHGI total distributed with CWNS (Domestic facilities) and GHGRP (industrial)\nand developed open space/low intensity NLCD land cover (Septic)")
+    
+    #default min/max that should be overwritten using the data - to ensure
+    #consistent axes across the 4 possible method combinations.
+    WWTP_min=5000
+    WWTP_max=0
+    if(Wastewater_use_CWNS){
+      if(Wastewater_Municipal_Method_Moore_linear){
+        #set 0 to NA so the minimum ignores 0 (log plot, so 0 = -inf)
+        WWTP_CWNS_Moore_Linear_municipal[WWTP_CWNS_Moore_Linear_municipal==0] <- NA
+        WWTP_min <- min(WWTP_min,as.numeric(global(WWTP_CWNS_Moore_Linear_municipal,min,na.rm=T)))
+        WWTP_max <- max(WWTP_max,as.numeric(global(WWTP_CWNS_Moore_Linear_municipal,max,na.rm=T)))
+      }
+      if(Wastewater_Municipal_Method_GHGI){
+        WWTP_CWNS_GHGI_municipal[WWTP_CWNS_GHGI_municipal==0] <- NA
+        WWTP_min <- min(WWTP_min,as.numeric(global(WWTP_CWNS_GHGI_municipal,min,na.rm=T)))
+        WWTP_max <- max(WWTP_max,as.numeric(global(WWTP_CWNS_GHGI_municipal,max,na.rm=T)))
+      }
+    }
+    if(Wastewater_use_DMR){
+      if(Wastewater_Municipal_Method_Moore_linear){
+        WWTP_DMR_Moore_Linear_municipal[WWTP_DMR_Moore_Linear_municipal==0] <- NA
+        WWTP_min <- min(WWTP_min,as.numeric(global(WWTP_DMR_Moore_Linear_municipal,min,na.rm=T)))
+        WWTP_max <- max(WWTP_max,as.numeric(global(WWTP_DMR_Moore_Linear_municipal,max,na.rm=T)))
+      }
+      if(Wastewater_Municipal_Method_GHGI){
+        WWTP_DMR_GHGI_municipal[WWTP_DMR_GHGI_municipal==0] <- NA
+        WWTP_min <- min(WWTP_min,as.numeric(global(WWTP_DMR_GHGI_municipal,min,na.rm=T)))
+        WWTP_max <- max(WWTP_max,as.numeric(global(WWTP_DMR_GHGI_municipal,max,na.rm=T)))
+      }
+    }
+    
+    
+    
+    #actually do the plotting now, slight changes to filename and title for each
+    WWTP_min <- log10(WWTP_min)
+    WWTP_max <- log10(WWTP_max)
+    if(Wastewater_use_CWNS){
+      if(Wastewater_Municipal_Method_Moore_linear){
+        log_plot(WWTP_CWNS_Moore_Linear_municipal,filename="Wastewater_dom_central_CWNS_Moore_linear",
+                 "Domestic Wastewater -\n Moore log-linear relationship combined with\nClean Watersheds Needs Survey",
+                 WWTP_min,WWTP_max)
+        #else if below as GHGI vs Moore can ~double emissions, which is
+        #negligible on a log scale.
+      }else if(Wastewater_Municipal_Method_GHGI){
+        log_plot(WWTP_CWNS_GHGI_municipal,filename="Wastewater_dom_central_CWNS_GHGI",
+                 "Domestic Wastewater -\n EPA total distributed using\nClean Watersheds Needs Survey",
+                 WWTP_min,WWTP_max)
+      }
+    }
+    if(Wastewater_use_DMR){
+      if(Wastewater_Municipal_Method_Moore_linear){
+        log_plot(WWTP_DMR_Moore_Linear_municipal,filename="Wastewater_dom_central_DMR_Moore_linear",
+                 "Domestic Wastewater -\n Moore log-linear relationship combined with\nDischarge Monitoring Reports",
+                 WWTP_min,WWTP_max)
+      }else if(Wastewater_Municipal_Method_GHGI){
+        log_plot(WWTP_DMR_GHGI_municipal,filename="Wastewater_dom_central_DMR_GHGI",
+                 "Domestic Wastewater -\n EPA total distributed using\nDischarge Monitoring Reports",
+                 WWTP_min,WWTP_max)
+      }
+    }
+    
+    
+    
+    
+    
+    #Now plot sectoral totals (industrial + municipal WWTP + septic)
+    
+    #incorporate the industrial WWTPs in the max, manually set the min to show
+    #small septic emissions too.
+    WWTP_min <- -4
+    
+    #A is just to keep simple names and avoid overwriting
+    A=0
+    #just build all possible variations and calculate the max across all of them
+    if(Wastewater_use_CWNS){
+      A=1
+      if(Wastewater_Municipal_Method_Moore_linear){
+        WWTP <- WWTP_CWNS_Moore_Linear_municipal
+        text="EPA total distributed using CWNS"
+      }else if(Wastewater_Municipal_Method_GHGI){
+        WWTP <- WWTP_CWNS_GHGI_municipal
+        text="Moore log-linear relationship combined with CWNS"
+      }
+      #like before, slightly different main titles across each variation
+      Summed_wastewater_treatment_v1 = sum(WWTP,septic_flux,ghgrp_flux,na.rm=T)
+      Summed_wastewater_treatment_v2 = sum(WWTP,septic_flux2,ghgrp_flux,na.rm=T)
+      WWTP_max <- max(WWTP_max,as.numeric(log10(global(Summed_wastewater_treatment_v1,max))))
+      WWTP_max <- max(WWTP_max,as.numeric(log10(global(Summed_wastewater_treatment_v2,max))))
+    }
+    if(Wastewater_use_DMR){
+      if(Wastewater_Municipal_Method_Moore_linear){
+        WWTP <- WWTP_DMR_Moore_Linear_municipal
+        text="Moore log-linear relationship combined with DMR"
+      }else if(Wastewater_Municipal_Method_GHGI){
+        WWTP <- WWTP_DMR_GHGI_municipal
+        text="EPA total distributed using DMR"
+      }
+      if(A==0){
+        Summed_wastewater_treatment_v1 = sum(WWTP,septic_flux,ghgrp_flux,na.rm=T)
+        Summed_wastewater_treatment_v2 = sum(WWTP,septic_flux2,ghgrp_flux,na.rm=T)
+        WWTP_max <- max(WWTP_max,as.numeric(log10(global(Summed_wastewater_treatment_v1,max))))
+        WWTP_max <- max(WWTP_max,as.numeric(log10(global(Summed_wastewater_treatment_v2,max))))
+      }else{
+        Summed_wastewater_treatment_v3 = sum(WWTP,septic_flux,ghgrp_flux,na.rm=T)
+        Summed_wastewater_treatment_v4 = sum(WWTP,septic_flux2,ghgrp_flux,na.rm=T)
+        WWTP_max <- max(WWTP_max,as.numeric(log10(global(Summed_wastewater_treatment_v3,max))))
+        WWTP_max <- max(WWTP_max,as.numeric(log10(global(Summed_wastewater_treatment_v4,max))))
+      }
+    }
+    
+    
+    #now actually plot
+    if(Wastewater_use_CWNS){
+      #like before, slightly different main titles across each variation
+      log_plot(Summed_wastewater_treatment_v1,
+               paste0("Wastewater Treatment Sector\n",text," (Domestic facilities)\nand GHGRP (industrial) and developed open space/low intensity\nNLCD land cover * national septic data (Septic)"),
+               WWTP_min,WWTP_max)
+      log_plot(Summed_wastewater_treatment_v2,
+               paste0("Wastewater Treatment Sector\n",text," (Domestic facilities)\nand GHGRP (industrial) and developed open space/low intensity\nNLCD land cover * state septic data (Septic)"),
+               WWTP_min,WWTP_max)
+    }
+    if(Wastewater_use_DMR){
+      if(A==0){
+        log_plot(Summed_wastewater_treatment_v1,
+                 paste0("Wastewater Treatment Sector\n",text," (Domestic facilities)\nand GHGRP (industrial) and developed open space/low intensity\nNLCD land cover * national septic data (Septic)"),
+                 WWTP_min,WWTP_max)
+        log_plot(Summed_wastewater_treatment_v2,
+                 paste0("Wastewater Treatment Sector\n",text," (Domestic facilities)\nand GHGRP (industrial) and developed open space/low intensity\nNLCD land cover * state septic data (Septic)"),
+                 WWTP_min,WWTP_max)
+      }else{
+        log_plot(Summed_wastewater_treatment_v3,
+                 paste0("Wastewater Treatment Sector\n",text," (Domestic facilities)\nand GHGRP (industrial) and developed open space/low intensity\nNLCD land cover * national septic data (Septic)"),
+                 WWTP_min,WWTP_max)
+        log_plot(Summed_wastewater_treatment_v4,
+                 paste0("Wastewater Treatment Sector\n",text," (Domestic facilities)\nand GHGRP (industrial) and developed open space/low intensity\nNLCD land cover * state septic data (Septic)"),
+                 WWTP_min,WWTP_max)
+      }
+    }
   }
-  cat("Finished wastewater sector in",difftime(Sys.time(),starttime,units = "sec")," seconds")
+  cat("Finished wastewater sector: Wastewater in",difftime(Sys.time(),starttime,units = "min"),"minutes\n")
 }
