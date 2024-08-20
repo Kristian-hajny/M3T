@@ -412,7 +412,7 @@ NG_distribution <- function(domain,
   # rm(PHMSA_csv,EIA_file,HIFLD_check,HIFLD_check2,PHMSA_file,A)
   if(NG_distribution_by_LDC){
     GHGRP_csv <- read_xls(GHGRP_file,sheet=as.character(inventory_year),col_names = T,skip = 5)
-    GHGRP_edited <- GHGRP_edited[!is.na(GHGRP_edited$`Company ID`),]
+    GHGRP_csv <- GHGRP_csv[!is.na(GHGRP_csv$`Company ID`),]
   }else{
     ################################################################################
     #Download the relevant ghgrp emissions data using the API
@@ -686,16 +686,7 @@ NG_distribution <- function(domain,
                                  "EF"=as.numeric(unlist(sapply(Data_list,FUN=function(x){GHGI_p2[GHGI_p2[,1]==x,as.character(inventory_year)]})))*
                                    1000/(16.043*60*60*24*365),#convert from kg/yr to mol/s
                                  row.names = NULL)
-  
-  Data_list <- c("Pressure Relief Valve Releases",
-                 "Pipeline Blowdown",
-                 "Mishaps (Dig-ins)")
-  
-  GHGI_maintenance <- data.frame("Type"=Data_list,
-                                 "EF"=as.numeric(unlist(sapply(Data_list,FUN=function(x){GHGI_p2[GHGI_p2[,1]==x,as.character(inventory_year)]})))*
-                                   1000/(16.043*60*60*24*365),#convert from kg/yr to mol/s
-                                 row.names = NULL)
-  
+
   rm(GHGI_p1,GHGI_p2,Data_list,GHGI_file,first_col)
   ################################################################################
   ## Calculate emissions (all in mol/s):
