@@ -367,16 +367,6 @@ NG_distribution <- function(domain,
                             plot_directory,
                             County_Tigerlines,
                             focus_city_tigerlines){
-  XESMF=F
-  ################################################################################
-  #Quit ASAP if neither ACES or Vulcan are set to be used.  Need one of them
-  if(!(Use_Vulcan | Use_ACES)){
-    stop("We need ACES, Vulcan or both to disaggregate emissions.")
-  }
-  if(!(NG_distribution_by_domain | NG_distribution_by_LDC | NG_distribution_by_state)){
-    stop("We need to disaggregate natural gas distribution emissions by domain, state, or local distribution company or some combination thereof.")
-  }
-  
   ################################################################################
   #load in and filter the various files, excluding the GHGI one for now
   
@@ -386,8 +376,7 @@ NG_distribution <- function(domain,
   # HIFLD_shp_new <- vect("https://services1.arcgis.com/Hp6G80Pky0om7QvQ/arcgis/rest/services/Natural_Gas_Local_Distribution_Company_Service_Territories/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson")
   if(NG_distribution_by_LDC){
     # Load in the HIFLD csv file containing the clean company IDs that we'll use for cross-referencing
-    HIFLD_csv <- read.csv(HIFLD_file)
-    rm(HIFLD_file)
+    HIFLD_csv <- read_excel(HIFLD_file)
   }else{
     #note that dates are not translated well from this
     HIFLD_csv <- as.data.frame(HIFLD_shp)
@@ -420,10 +409,10 @@ NG_distribution <- function(domain,
     }
   }
   
-  rm(PHMSA_csv,EIA_file,HIFLD_check,HIFLD_check2,PHMSA_file,A)
-  
+  # rm(PHMSA_csv,EIA_file,HIFLD_check,HIFLD_check2,PHMSA_file,A)
   if(NG_distribution_by_LDC){
-    GHGRP_csv <- read_xls(GHGRP_file,sheet=inventory_year,col_names = T,skip = 5)
+    GHGRP_csv <- read_xls(GHGRP_file,sheet=as.character(inventory_year),col_names = T,skip = 5)
+    GHGRP_edited <- GHGRP_edited[!is.na(GHGRP_edited$`Company ID`),]
   }else{
     ################################################################################
     #Download the relevant ghgrp emissions data using the API
@@ -452,15 +441,11 @@ NG_distribution <- function(domain,
     #Download the relevant facility (e.g., location) data using the API and merge
     
     #see https://www.epa.gov/enviro/envirofacts-data-service-api
-    data_URLs <- paste0("https://data.epa.gov/efservice/PUB_DIM_FACILITY/STATE/=/",state_name_list,"/JSON")
+    data_URLs <- paste0("https://data.epa.gov/efservice/PUB_DIM_FACILITY/JSON")
     
-    #initialize output
-    ghgrp_facility_info <- data.frame()
-    for(A in 1:length(state_name_list)){
-      # download data and read/combine in an R dataframe
-      ghgrp_facility_info <- rbind(ghgrp_facility_info,fromJSON(data_URLs[A]))
-    }
-    
+    #download data
+    ghgrp_facility_info <- fromJSON(data_URLs)
+
     #subset to the desired year
     ghgrp_facility_info <- ghgrp_facility_info[ghgrp_facility_info$year==inventory_year,]
     
@@ -471,6 +456,34 @@ NG_distribution <- function(domain,
     #convert the relevant columns to numeric class
     GHGRP_csv[,c("latitude","longitude","Reported_CH4")] <- apply(GHGRP_csv[,c("latitude","longitude","Reported_CH4")],
                                                                   2,FUN=function(x){as.numeric(x)})
+    
+    
+    #now we need to adjust the GHGRP data as some LDC's provide their
+    #headquarters, not the location of operation.  Use facility names to correct
+    #(e.g., Atmos Energy Corporation - Kentucky has headquarters in TX, but
+    #operates in KY).
+    for(A in 1:50){
+      #CO and WA are a bit special.  CO often just means company, not
+      #Colorado.  Washington can refer to DC or the state.
+      if(A == 6){
+        #search for state name anywhere in the facility name (\\b = whole word)
+        match_indx <- grepl(pattern = paste0("\\b",state.name[A],"\\b"),x=GHGRP_csv$facility_name.y,ignore.case = T) & GHGRP_csv$state!=state.abb[A]
+      }else if(A==47){
+        #search for state name or abbreviation, but state name must be
+        #immediately after a dash (several in/near DC have Washington in them)
+        match_indx <- (grepl(pattern = paste0("- \\b",state.name[A],"\\b"),x=GHGRP_csv$facility_name.y,ignore.case = T) | 
+                         grepl(pattern = paste0(" ",state.abb[A]," "),x=GHGRP_csv$facility_name.y,ignore.case = T)) & GHGRP_csv$state!=state.abb[A]
+      }else{
+        #search state name or abbreviation
+        match_indx <- (grepl(pattern = paste0("\\b",state.name[A],"\\b"),x=GHGRP_csv$facility_name.y,ignore.case = T) | 
+                         grepl(pattern = paste0(" ",state.abb[A]," "),x=GHGRP_csv$facility_name.y,ignore.case = T)) & GHGRP_csv$state!=state.abb[A]
+      }
+      GHGRP_csv[match_indx,"state"]=state.abb[A]
+      GHGRP_csv[match_indx,"state_name"]=state.name[A]
+    }
+    
+    #filter to the states in the domain
+    GHGRP_csv <- GHGRP_csv[GHGRP_csv$state %in% state_name_list,]
     
     #delete all tempfiles and clean up working environment
     rm(A,ghgrp_facility_info,ghgrp_w_only_emissions)
