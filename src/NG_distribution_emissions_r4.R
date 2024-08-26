@@ -26,7 +26,7 @@
 #'  as separately for above grade and below grade stations.  If calculating by
 #'  LDC, the PHMSA miles of pipeline per LDC is used in the calculation of
 #'  stations per mile, rather than the GHGRP, though the miles of pipeline for
-#'  each LDC in GHGRP and PHMSA are compared and if any LDC differs by > 5 miles
+#'  each LDC in GHGRP and PHMSA are compared and if any LDC differs by > 5\%
 #'  an error will be flagged.
 #'
 #'  The GHGI Annex data is then pulled and includes emission factors and
@@ -462,6 +462,8 @@ NG_distribution <- function(domain,
     #headquarters, not the location of operation.  Use facility names to correct
     #(e.g., Atmos Energy Corporation - Kentucky has headquarters in TX, but
     #operates in KY).
+    GHGRP_csv[,"operating_state"]=GHGRP_csv$state
+    GHGRP_csv[,"operating_state_name"]=GHGRP_csv$state_name
     for(A in 1:50){
       #CO and WA are a bit special.  CO often just means company, not
       #Colorado.  Washington can refer to DC or the state.
@@ -472,21 +474,27 @@ NG_distribution <- function(domain,
         #search for state name or abbreviation, but state name must be
         #immediately after a dash (several in/near DC have Washington in them)
         match_indx <- (grepl(pattern = paste0("- \\b",state.name[A],"\\b"),x=GHGRP_csv$facility_name.y,ignore.case = T) | 
-                         grepl(pattern = paste0(" ",state.abb[A]," "),x=GHGRP_csv$facility_name.y,ignore.case = T)) & GHGRP_csv$state!=state.abb[A]
+                         grepl(pattern = paste0("\\b",state.abb[A],"\\b"),x=GHGRP_csv$facility_name.y,ignore.case = T)) & GHGRP_csv$state!=state.abb[A]
       }else{
         #search state name or abbreviation
         match_indx <- (grepl(pattern = paste0("\\b",state.name[A],"\\b"),x=GHGRP_csv$facility_name.y,ignore.case = T) | 
-                         grepl(pattern = paste0(" ",state.abb[A]," "),x=GHGRP_csv$facility_name.y,ignore.case = T)) & GHGRP_csv$state!=state.abb[A]
+                         grepl(pattern = paste0("\\b",state.abb[A],"\\b"),x=GHGRP_csv$facility_name.y,ignore.case = T)) & GHGRP_csv$state!=state.abb[A]
       }
-      GHGRP_csv[match_indx,"state"]=state.abb[A]
-      GHGRP_csv[match_indx,"state_name"]=state.name[A]
+      if(sum(match_indx)>0){
+        cat("\n",paste(GHGRP_csv$facility_name[match_indx],collapse="  &  "),"rewritten from",paste(GHGRP_csv$state_name[match_indx],collapse="  &  "),"to",state.name[A])
+      }
+      GHGRP_csv[match_indx,"operating_state"]=state.abb[A]
+      GHGRP_csv[match_indx,"operating_state_name"]=state.name[A]
     }
     
     #filter to the states in the domain
-    GHGRP_csv <- GHGRP_csv[GHGRP_csv$state %in% state_name_list,]
+    GHGRP_csv <- GHGRP_csv[GHGRP_csv$operating_state %in% state_name_list,]
     
+    #cleanup a column that is in all 3 GHRGP datasets and are identical (or ~so).
+    GHGRP_csv[,c("facility_name.x","facility_name.y")] <- NULL
+
     #delete all tempfiles and clean up working environment
-    rm(A,ghgrp_facility_info,ghgrp_w_only_emissions)
+    rm(A,data_URLs,ghgrp_facility_info,ghgrp_w_only_emissions,match_indx,ghgrp_NN_data)
   }
   
   ################################################################################
@@ -727,17 +735,17 @@ NG_distribution <- function(domain,
   # the GHGI national inventory report).
   
   main_miles_ghgrp <- aggregate(GHGRP_csv$Miles_of_Mains,
-                                list(State=GHGRP_csv$state),
+                                list(State=GHGRP_csv$operating_state),
                                 sum,
                                 na.rm=TRUE)
   above_grade_MnR <- aggregate((GHGRP_csv$`N_of_above_grade_T-D_transfer_stations` +
                                   GHGRP_csv$`N_of_above_grade_non_T-D_MR_stations`),
-                               list(State=GHGRP_csv$state),
+                               list(State=GHGRP_csv$operating_state),
                                sum,
                                na.rm=TRUE)
   below_grade_MnR <- aggregate((GHGRP_csv$`N_of_below_grade_non_T-D_MR_stations` +
                                   GHGRP_csv$`N_of_below_grade_T-D_transfer_stations`),
-                               list(State=GHGRP_csv$state),
+                               list(State=GHGRP_csv$operating_state),
                                sum,
                                na.rm=TRUE)
   above_grade_MnR$stations_per_mile <- above_grade_MnR$x/main_miles_ghgrp$x
@@ -876,17 +884,17 @@ NG_distribution <- function(domain,
     # Note that for PA this means the average stations_per_mile value for reporters included here does not equal the default
     # stations_per_mile value assigned to non-reporters below.
     main_miles_ghgrp <- aggregate(GHGRP_csv$`Miles_of_Mains(PHMSA)`,
-                                  list(State=GHGRP_csv$STATE),
+                                  list(State=GHGRP_csv$operating_state),
                                   sum,
                                   na.rm=TRUE)
     above_grade_MnR <- aggregate((GHGRP_csv$`N_of_above_grade_T-D_transfer_stations` +
                                     GHGRP_csv$`N_of_above_grade_non_T-D_MR_stations`),
-                                 list(State=GHGRP_csv$STATE),
+                                 list(State=GHGRP_csv$operating_state),
                                  sum,
                                  na.rm=TRUE)
     below_grade_MnR <- aggregate((GHGRP_csv$`N_of_below_grade_non_T-D_MR_stations` +
                                     GHGRP_csv$`N_of_below_grade_T-D_transfer_stations`),
-                                 list(State=GHGRP_csv$STATE),
+                                 list(State=GHGRP_csv$operating_state),
                                  sum,
                                  na.rm=TRUE)
     
@@ -908,11 +916,11 @@ NG_distribution <- function(domain,
                              list(State=EIA_csv$State),
                              sum,na.rm=T)
     GHGRP_csv_agg <- aggregate(GHGRP_csv[,"Miles_of_Mains"],
-                               list(STATE=GHGRP_csv$state),
+                               list(STATE=GHGRP_csv$operating_state),
                                sum,na.rm=T)
-    colnames(GHGRP_csv_agg) <- c("STATE","Miles_of_Mains")
+    colnames(GHGRP_csv_agg) <- c("operating_state","Miles_of_Mains")
     EIA_PHMSA_merge <- merge(EIA_csv_agg, PHMSA_csv_NG_agg, by.x='State', by.y='STOP')
-    all_merge <- merge(EIA_PHMSA_merge, GHGRP_csv_agg, by.x='State', by.y='STATE', all.x=TRUE)
+    all_merge <- merge(EIA_PHMSA_merge, GHGRP_csv_agg, by.x='State', by.y='operating_state', all.x=TRUE)
     # Now merge csv stuff together
     
     all_merge_clean <- all_merge[cols_to_keep]
