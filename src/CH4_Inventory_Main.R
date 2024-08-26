@@ -373,10 +373,12 @@ State_Tigerlines <- project(State_Tigerlines,domain)
 Urban_Tigerlines <- project(Urban_Tigerlines,domain)
 County_Tigerlines <- project(County_Tigerlines,domain)
 
-#subset to just those relevant for the domain (speedier)
+#subset to just those relevant for the domain (speedier).  For state it's any
+#state that touches the domain at all.  For county, it's only those within the
+#states (i.e., not just touching the states, crop vs mask for vectors).
 State_Tigerlines <- mask(State_Tigerlines,mask=as.polygons(domain))
 Urban_Tigerlines <- mask(Urban_Tigerlines,mask=State_Tigerlines)
-County_Tigerlines <- mask(County_Tigerlines,mask=State_Tigerlines)
+County_Tigerlines <- crop(County_Tigerlines,State_Tigerlines)
 
 #sort by state abbreviation
 State_Tigerlines <- State_Tigerlines[order(State_Tigerlines$STUSPS),]
