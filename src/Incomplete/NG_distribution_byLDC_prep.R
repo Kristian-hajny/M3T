@@ -954,7 +954,7 @@
       #subset to just 1 state, get the water data for just that state, then take
       #the difference (i.e., only land within state bounds).
       state_poly <- sf_state_tigerlines[which(sf_state_tigerlines$STUSPS == a_state),]
-      state_water_poly <- st_union(st_intersection(sf_Water_Tigerlines,state_poly))
+      state_water_poly <- st_simplify(st_union(st_intersection(sf_Water_Tigerlines,state_poly)),dTolerance=500)
       state_land <- st_make_valid(st_collection_extract(st_difference(st_geometry(state_poly),
                                                                       state_water_poly),"POLYGON"))
       
@@ -962,6 +962,9 @@
       #the SVCTERID for clarity
       st_geometry(all_merge_sf[other_indx,]) <- st_collection_extract(st_geometry(st_make_valid(st_difference(state_land,
                                                                                                               st_make_valid(st_union(all_merge_sf))))),"POLYGON")
+      # st_geometry(all_merge_sf[other_indx,]) <- st_geometry(st_make_valid(st_difference(state_land,
+      #                                                                                   st_make_valid(st_collection_extract(st_union(all_merge_sf),"POLYGON")))))
+      # st_geometry(all_merge_sf[other_indx,]) <- st_geometry(st_simplify(all_merge_sf[other_indx,],dTolerance=500))
       all_merge_sf[other_indx,'HIFLD_SVCTERID'] <- paste0('DUMMY_', a_state)
     }
     cat("\nFinished distributing OTHER for",a_state)
