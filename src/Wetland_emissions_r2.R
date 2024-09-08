@@ -128,7 +128,8 @@ SOCCR_Wetlands <- function(output_directory,
   # These overlap somewhat, so crop each to the squares within each state
   # Then add together and assign fluxes to each class
   
-  
+  starttime <- Sys.time()
+  cat("Starting wetland sector: SOCCR_Wetlands\n")
   ################################################################################
   #load in and process the Wetland_fraction_r1 output to convert from wetland
   #coverage to wetland emissions
@@ -177,17 +178,27 @@ SOCCR_Wetlands <- function(output_directory,
   # Check that the fractions are always between 0 and 1
   max_frac <- unlist(global(all_frac,max))*100
   min_frac <- unlist(global(all_frac,min))*100
-  if((Use_SOCCR1 | Use_SOCCR2) & Include_freshwater){
-    cat("total SOCCR-relevant + freshwater wetland area per pixel ranges from",min_frac,"to",max_frac,"%\n")
-  }else if(Use_SOCCR1 | Use_SOCCR2){
-    cat("total SOCCR-relevant wetland area per pixel ranges from",min_frac,"to",max_frac,"%\n")
-  }else if(Include_freshwater){
-    cat("total freshwater wetland area per pixel ranges from",min_frac,"to",max_frac,"%\n")
+  if(max_frac>100){
+    stop(paste0("some pixels have over 100% wetland coverage.  Range is ",min_frac,"% to ",max_frac,"%"))
   }
-  
+  # if((Use_SOCCR1 | Use_SOCCR2) & Include_freshwater){
+  #   cat("total SOCCR-relevant + freshwater wetland area per pixel ranges from",min_frac,"to",max_frac,"%\n")
+  # }else if(Use_SOCCR1 | Use_SOCCR2){
+  #   cat("total SOCCR-relevant wetland area per pixel ranges from",min_frac,"to",max_frac,"%\n")
+  # }else if(Include_freshwater){
+  #   cat("total freshwater wetland area per pixel ranges from",min_frac,"to",max_frac,"%\n")
+  # }
   ################################################################################
   #save the output
   
+  if(Use_SOCCR1 & Include_freshwater){
+    longname_text <- 'Methane emissions from National Wetland Inventory separated by classes, using fluxes from the SOCCR1 report and the median flux from Rosentreter et al. (2021) for lakes and rivers'
+  }else if(Use_SOCCR1 & !Include_freshwater){
+    longname_text <- 'Methane emissions from National Wetland Inventory separated by classes, using fluxes from the SOCCR1 report'
+  }else if(!Use_SOCCR1 & Include_freshwater){
+    longname_text <- 'Methane emissions from National Wetland Inventory separated by classes, using the median flux from Rosentreter et al. (2021) for lakes and rivers'
+  }
+    
   if(Use_SOCCR1 | Include_freshwater){
     SOCCR1_flux <- crop(SOCCR1_flux,ext(domain))
     writeCDF(SOCCR1_flux,
@@ -195,10 +206,18 @@ SOCCR_Wetlands <- function(output_directory,
              force_v4=TRUE,
              varname='methane_emissions',
              unit='nmol/m2/s',
-             longname='Methane emissions from National Wetland Inventory separated by classes, using fluxes from the SOCCR1 report and the median flux from Rosentreter et al. (2021) for lakes and rivers',
+             longname=longname_text,
              missval=-9999,
              overwrite=TRUE)
   }
+  
+  
+  if(Use_SOCCR2 & Include_freshwater){
+    longname_text <- 'Methane emissions from National Wetland Inventory separated by classes, using fluxes from the SOCCR2 report and the median flux from Rosentreter et al. (2021) for lakes and rivers'
+  }else if(Use_SOCCR2 & !Include_freshwater){
+    longname_text <- 'Methane emissions from National Wetland Inventory separated by classes, using fluxes from the SOCCR2 report'
+  }
+  
   if(Use_SOCCR2){
     SOCCR2_flux <- crop(SOCCR2_flux,ext(domain))
     writeCDF(SOCCR2_flux,
@@ -206,7 +225,7 @@ SOCCR_Wetlands <- function(output_directory,
              force_v4=TRUE,
              varname='methane_emissions',
              unit='nmol/m2/s',
-             longname='Methane emissions from National Wetland Inventory separated by classes, using fluxes from the SOCCR2 report and the median flux from Rosentreter et al. (2021) for lakes and rivers',
+             longname=longname_text,
              missval=-9999,
              overwrite=TRUE)
   }
@@ -216,7 +235,24 @@ SOCCR_Wetlands <- function(output_directory,
   if(verbose){
     #the minimum is a ~arbitrary value given the log scale can go quite negative.
     zlim_min <- -3
-    if(Use_SOCCR1 & Use_SOCCR2){
+    if(Use_SOCCR1 & Use_SOCCR2 & Include_freshwater){
+      Freshwater_flux <- sum(subset(SOCCR1_flux,c("R1","R2","R3","R4","L1","L2")))
+      SOCCR1_flux <- sum(subset(SOCCR1_flux,c("M2","E2","PFO","PNF")))
+      SOCCR2_flux <- sum(subset(SOCCR2_flux,c("M2","E2","PFO","PNF")))
+      zlim_max <- log10(max(global(SOCCR1_flux,max),global(SOCCR2_flux,max),global(Freshwater_flux,max)))
+      log_plot(input = Freshwater_flux,
+               zlim_min = zlim_min, zlim_max = zlim_max,
+               filename = 'Freshwater',
+               title = paste0("Freshwater CH4\nSaturated colorscale low end"))
+      log_plot(input = SOCCR1_flux,
+               zlim_min = zlim_min, zlim_max = zlim_max,
+               filename = 'SOCCR1',
+               title = paste0("SOCCR1 CH4\nSaturated colorscale low end"))
+      log_plot(input = SOCCR2_flux,
+               zlim_min = zlim_min, zlim_max = zlim_max,
+               filename = 'SOCCR2',
+               title = paste0("SOCCR2 CH4\nSaturated colorscale low end"))
+    }else if(Use_SOCCR1 & Use_SOCCR2){
       SOCCR1_flux <- sum(subset(SOCCR1_flux,c("M2","E2","PFO","PNF")))
       SOCCR2_flux <- sum(subset(SOCCR2_flux,c("M2","E2","PFO","PNF")))
       zlim_max <- log10(max(global(SOCCR1_flux,max),global(SOCCR2_flux,max)))
@@ -244,4 +280,5 @@ SOCCR_Wetlands <- function(output_directory,
                title = paste0("SOCCR2 CH4\nlog10(nmol/m2s), Saturated colorscale low end"))
     }
   }
+  cat("Finished wastewater sector: SOCCR_Wetlands in",difftime(Sys.time(),starttime,units = "min"),"minutes\n")
 }
