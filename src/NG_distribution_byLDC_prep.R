@@ -131,6 +131,9 @@
   Water_Tigerlines <- lapply(Census_filenames,vect)
   Water_Tigerlines <- vect(Water_Tigerlines)
   
+  #project to match the domain (crs)
+  Water_Tigerlines <- project(Water_Tigerlines,domain)
+
   rm(Census_filenames,state_county_list)
 }
 
@@ -635,18 +638,18 @@
     subset_HIFLD <- HIFLD_shp[HIFLD_shp$OBJECTID==LDC_OBJECT_ID,]
     subset_HIFLD_state <- HIFLD_shp[HIFLD_shp$LDC_STATE %in% subset_HIFLD$LDC_STATE,]
     plot(subset_HIFLD_state[order(subset_HIFLD_state$Shape__Area,decreasing = T),],"NAME",
-         ext=ext(State_Tigerlines[State_Tigerlines$STUSPS==subset_HIFLD$LDC_STATE[1]]),
-         mar=c(3.1, 3.1, 2.1, 7.1) + c(0,0,0,8))
+         ext=ext(project(State_Tigerlines[State_Tigerlines$STUSPS==subset_HIFLD$LDC_STATE[1]],HIFLD_shp)),
+         mar=c(3.1, 3.1, 2.1, 7.1) + c(0,0,0,8),main=subset_HIFLD$NAME)
     lines(subset_HIFLD,lwd=5)
-    lines(State_Tigerlines[State_Tigerlines$STUSPS==subset_HIFLD$LDC_STATE[1]],lwd=3,col="red")
+    lines(project(State_Tigerlines[State_Tigerlines$STUSPS==subset_HIFLD$LDC_STATE[1]],HIFLD_shp),lwd=3,col="red")
   }
   plot_state <- function(input,statename){
     statename <- as.character(statename)
     subset_input <- input[input$LDC_STATE %in% statename,]
     plot(subset_input[order(expanse(subset_input),decreasing = T),],"NAME",
-         ext=ext(State_Tigerlines[State_Tigerlines$STUSPS==statename]),
+         ext=ext(project(State_Tigerlines[State_Tigerlines$STUSPS==statename],HIFLD_shp)),
          mar=c(3.1, 3.1, 2.1, 7.1) + c(0,0,0,4),main=statename)
-    lines(State_Tigerlines[State_Tigerlines$STUSPS==statename],lwd=3,col="red")
+    lines(project(State_Tigerlines[State_Tigerlines$STUSPS==statename],HIFLD_shp),lwd=3,col="red")
   }
   # plot_state(HIFLD_shp,"DE")
   # plot_state(HIFLD_shp,"MD")
@@ -657,6 +660,7 @@
   # #plot LDC can't use the name as LDC's often cover various states and use
   # #the same name for these different operations, but different OBJECTID's.  
   # 
+  # View(as.data.frame(HIFLD_shp))
   # #PA
   # plot_LDC(1253)#columbia gas of PA
   # plot_LDC(1114)#KNOX energy
@@ -691,7 +695,7 @@
     png(file.path(input_directory,paste0(state_name_list[A],'_LDC_shapefile_original.png')),
         width = 480*2,height = 480*2)
     plot_state(HIFLD_shp,state_name_list[A])
-    plot(crop(Water_Tigerlines,State_Tigerlines[State_Tigerlines$STUSPS==state_name_list[A]]),
+    plot(project(crop(Water_Tigerlines,State_Tigerlines[State_Tigerlines$STUSPS==state_name_list[A]]),HIFLD_shp),
          add=T,col="black")
     graphics.off()
   }
@@ -700,8 +704,8 @@
   #do the modification work
   
   #work entirely in sf here, as terra had issues crashing
-  sf_state_tigerlines <- st_as_sf(State_Tigerlines)
-  sf_county_tigerlines <- st_as_sf(County_Tigerlines)
+  sf_state_tigerlines <- st_as_sf(project(State_Tigerlines,HIFLD_shp))
+  sf_county_tigerlines <- st_as_sf(project(County_Tigerlines,HIFLD_shp))
   sf_HIFLD_shp <- st_as_sf(HIFLD_shp)
   
   #combine a few counties
@@ -749,7 +753,7 @@
     png(file.path(input_directory,paste0(state_name_list[A],'_LDC_shapefile_update.png')),
         width = 480*2,height = 480*2)
     plot_state(vect(sf_HIFLD_shp),state_name_list[A])
-    plot(crop(Water_Tigerlines,State_Tigerlines[State_Tigerlines$STUSPS==state_name_list[A]]),
+    plot(project(crop(Water_Tigerlines,State_Tigerlines[State_Tigerlines$STUSPS==state_name_list[A]]),HIFLD_shp),
          add=T,col="black")
     graphics.off()
   }
@@ -999,9 +1003,9 @@
         width = 480*2,height = 480*2)
     subset_merge_state <- all_merge[all_merge$PHMSA_State %in% state_name_list[A],]
     plot(subset_merge_state[order(expanse(subset_merge_state),decreasing = T),],"EIA_Company_Name",
-         ext=ext(State_Tigerlines[State_Tigerlines$STUSPS==state_name_list[A]]),
+         ext=ext(project(State_Tigerlines[State_Tigerlines$STUSPS==state_name_list[A]],all_merge)),
          mar=c(3.1, 3.1, 2.1, 7.1) + c(0,0,0,4),main=state_name_list[A])
-    lines(State_Tigerlines[State_Tigerlines$STUSPS==state_name_list[A]],lwd=3,col="red")
+    lines(project(State_Tigerlines[State_Tigerlines$STUSPS==state_name_list[A]],all_merge),lwd=3,col="red")
     graphics.off()
   }
   rm(all_merge_with_poly,all_merge_sf,sf_Water_Tigerlines,other_indx,
