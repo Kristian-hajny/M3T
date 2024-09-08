@@ -615,7 +615,7 @@ Wastewater <- function(DMR_file,
     names(ghgrp_crop_output) <- c('Site_Name','Longitude','Latitude','Emission_mol_per_s')
     write.csv(ghgrp_crop_output, file.path(output_directory,"WWTP_industrial.csv"),row.names = F)
   }
-  cat("Finished calculating industrial treamtent plant emissions at",difftime(Sys.time(),starttime,units = "min"),"minutes since start\n")
+  cat("Finished calculating industrial treasment plant emissions at",difftime(Sys.time(),starttime,units = "min"),"minutes since start\n")
   ################################################################################
   # Write the rasters
   
