@@ -100,10 +100,10 @@ log_plot <- function(input,title,zlim_min=NULL,zlim_max=NULL,
        xlab="Longitude",ylab="Latitude",
        cex.main=2,cex.axis=2,cex.lab=2,
        range=c(zlim_min,zlim_max))
-  plot(County_Tigerlines,add=T,border="dimgrey",col=NA)
-  plot(State_Tigerlines,add=T,border="white",lwd=2,col=NA)
+  plot(project(County_Tigerlines,input),add=T,border="dimgrey",col=NA)
+  plot(project(State_Tigerlines,input),add=T,border="white",lwd=2,col=NA)
   if(class(focus_city_tigerlines)=="SpatVector"){
-    plot(focus_city_tigerlines,add=T,border="darkgrey",col=NA)
+    plot(project(focus_city_tigerlines,input),add=T,border="darkgrey",col=NA)
   }
   dev.off()
   
@@ -172,10 +172,10 @@ not_log_plot <- function(input,title,zlim_min=NULL,zlim_max=NULL,
        xlab="Longitude",ylab="Latitude",
        cex.main=2,cex.axis=2,cex.lab=2,
        range=c(zlim_min,zlim_max))
-  plot(County_Tigerlines,add=T,border="dimgrey",col=NA)
-  plot(State_Tigerlines,add=T,border="white",lwd=2,col=NA)
+  plot(project(County_Tigerlines,input),add=T,border="dimgrey",col=NA)
+  plot(project(State_Tigerlines,input),add=T,border="white",lwd=2,col=NA)
   if(class(focus_city_tigerlines)=="SpatVector"){
-    plot(focus_city_tigerlines,add=T,border="darkgrey",col=NA)
+    plot(project(focus_city_tigerlines,input),add=T,border="darkgrey",col=NA)
   }
   dev.off()
 }
