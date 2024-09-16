@@ -386,13 +386,13 @@ Disaggregate_Wetcharts <- function(
         if(Use_NLCD){
           log_plot(input = NLCD_Downscaled_Averaged_wetcharts[[B]][[A]],zlim_min = zlim_min,
                    zlim_max = zlim_max,filename = paste0('Wetcharts_NLCD_Downscaled_subset_',B,"_month_",A),
-                   title = paste0(month.abb[A]," NLCD downscaled Wetcharts CH4\nlog10(nmol/m2s), Saturated colorscale low end\nmodels ",
+                   title = paste0(month.abb[A]," NLCD downscaled Wetcharts CH4\nSaturated colorscale low end\nmodels ",
                                   model_list_string))
         }
         if(Use_NALCMS){
           log_plot(input = NALCMS_Downscaled_Averaged_wetcharts[[B]][[A]],zlim_min = zlim_min,
                    zlim_max = zlim_max,filename = paste0('Wetcharts_NALCMS_Downscaled_subset_',B,"_month_",A),
-                   title = paste0(month.abb[A]," NALCMS downscaled Wetcharts CH4\nlog10(nmol/m2s), Saturated colorscale low end\nmodels ",
+                   title = paste0(month.abb[A]," NALCMS downscaled Wetcharts CH4\nSaturated colorscale low end\nmodels ",
                                   model_list_string))
         }
       }
