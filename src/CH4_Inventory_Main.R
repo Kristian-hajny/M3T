@@ -196,12 +196,12 @@ if(verbose){
 ################################################################################
 #Get the years for ACES and Vulcan based on the input year.
 
-ACES_year <- (2012:2017)[which.min(abs(2012:2017 - inventory_year))]
 #year of ACES data, will be part of the filename
+ACES_year <- (2012:2017)[which.min(abs(2012:2017 - inventory_year))]
 
-vulcan_band <- which.min(abs(2010:2015 - inventory_year))
 #year of Vulcan data.  Assuming Vulcan v3.0, 1 - 6 corresponding to years 2010 -
 #2015
+vulcan_band <- which.min(abs(2010:2015 - inventory_year))
 
 ################################################################################
 #load in the many relevant functions and the config file
@@ -225,6 +225,7 @@ source(paste0(code_directory,"NLCD_fractions_by_state.R"))
 source(paste0(code_directory,"WWTP_emissions_r3.R"))
 source(paste0(code_directory,"NG_transmission_emissions_r1.R"))
 source(paste0(code_directory,"NG_distribution_emissions_r4.R"))
+source(paste0(code_directory,"Prepare_ACES_Vulcan.R"))
 source(paste0(code_directory,"Prepare_GEPA.R"))
 source(paste0(code_directory,"WETCHARTS_downscaling.R"))
 source(paste0(code_directory,"Wetland_fraction_r2_WIP.R"))
@@ -401,6 +402,22 @@ rm(UAC_year,Census_filenames,focus_city)
 ################################################################################
 #Actually run the functions now, based on the config file
 
+#we need ACES and/or Vulcan for both of these sectors
+if(Process_natural_gas_distribution | Process_stationary_combustion){
+  # rm(list=setdiff(ls(),c("input_directory","Use_ACES","Use_Vulcan",
+  #                        "ACES_year","vulcan_band","State_Tigerlines",
+  #                        "code_directory")))
+  # # source(paste0(code_directory,"CH4_inventory_config.R"))
+  # source(paste0(code_directory,"Prepare_ACES_Vulcan.R"))
+  # # main_config()
+  # rm(code_directory)
+  Prepare_ACES_Vulcan(input_directory,
+                      Use_ACES,
+                      Use_Vulcan,
+                      ACES_year,
+                      vulcan_band,
+                      State_Tigerlines)
+}
 if(Process_landfills){
   # rm(list=setdiff(ls(),c("input_directory","domain","output_directory",
   #                        "inventory_year","verbose","clear","state_name_list",
