@@ -228,6 +228,7 @@ Prepare_ACES_Vulcan <- function(input_directory,
     
     #output directory and names
     destination_folder <- file.path(input_directory,"Vulcan")
+    # monthly_output_list <- paste0("Vulcan_monthly_",rep(sectors,each=12),"_",vulcan_year,"_",sprintf("%02d",1:12),".nc")
     monthly_output_list <- paste0("Vulcan_monthly_",rep(sectors,each=12),"_",vulcan_year,"_",1:12,".nc")
     annual_output_list <- paste0("Vulcan_annual_",sectors,"_",vulcan_year,".nc")
     
