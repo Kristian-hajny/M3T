@@ -422,7 +422,7 @@ Transmission <- function(GHGI_file,
   
   if(verbose){
     log_plot(compressor_flux,filename="NG_trans_compressors",
-             "NG transmission - compressors\n GHGRP reporters + (average GHGI emissions distributed using\n Homeland Infrastructure Foundation-Level Database)")
+             "NG transmission - compressors\n GHGRP reporters + average GHGI emissions distributed using\n Homeland Infrastructure Foundation-Level Database")
     
     not_log_plot(pipes_flux,filename="NG_trans_pipes",
                  "NG transmission - pipelines\n EIA pipeline data * GHGI EF")
