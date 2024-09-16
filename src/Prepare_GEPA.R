@@ -101,9 +101,36 @@ Prepare_GEPA <- function(inventory_year,
   rm(GEPA_URL)
   ################################################################################
   #load in the file and split into the fossil fuel and non-fossil components we need
+  
   GEPA <- rast(file.path(input_directory,GEPA_filename))
   
-  GEPA <- project(GEPA,domain)
+  #convert units
+  #molec/cm2/s to nmol/m2/s
+  GEPA <- GEPA*(1e9*100^2)/(6.022141e+23)
+  
+  #aggregate/disaggregate to a similar resolution
+  domain_trans <- project(domain,crs(GEPA))
+  domain_res <- res(domain_trans)
+  if(any(domain_res<res(GEPA))){
+    # domain_GEPA <- aggregate(domain,round(res(GEPA)/domain_res,3))
+    # GEPA <- project(GEPA,domain_GEPA)
+    # GEPA <- disagg(GEPA,round(res(GEPA)/domain_res,3),"nearest")
+    
+    #crop to the domain + buffer first to speed up process
+    GEPA <- crop(GEPA,ext(domain_trans)*1.1)
+    GEPA <- disagg(GEPA,round(res(GEPA)/domain_res,3),"near")
+    #reproject to exact domain now.  Here using nearest neighbor to prevent only
+    #1 row/column of higher res pixels on the border of each GEPA pixel from
+    #being interpolated.
+    GEPA <- project(GEPA,domain,method="near")
+  }else if(any(domain_res>res(GEPA))){
+    GEPA <- crop(GEPA,domain_trans,snap="out")
+
+    #reproject to exact domain now using an average to effectively aggregate
+    #while reprojecting.
+    GEPA <- project(GEPA,domain,method="average")
+  }
+  
   
   GEPA_non_thermo_sectors <- c("emi_ch4_5B1_Composting",
                                "emi_ch4_3A_Enteric_Fermentation",
@@ -125,9 +152,6 @@ Prepare_GEPA <- function(inventory_year,
                            "emi_ch4_2B8_Industry_Petrochemical",
                            "emi_ch4_2C2_Industry_Ferroalloy")
   
-  #convert units
-  #molec/cm2/s to nmol/m2/s
-  GEPA <- GEPA*(1e9*100^2)/(6.022141e+23)
   
   #subset to the 3 types of GEPA data we need
   GEPA_landfill <- GEPA$emi_ch4_5A1_Landfills_Industrial
@@ -170,8 +194,8 @@ Prepare_GEPA <- function(inventory_year,
   #Plots
   
   if(verbose){
-    zlim_min=-2
-    zlim_max <- log10(max(global(GEPA_landfill,max),global(GEPA_non_thermo,max),global(GEPA_thermo,max)))
+    zlim_min <- min(global(GEPA_landfill,min),global(GEPA_non_thermo,min),global(GEPA_thermo,min))
+    zlim_max <- max(global(GEPA_landfill,max),global(GEPA_non_thermo,max),global(GEPA_thermo,max))
     not_log_plot(GEPA_landfill,filename="GEPA_industrial_landfills",
                  "Gridded EPA Inventory -\nIndustrial landfills",
                  zlim_min=zlim_min,zlim_max=zlim_max)
