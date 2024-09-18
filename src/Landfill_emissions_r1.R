@@ -237,17 +237,21 @@ Municipal_solid_waste <- function(LMOP_file,
   #keep only data for the year of interest
   ghgrp <- ghgrp_all_data[ghgrp_all_data$year==inventory_year,]
   
-  #identify facilities that stopped reporting without a valid reason, then subset
-  #to only landfill facilities
+  #identify facilities that stopped reporting without a valid reason, then
+  #subset to only landfill facilities and only those that we don't have data for
+  #(e.g., it stopped reporting back in 2015, but reported again post 2018)
   nonreporting_facilities <- unique(ghgrp_facility_info$facility_id[ghgrp_facility_info$reporting_status=="STOPPED_REPORTING_UNKNOWN_REASON" & ghgrp_facility_info$year<=inventory_year])
   nonreporting_landfills <- nonreporting_facilities[which(nonreporting_facilities %in% unique(ghgrp_landfill_emissions$facility_id))]
+  nonreporting_landfills <- nonreporting_landfills[!(nonreporting_landfills %in% unique(ghgrp$facility_id))]
   
-  # find the latest data available for those that stopped reporting
-  nonreporting_landfill_data <- ghgrp_all_data[ghgrp_all_data$facility_id %in% nonreporting_landfills,] %>%
-    group_by(facility_id) %>%
-    slice_max(order_by = year) %>%
-    as.data.frame()
-  
+  # find the closest data available for those that stopped reporting (this can
+  # be after the inventory year in some cases)
+  nonreporting_landfill_data <- ghgrp_all_data[ghgrp_all_data$facility_id %in% nonreporting_landfills,]
+  nonreporting_landfill_data=tapply(nonreporting_landfill_data,
+                                    INDEX=nonreporting_landfill_data$facility_id,
+                                    FUN=function(x){x[which.min(abs(x$year-inventory_year)),]})
+  nonreporting_landfill_data=do.call(rbind, nonreporting_landfill_data)
+
   #add this most recent data to the GHGRP dataset
   ghgrp <- rbind(nonreporting_landfill_data,ghgrp)
   
@@ -274,17 +278,21 @@ Municipal_solid_waste <- function(LMOP_file,
   non_ghgrp_total <- EPA_total - ghgrp_national
   
   # Read in LMOP and remove those in GHGRP.  Note facilities that used to report
-  # to GHGRP and stopped with a valid reason are being considered LMOP facilities
-  # in this approach.
+  # to GHGRP and stopped with a valid reason are being considered LMOP
+  # facilities in this approach.  
   LMOP <- read_xlsx(LMOP_file,sheet="LMOP Database",col_names = T)
   LMOP_non_ghgrp <- LMOP[!(LMOP$`GHGRP ID` %in% ghgrp_landfill_emissions$facility_id[ghgrp_landfill_emissions$year==inventory_year]),]
-  
+
   #This has some nans in, remove those
   LMOP_filt <- subset(LMOP_non_ghgrp,!is.na(Latitude))
   LMOP_filt <- vect(LMOP_filt,geom=c("Longitude","Latitude"))
   crs(LMOP_filt) <- "epsg:4326"
   LMOP_filt <- project(LMOP_filt,crs(domain))
   LMOP_crop <- crop(LMOP_filt, domain)
+  
+  #Exclude those we already handled as they stopped reporting without a valid
+  #reason.
+  LMOP_crop <- LMOP_crop[!(LMOP_crop$`GHGRP ID` %in% ghgrp$facility_id),]
   
   # Find avg emission per non-GHGRP LMOP landfill (including the ones with no coordinates)
   avg_non_ghgrp <- non_ghgrp_total/nrow(LMOP_non_ghgrp)
