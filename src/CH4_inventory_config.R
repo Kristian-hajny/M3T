@@ -155,6 +155,49 @@ main_config <- function(){
     #/ yr.  This is used as a conversion factor from cubic feet to grams here.  Then
     #convert from g/yr to mol/s.
     
+    #emission factors for local distribution company pipeline components in
+    #kg/activity.  Either provided directly or set to GHGI to indicate that
+    #these emission factors and activity data should be pulled from the
+    #appropriate GHGI annex file instead (for the 2022 GHGI -
+    #https://www.epa.gov/ghgemissions/natural-gas-and-petroleum-systems-ghg-inventory-additional-information-1990-2022-ghg).
+    #Values currently listed below are from the 2022 GHGI Annex file for the
+    #year 2019.
+    
+    # GHGI_MnR <- data.frame("Type"          =c("M&R >300"        ,"M&R 100-300"     ,"M&R <100"        ,"Reg >300"        ,"R-Vault >300"    ,"Reg 100-300"     ,"R-Vault 100-300" ,"Reg 40-100"      ,"R-Vault 40-100"  ,"Reg <40"),
+    #                        "EF"            =c(4.235180452534E-03,1.967524777161E-03,1.437293523655E-03,1.717415695319E-03,1.000436327370E-04,2.834569594216E-04,1.000436327370E-04,3.234744125164E-04,1.000436327370E-04,4.435267718008E-05),
+    #                        "Total_stations"=c(4134.563          ,15088.505         ,8064.842          ,4520.347          ,4077.839          ,13674.863         ,12825.308         ,41036.497         ,9219.463          ,17400.594))
+    # GHGI_maintenance <- data.frame("Type"=c("Pressure Relief Valve Releases","Pipeline Blowdown","Mishaps (Dig-ins)"),
+    #                                "EF"  =c(1.83231029619102E-06            ,1.7916071884252E-06,5.93205444189599E-05))
+    # GHGI_meters <- data.frame("Type"=c("Residential"       ,"Commercial"        ,"Industrial"),
+    #                           "EF"  =c(2.94314949875421E-06,4.62512704868224E-05,2.07537752184459E-4))
+    # GHGI_services <- data.frame("Type"=c("Services - Unprotected steel","Services Protected steel","Services - Plastic","Services - Copper"),
+    #                             "EF"  =c(2.86336031045332E-05          ,2.56013867312366E-06      ,5.19820797350566E-07,9.68176516012578E-06))
+    GHGI_MnR <- "GHGI"
+    GHGI_maintenance <- "GHGI"
+    GHGI_meters <- "GHGI"
+    GHGI_services <- "GHGI"
+    
+    
+    #natural gas transmission
+    
+    #national emissions and activity data to calculate emission factors per
+    #component in kt/yr and counts/miles.   Either provided directly or set to
+    #GHGI to indicate that these data should be pulled from the appropriate GHGI
+    #annex file instead (for the 2022 GHGI -
+    #https://www.epa.gov/ghgemissions/natural-gas-and-petroleum-systems-ghg-inventory-additional-information-1990-2022-ghg).
+    #Values currently listed below are from the 2022 GHGI Annex file for the
+    #year 2019.
+    
+    # GHGI_Pipeline <- data.frame("Type"          =c("Pipeline Leaks","M&R (Trans. Co. Interconnect)", "M&R (Farm Taps + Direct Sales)", "Pipeline venting"),
+    #                             "Emissions"     =c(6.52811286997864,148.988084201472               ,34.5960442337367                 ,370.144374243981),
+    #                             "Total_stations"=c(486570674.304   ,4331358.53227287               ,128429200.235495                 ,486570674.304))
+    # GHGI_transmission_compressors <- data.frame("Type"          =c("Station Total Emissions", "Dehydrator vents (Transmission)", "Flaring (Transmission)", "Engines (Transmission)", "Turbines (Transmission)", "Generators (Engines)", "Generators (Turbines)", "Pneumatic Devices Transmission", "Station Venting Transmission"),
+    #                                             "Emissions"     =c(1357.80542776983         ,5.03531064009076                  ,1.00340431488143         ,306.078942722016         ,3.21765775547095          ,24.0107575793924       ,0.00691810990744483     ,73.1035216017783                 ,325.070554268957),
+    #                                             "Total_stations"=c(NA                       ,1411334.29888                     ,2214.08,62146.3313543826 ,14828.6256215819         ,3041.14137496572          ,35.8595720791757       ,73384.96,2214.08))
+    GHGI_Pipeline <- "GHGI"
+    GHGI_transmission_compressors <- "GHGI"
+
+    
     #Stationary Combustion
     EIA_API_key <- "1kLep4UApTZKwdOrDkW6J8qlO0niiw8ej0JPliyc"
     stationary_combustion_GHGI_data <- data.frame("State"="US_EPA",

@@ -727,9 +727,9 @@
   sf_HIFLD_shp$SVCTERID[nrow(sf_HIFLD_shp)-2] <- 'LDC360007a'
   sf_HIFLD_shp$SVCTERID[nrow(sf_HIFLD_shp)-1] <- 'LDC360007b'
   sf_HIFLD_shp$SVCTERID[nrow(sf_HIFLD_shp)] <- 'LDC360007c'
-  sf_HIFLD_shp$NAME[nrow(sf_HIFLD_shp)-2] <- 'KEYSPAN - NYC'
-  sf_HIFLD_shp$NAME[nrow(sf_HIFLD_shp)-1] <- 'NIAGARA MOHAWK'
-  sf_HIFLD_shp$NAME[nrow(sf_HIFLD_shp)] <- 'KEYSPAN - LONG ISLAND'
+  sf_HIFLD_shp$NAME[nrow(sf_HIFLD_shp)-2] <- 'KEYSPAN - LONG ISLAND'
+  sf_HIFLD_shp$NAME[nrow(sf_HIFLD_shp)-1] <- 'KEYSPAN - NYC'
+  sf_HIFLD_shp$NAME[nrow(sf_HIFLD_shp)] <- 'NIAGARA MOHAWK'
   sf_HIFLD_shp <- sf_HIFLD_shp[sf_HIFLD_shp$SVCTERID != 'LDC360007',]
   
   #associate the polygons with the sf
@@ -861,6 +861,15 @@
   HIFLD_csv <- read_excel(file.path(input_directory,"ByLDC_HIFLD_natural_gas_service_territories.xlsx"))
   
   ##############################################################################
+  #have to calculate before aggregating/merging via sum since it applies an
+  #average term
+  
+  # We're going to need the total miles of pipeline (inc. services) -
+  # calculate that here from AVERAGE_LENGTH (converting ft to miles)
+  PHMSA_csv_NG$Miles_main_and_serv <- PHMSA_csv_NG$MMILES_TOTAL + 
+    PHMSA_csv_NG$NUM_SRVCS_TOTAL*PHMSA_csv_NG$AVERAGE_LENGTH/5280
+  
+  ##############################################################################
   #Do the work to merge all input data + shapefiles
   
   # First select the columns we need
@@ -886,7 +895,7 @@
                                           'NUM_SRVS_OTHER',
                                           'NUM_SRVS_RCI',
                                           'NUM_SRVCS_TOTAL',
-                                          "AVERAGE_LENGTH"))
+                                          "Miles_main_and_serv"))
   
   EIA_cols_to_keep <- paste0("EIA_",c("Residential_Total_Volume_(Mcf)",
                                       "Residential_Total_Customers",
