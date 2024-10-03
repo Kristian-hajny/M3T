@@ -14,7 +14,6 @@ Stationary_combustion_file <- "G:/My Drive/Shepson Group Drive/Kris/Philly Inven
 state_shapefile <- "G:/My Drive/Shepson Group Drive/General Inventories and Shapefiles/Shapefiles/tl_2022_us_state/tl_2022_us_state.shp"
 state_name_list <- sort(c("NJ","NY","PA","MD","DE"))
 input_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Raw_data_rewrite/"
-output_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Processed_rewrite/"
 
 plot_directory <- "G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Figures_rewrite/stat_comb_intercomparison"
 
