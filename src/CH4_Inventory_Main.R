@@ -246,7 +246,7 @@ error_found <- FALSE
 #all config errors can be presented at once.
 if((!Use_ACES & !Use_Vulcan) & (Process_stationary_combustion | Process_natural_gas_distribution)){
   error_found <- TRUE
-  error_text <- paste0(error_text,"\n\nMust set both Process_stationary_combustion and Process_natural_gas_distribution to FALSE or set either Use_ACES or Use_Vulcan to TRUE to disaggregate stationary combustion and natural gas distribution data")
+  error_text <- paste0(error_text,"\n\nMust set both Process_stationary_combustion and Process_natural_gas_distribution to FALSE or set Use_ACES and/or Use_Vulcan to TRUE to disaggregate stationary combustion and natural gas distribution data")
 }
 
 if(Process_stationary_combustion & (!stationary_combustion_by_state & !stationary_combustion_by_domain)){
@@ -268,6 +268,31 @@ if(Process_natural_gas_distribution & (!NG_distribution_by_LDC & !NG_distributio
   error_found <- TRUE
   error_text <- paste0(error_text,"\n\nMust set Process_natural_gas_distribution to FALSE or set either NG_distribution_by_LDC or NG_distribution_by_state or NG_distribution_by_domain to TRUE to disaggregate natural gas distribution data")
 }
+
+#if any of the NG distribution GHGI EFs were not clearly specified, default to
+#use the GHGI data.
+NG_dist_GHGI_EFs <- c("GHGI_MnR","GHGI_maintenance","GHGI_meters","GHGI_services")
+if(Process_natural_gas_distribution & any(!NG_dist_GHGI_EFs %in% ls())){
+  NG_dist_GHGI_EFs <- NG_dist_GHGI_EFs[!NG_dist_GHGI_EFs %in% ls()]
+  for(A in 1:length(NG_dist_GHGI_EFs)){
+    assign(NG_dist_GHGI_EFs[A],"GHGI")
+  }
+  rm(A)
+}
+rm(NG_dist_GHGI_EFs)
+
+#if any of the transmission GHGI EFs were not clearly specified, default to use
+#the GHGI data.
+transmission_GHGI_EFs <- c("GHGI_transmission_compressors","GHGI_Pipeline")
+if(Process_natural_gas_transmission & any(!transmission_GHGI_EFs %in% ls())){
+  transmission_GHGI_EFs <- transmission_GHGI_EFs[!transmission_GHGI_EFs %in% ls()]
+  for(A in 1:length(transmission_GHGI_EFs)){
+    assign(transmission_GHGI_EFs[A],"GHGI")
+  }
+  rm(A)
+}
+rm(transmission_GHGI_EFs)
+
 
 if(Process_wastewater & (!Wastewater_use_CWNS & !Wastewater_use_DMR)){
   error_found <- TRUE
@@ -467,6 +492,10 @@ if(Process_natural_gas_distribution){
                   GHGI_file = file.path(input_directory,"2022_ghgi_natural_gas_systems_annex36_tables.xlsx"),
                   GHGI_EF_sheet = "3.6-2",
                   GHGI_Activity_sheet = "3.6-7",
+                  GHGI_MnR = GHGI_MnR,
+                  GHGI_maintenance = GHGI_maintenance,
+                  GHGI_meters = GHGI_meters,
+                  GHGI_services = GHGI_services,
                   State_Tigerlines=State_Tigerlines,
                   NG_distribution_by_LDC = NG_distribution_by_LDC,
                   NG_distribution_by_state = NG_distribution_by_state,
@@ -498,6 +527,9 @@ if(Process_natural_gas_transmission){
   Transmission(GHGI_file=file.path(input_directory,"2022_ghgi_natural_gas_systems_annex36_tables.xlsx"),
                GHGI_Emissions_sheet="3.6-1",
                GHGI_Activity_sheet="3.6-7",
+               GHGI_transmission_compressors=GHGI_transmission_compressors,
+               GHGI_Pipeline=GHGI_Pipeline,
+               HIFLD_compressor_file=file.path(input_directory,'Natural_Gas_Compressor_Stations.csv'),
                domain=domain,
                state_name_list=state_name_list,
                output_directory=output_directory,

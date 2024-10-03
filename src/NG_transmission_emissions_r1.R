@@ -142,6 +142,9 @@
 Transmission <- function(GHGI_file,
                          GHGI_Emissions_sheet,
                          GHGI_Activity_sheet,
+                         GHGI_transmission_compressors,
+                         GHGI_Pipeline,
+                         HIFLD_compressor_file,
                          domain,
                          state_name_list,
                          output_directory,
@@ -168,7 +171,12 @@ Transmission <- function(GHGI_file,
   #noise (<0.5, a few as much as 0.4 MT CH4 difference).
   
   pipes_EIA=vect("https://services7.arcgis.com/FGr1D95XCGALKXqM/arcgis/rest/services/NaturalGas_InterIntrastate_Pipelines_US_EIA/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=json")
-  compressors_HIFLD=vect("https://services1.arcgis.com/Hp6G80Pky0om7QvQ/arcgis/rest/services/Natural_Gas_Compressor_Stations/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=json")
+  
+  #need to use the downloaded file for the moment - as of 9/30/24 the API and
+  #website with the HIFLD compressors has been removed
+  compressors_HIFLD <- read.csv(HIFLD_compressor_file)
+  compressors_HIFLD <- vect(compressors_HIFLD,geom=c("LONGITUDE", "LATITUDE"),crs="epsg:4326")
+  # compressors_HIFLD=vect("https://services1.arcgis.com/Hp6G80Pky0om7QvQ/arcgis/rest/services/Natural_Gas_Compressor_Stations/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=json")
   ################################################################################
   #Download the relevant GHGRP emissions data using the API
   #(https://www.GHGI.gov/enviro/envirofacts-data-service-api) and combine the
@@ -275,39 +283,43 @@ Transmission <- function(GHGI_file,
   #p2 = emissions, p1 = activity data.  Columns = year, rows = various types of
   #sources.  First col is just to identify the first column of useable data
   
-  Data_list <- c("Pipeline Leaks","M&R (Trans. Co. Interconnect)","M&R (Farm Taps + Direct Sales)",
-                 "Pipeline venting")
-  #all the sources we're looking for, written exactly as in the GHGI file
+  if(GHGI_Pipeline=="GHGI"){
+    Data_list <- c("Pipeline Leaks","M&R (Trans. Co. Interconnect)","M&R (Farm Taps + Direct Sales)",
+                   "Pipeline venting")
+    #all the sources we're looking for, written exactly as in the GHGI file
+    
+    GHGI_Pipeline <- data.frame("Type"=Data_list,
+                                "Emissions"=as.numeric(unlist(sapply(Data_list,FUN=function(x){GHGI_p2[which(GHGI_p2[,1]==x)[1],as.character(inventory_year)]})))*
+                                  1E9/(16.043*60*60*24*365),#convert from kt/yr to mol/s
+                                "Total_stations"=as.numeric(unlist(sapply(Data_list,FUN=function(x){GHGI_p1[which(GHGI_p1[,1]==x)[1],as.character(inventory_year)]})))*
+                                  1609.344,#convert from miles to meters
+                                row.names = NULL)
+    #use sapply to find the row using data list, specify the column as the year and
+    #grab the relevant EF and activity data into a dataframe.
+  }
   
-  GHGI_Pipeline <- data.frame("Type"=Data_list,
-                              "Emissions"=as.numeric(unlist(sapply(Data_list,FUN=function(x){GHGI_p2[which(GHGI_p2[,1]==x)[1],as.character(inventory_year)]})))*
-                                1E9/(16.043*60*60*24*365),#convert from kt/yr to mol/s
-                              "Total_stations"=as.numeric(unlist(sapply(Data_list,FUN=function(x){GHGI_p1[which(GHGI_p1[,1]==x)[1],as.character(inventory_year)]})))*
-                                1609.344,#convert from miles to meters
-                              row.names = NULL)
-  #use sapply to find the row using data list, specify the column as the year and
-  #grab the relevant EF and activity data into a dataframe.
-  
-  pipeline_EF <- sum(GHGI_Pipeline[,2])/GHGI_Pipeline[1,3] #mol/m/s
-  #sum of emissions / miles of pipelines (activity data from leaks entry)
-  
-  
-  Data_list <- c("Station Total Emissions","Dehydrator vents (Transmission)",
-                 "Flaring (Transmission)","Engines (Transmission)",
-                 "Turbines (Transmission)","Engines (Storage)",
-                 "Turbines (Storage)","Generators (Engines)",
-                 "Generators (Turbines)","Pneumatic Devices Transmission",
-                 "Station Venting Transmission")
-  #transmission station total + emissions during operations (vents, flaring,
-  #leaks, exhaust, etc.)
-  
-  GHGI_transmission_compressors <- data.frame("Type"=Data_list,
-                                              "Emissions"=as.numeric(unlist(sapply(Data_list,FUN=function(x){GHGI_p2[which(GHGI_p2[,1]==x)[1],as.character(inventory_year)]})))*
-                                                1E9/(16.043*60*60*24*365),#convert from kt/yr to mol/s
-                                              "Total_stations"=as.numeric(unlist(sapply(Data_list,FUN=function(x){GHGI_p1[which(GHGI_p1[,1]==x)[1],as.character(inventory_year)]}))),
-                                              row.names = NULL)
-  #use sapply to find the row using data list, specify the column as the year and
-  #grab the relevant EF and activity data into a dataframe.
+  if(GHGI_transmission_compressors=="GHGI"){
+    pipeline_EF <- sum(GHGI_Pipeline[,2])/GHGI_Pipeline[1,3] #mol/m/s
+    #sum of emissions / miles of pipelines (activity data from leaks entry)
+    
+    
+    Data_list <- c("Station Total Emissions","Dehydrator vents (Transmission)",
+                   "Flaring (Transmission)","Engines (Transmission)",
+                   "Turbines (Transmission)","Engines (Storage)",
+                   "Turbines (Storage)","Generators (Engines)",
+                   "Generators (Turbines)","Pneumatic Devices Transmission",
+                   "Station Venting Transmission")
+    #transmission station total + emissions during operations (vents, flaring,
+    #leaks, exhaust, etc.)
+    
+    GHGI_transmission_compressors <- data.frame("Type"=Data_list,
+                                                "Emissions"=as.numeric(unlist(sapply(Data_list,FUN=function(x){GHGI_p2[which(GHGI_p2[,1]==x)[1],as.character(inventory_year)]})))*
+                                                  1E9/(16.043*60*60*24*365),#convert from kt/yr to mol/s
+                                                "Total_stations"=as.numeric(unlist(sapply(Data_list,FUN=function(x){GHGI_p1[which(GHGI_p1[,1]==x)[1],as.character(inventory_year)]}))),
+                                                row.names = NULL)
+    #use sapply to find the row using data list, specify the column as the year and
+    #grab the relevant EF and activity data into a dataframe.
+  }
   
   Engine_transmission_fraction <- GHGI_transmission_compressors[4,2]/sum(GHGI_transmission_compressors[c(4,6),2])
   Turbine_transmission_fraction <- GHGI_transmission_compressors[5,2]/sum(GHGI_transmission_compressors[c(5,7),2])
