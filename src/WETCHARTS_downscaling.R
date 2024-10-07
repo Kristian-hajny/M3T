@@ -368,12 +368,20 @@ Disaggregate_Wetcharts <- function(
   #Visuals
   
   if(verbose){
-    zlim_min <- -3
-    zlim_max <- log10(max(unlist(sapply(NLCD_Downscaled_Averaged_wetcharts,FUN=function(x){global(x,max,na.rm=T)})),
-                          unlist(sapply(NALCMS_Downscaled_Averaged_wetcharts,FUN=function(x){global(x,max,na.rm=T)})),
-                          unlist(sapply(Averaged_wetcharts,FUN=function(x){global(x,max,na.rm=T)}))))
     #the minimum is a ~arbitrary value given the log scale can go quite negative.
     #the max is the max across wetcharts pre and post downscaling.
+    zlim_min <- -3
+    zlim_max <- unlist(sapply(Averaged_wetcharts,FUN=function(x){global(x,max,na.rm=T)}))
+    if(Use_NLCD){
+      zlim_max <- max(unlist(sapply(NLCD_Downscaled_Averaged_wetcharts,FUN=function(x){global(x,max,na.rm=T)})),
+                      zlim_max)
+    }
+    if(Use_NALCMS){
+      zlim_max <- max(zlim_max,
+                      unlist(sapply(NALCMS_Downscaled_Averaged_wetcharts,FUN=function(x){global(x,max,na.rm=T)})))
+    }
+    zlim_max <- log10(zlim_max)
+    
     
     for(B in 1:length(Downscaled_Averaged_wetcharts)){
       model_list_string <- paste(Wetcharts_model_subset[[B]],collapse = ",")
@@ -436,8 +444,8 @@ Disaggregate_Wetcharts <- function(
   domain_total <- as.data.frame(domain_total)
   colnames(domain_total) <- colnamelist
   
-  if(!all(domain_total[,1]>=(domain_total[,2]*0.95) & domain_total[,1]<=(domain_total[,2]*1.05) | 
-          domain_total[,2]>=(domain_total[,3]*0.95) & domain_total[,2]<=(domain_total[,3]*1.05))){
+  percent_change <- abs(domain_total - domain_total[,1])/domain_total[,1]
+  if(!all(percent_change<0.001,na.rm=T)){
     View(domain_total)
     stop("Something's gone wrong.  The total emissions (nmol/s) across the domain differs between the original and downscaled wetcharts.")
   }
