@@ -283,7 +283,7 @@ Transmission <- function(GHGI_file,
   #p2 = emissions, p1 = activity data.  Columns = year, rows = various types of
   #sources.  First col is just to identify the first column of useable data
   
-  if(GHGI_Pipeline=="GHGI"){
+  if(all(GHGI_Pipeline=="GHGI")){
     Data_list <- c("Pipeline Leaks","M&R (Trans. Co. Interconnect)","M&R (Farm Taps + Direct Sales)",
                    "Pipeline venting")
     #all the sources we're looking for, written exactly as in the GHGI file
@@ -298,9 +298,10 @@ Transmission <- function(GHGI_file,
     #grab the relevant EF and activity data into a dataframe.
   }
   
-  if(GHGI_transmission_compressors=="GHGI"){
-    pipeline_EF <- sum(GHGI_Pipeline[,2])/GHGI_Pipeline[1,3] #mol/m/s
-    #sum of emissions / miles of pipelines (activity data from leaks entry)
+  pipeline_EF <- sum(GHGI_Pipeline[,2])/GHGI_Pipeline[1,3] #mol/m/s
+  #sum of emissions / miles of pipelines (activity data from leaks entry)
+  
+  if(all(GHGI_transmission_compressors=="GHGI")){
     
     
     Data_list <- c("Station Total Emissions","Dehydrator vents (Transmission)",
@@ -336,8 +337,8 @@ Transmission <- function(GHGI_file,
   compressor_avg_emissions <- sum(GHGI_transmission_compressors[,2])/GHGI_transmission_compressors[3,3] #mol/station/s
   #sum of emissions / N stations (activity data from flaring entry)
   
-  rm(GHGI_transmission_compressors,GHGI_Pipeline,GHGI_p1,GHGI_p2,first_row,Data_list,
-     Engine_transmission_fraction,Turbine_transmission_fraction)
+  suppressWarnings(rm(GHGI_transmission_compressors,GHGI_Pipeline,GHGI_p1,GHGI_p2,first_row,Data_list,
+                      Engine_transmission_fraction,Turbine_transmission_fraction))
   cat("Finished loading all input data at",difftime(Sys.time(),starttime,units = "min"),"minutes since start\n")
   ################################################################################
   #process the transmission pipeline data
