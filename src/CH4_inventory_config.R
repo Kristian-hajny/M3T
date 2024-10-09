@@ -44,7 +44,10 @@ main_config <- function(){
     Process_wastewater <- FALSE
     Incorporate_remaining_sectors_from_gridded_EPA <- FALSE
     Combine_sectors <- FALSE #create total CH4 inventory(s) by summing across sectors
+    EIA_API_key <- "1kLep4UApTZKwdOrDkW6J8qlO0niiw8ej0JPliyc"
   }
+  
+  
   
   #Variations on the method
   {
@@ -121,7 +124,7 @@ main_config <- function(){
     #1 wetcharts output
     Wetcharts_model_subset <- list(c(1913,1914,1923,1924,1933,1934,2913,2914,2923,
                                      2924,2933,2934,3913,3914,3923,3924,3933,3934)) #all models
-    #2 wetcharts outputs
+    ##2 wetcharts outputs
     # Wetcharts_model_subset <- list(c(1913,1914,1923,1924,1933,1934,2913,2914,2924), #Ma subset
     #                                c(1913,1914,1924,1933,1934,2914,2924)) #Nesser subset
   }
@@ -139,10 +142,8 @@ main_config <- function(){
     #CH4 emissions from Landfills (kt)
     
     #Natural Gas Distribution
-    GHGI_natural_gas_pipeline_emission_factors <- data.frame("Leaks_per_mile"=
-                                                               c(0.51,1,0.61,0.43),
-                                                             "Avg_emissions_mol_per_s"=
-                                                               c(2.24,1.72,2,2.03)/(16.043*60)) #converting from g/min to mol/s
+    GHGI_natural_gas_pipeline_emission_factors <- data.frame("Leaks_per_mile"         =c(0.51,1.00,0.61,0.43),
+                                                             "Avg_emissions_mol_per_s"=c(2.24,1.72,2.00,2.03)/(16.043*60)) #converting from g/min to mol/s
     rownames(GHGI_natural_gas_pipeline_emission_factors) <- c("Bare_Steel",
                                                               "Cast_Iron",
                                                               "Coated_steel",
@@ -191,15 +192,14 @@ main_config <- function(){
     # GHGI_Pipeline <- data.frame("Type"          =c("Pipeline Leaks","M&R (Trans. Co. Interconnect)", "M&R (Farm Taps + Direct Sales)", "Pipeline venting"),
     #                             "Emissions"     =c(6.52811286997864,148.988084201472               ,34.5960442337367                 ,370.144374243981),
     #                             "Total_stations"=c(486570674.304   ,4331358.53227287               ,128429200.235495                 ,486570674.304))
-    # GHGI_transmission_compressors <- data.frame("Type"          =c("Station Total Emissions", "Dehydrator vents (Transmission)", "Flaring (Transmission)", "Engines (Transmission)", "Turbines (Transmission)", "Generators (Engines)", "Generators (Turbines)", "Pneumatic Devices Transmission", "Station Venting Transmission"),
-    #                                             "Emissions"     =c(1357.80542776983         ,5.03531064009076                  ,1.00340431488143         ,306.078942722016         ,3.21765775547095          ,24.0107575793924       ,0.00691810990744483     ,73.1035216017783                 ,325.070554268957),
-    #                                             "Total_stations"=c(NA                       ,1411334.29888                     ,2214.08,62146.3313543826 ,14828.6256215819         ,3041.14137496572          ,35.8595720791757       ,73384.96,2214.08))
-    GHGI_Pipeline <- "GHGI"
-    GHGI_transmission_compressors <- "GHGI"
+    # GHGI_transmission_compressors <- data.frame("Type"          =c("Station Total Emissions","Dehydrator vents (Transmission)","Flaring (Transmission)","Engines (Transmission)","Turbines (Transmission)","Engines (Storage)","Turbines (Storage)","Generators (Engines)","Generators (Turbines)","Pneumatic Devices Transmission","Station Venting Transmission"),
+    #                                             "Emissions"     =c(1357.80542776983         ,5.03531064009076                 ,1.00340431488143        ,306.078942722016        ,3.21765775547095         ,48.1136980930844   ,0.401407734674907   ,27.7850987048789     ,0.00778115471743365   ,73.1035216017783                ,325.070554268957),
+    #                                             "Total_stations"=c(NA                       ,1411334.29888                    ,2214.08                 ,62146.3313543826        ,14828.6256215819         ,5266.15217486325   ,1849.89376479857    ,3041.14137496572     ,35.8595720791757      ,73384.96                        ,2214.08))
+    # GHGI_Pipeline <- "GHGI"
+    # GHGI_transmission_compressors <- "GHGI"
 
     
     #Stationary Combustion
-    EIA_API_key <- "1kLep4UApTZKwdOrDkW6J8qlO0niiw8ej0JPliyc"
     stationary_combustion_GHGI_data <- data.frame("State"="US_EPA",
                                                   "com_coal"=17,
                                                   "ind_coal"=517,
@@ -323,15 +323,15 @@ main_config <- function(){
     #National total of developed open space and developed low intensity land cover
     #from the national land cover database from Table 7 of 
     #https://doi.org/10.1016/j.isprsjprs.2020.02.019.
-    Wastewater_State_info <- data.frame("State"=c("DE", "MD", "NJ", "NY", "PA"),
-                                        "Population"=c(1018396,6164660,9261699,19677151,12972008),
-                                        "Septic_Fraction"=c(0.257,0.181,0.116,0.159,0.245),
-                                        "Method"=c("scaled","scaled","scaled","reported","scaled"))
+    Wastewater_State_info <- data.frame("State"          =c("DE"    ,"MD"    ,"NJ"    ,"NY"      ,"PA"),
+                                        "Population"     =c(1018396 ,6164660 ,9261699 ,19677151  ,12972008),
+                                        "Septic_Fraction"=c(0.257   ,0.181   ,0.116   ,0.159     ,0.245),
+                                        "Method"         =c("scaled","scaled","scaled","reported","scaled"))
     Wastewater_State_info[,4] <- tolower(Wastewater_State_info[,4]) #just in case manually entered with caps
     #Pulled from census data.  method is either scaled - i.e., from an old
     #census report, or reported, i.e., use as is from a relatively recent census
     #report.  Only used if state_septic=TRUE
-    National_wastewater_info <- data.frame("Year"=c(1990,2021),
+    National_wastewater_info <- data.frame("Year"           =c(1990 ,2021),
                                            "Septic_Fraction"=c(0.241,0.152))
     #Only needed if any states are using the scaled method.  National septic
     #fraction in the year of interest and the year that the scaled states reported a
