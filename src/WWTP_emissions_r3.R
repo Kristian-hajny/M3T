@@ -615,7 +615,7 @@ Wastewater <- function(DMR_file,
     names(ghgrp_crop_output) <- c('Site_Name','Longitude','Latitude','Emission_mol_per_s')
     write.csv(ghgrp_crop_output, file.path(output_directory,"WWTP_industrial.csv"),row.names = F)
   }
-  cat("Finished calculating industrial treasment plant emissions at",difftime(Sys.time(),starttime,units = "min"),"minutes since start\n")
+  cat("Finished calculating industrial treatment plant emissions at",difftime(Sys.time(),starttime,units = "min"),"minutes since start\n")
   ################################################################################
   # Write the rasters
   
@@ -696,15 +696,19 @@ Wastewater <- function(DMR_file,
   #Finally, plot up this output nicely
   
   if(verbose){
-    not_log_plot(septic_flux2,filename="Wastewater_dom_septic_bystate",
-                 "Domestic Wastewater - Septic v2\n estimated state septic distributed using \ndeveloped open space/low intensity land cover",
-                 as.numeric(global(min(septic_flux,septic_flux2),min)),
-                 as.numeric(global(max(septic_flux,septic_flux2),max)))
+    if(Wastewater_state_septic){
+      not_log_plot(septic_flux2,filename="Wastewater_dom_septic_bystate",
+                   "Domestic Wastewater - Septic\n estimated state septic distributed using \ndeveloped open space/low intensity land cover",
+                   as.numeric(global(min(septic_flux,septic_flux2),min)),
+                   as.numeric(global(max(septic_flux,septic_flux2),max)))
+    }
     
-    not_log_plot(septic_flux,filename="Wastewater_dom_septic_national",
-                 "Domestic Wastewater - Septic\n national EPA septic distributed using \ndeveloped open space/low intensity land cover",
-                 as.numeric(global(min(septic_flux,septic_flux2),min)),
-                 as.numeric(global(max(septic_flux,septic_flux2),max)))
+    if(Wastewater_national_septic){
+      not_log_plot(septic_flux,filename="Wastewater_dom_septic_national",
+                   "Domestic Wastewater - Septic\n national EPA septic distributed using \ndeveloped open space/low intensity land cover",
+                   as.numeric(global(min(septic_flux,septic_flux2),min)),
+                   as.numeric(global(max(septic_flux,septic_flux2),max)))
+    }
     
     log_plot(ghgrp_flux,filename="Wastewater_ind",
              "Industrial Wastewater -\n GHGRP Reporters")
@@ -782,61 +786,69 @@ Wastewater <- function(DMR_file,
     WWTP_min <- -4
     WWTP_max=0
     
+    #only one or the other here as the emissions are approximately 2x with
+    #Moore's approach, but on a log scale that's ~negligible.  So no need to
+    #plot separately, it has no visible impact on spatial distribution or
+    #emissions.
+    if(Wastewater_Municipal_Method_Moore_linear){
+      WWTP_method <- "Moore_Linear_municipal"
+      WWTP_text <- "Moore et al. log-linear relationship combined with"
+    }else if(Wastewater_Municipal_Method_GHGI){
+      WWTP_method <- "GHGI_municipal"
+      WWTP_text <- "GHGI total distributed using"
+    }
+    
     #just build all possible variations and calculate the max across all of them
     if(Wastewater_use_CWNS){
-      if(Wastewater_Municipal_Method_Moore_linear){
-        Summed_wastewater_treatment_CWNS_ML = sum(WWTP_CWNS_Moore_Linear_municipal,septic_flux,ghgrp_flux,na.rm=T)
-        CWNS_ML_text="Moore log-linear relationship combined with CWNS"
-        WWTP_max <- max(WWTP_max,as.numeric(global(Summed_wastewater_treatment_CWNS_ML,max,na.rm=T)))
-      }else if(Wastewater_Municipal_Method_GHGI){
-        Summed_wastewater_treatment_CWNS_GHGI = sum(WWTP_CWNS_GHGI_municipal,septic_flux2,ghgrp_flux,na.rm=T)
-        CWNS_GHGI_text="EPA total distributed using CWNS"
-        WWTP_max <- max(WWTP_max,as.numeric(global(Summed_wastewater_treatment_CWNS_GHGI,max,na.rm=T)))
+      if(Wastewater_state_septic){
+        Summed_wastewater_treatment_CWNS_state = sum(get(paste0("WWTP_CWNS_",WWTP_method)),septic_flux2,ghgrp_flux,na.rm=T)
+        CWNS_state_text=paste0(WWTP_text," CWNS")
+        WWTP_max <- max(WWTP_max,as.numeric(global(Summed_wastewater_treatment_CWNS_state,max,na.rm=T)))
+      }
+      if(Wastewater_national_septic){
+        Summed_wastewater_treatment_CWNS_national = sum(get(paste0("WWTP_CWNS_",WWTP_method)),septic_flux,ghgrp_flux,na.rm=T)
+        CWNS_national_text=paste0(WWTP_text," CWNS")
+        WWTP_max <- max(WWTP_max,as.numeric(global(Summed_wastewater_treatment_CWNS_national,max,na.rm=T)))
+      }
+    }
+    if(Wastewater_use_DMR){
+      if(Wastewater_state_septic){
+        Summed_wastewater_treatment_DMR_state = sum(get(paste0("WWTP_DMR_",WWTP_method)),septic_flux2,ghgrp_flux,na.rm=T)
+        DMR_state_text=paste0(WWTP_text," DMR")
+        WWTP_max <- max(WWTP_max,as.numeric(global(Summed_wastewater_treatment_DMR_state,max,na.rm=T)))
+      }
+      if(Wastewater_national_septic){
+        Summed_wastewater_treatment_DMR_national = sum(get(paste0("WWTP_DMR_",WWTP_method)),septic_flux,ghgrp_flux,na.rm=T)
+        DMR_national_text=paste0(WWTP_text," DMR")
+        WWTP_max <- max(WWTP_max,as.numeric(global(Summed_wastewater_treatment_DMR_national,max,na.rm=T)))
       }
     }
 
-    if(Wastewater_use_DMR){
-      if(Wastewater_Municipal_Method_Moore_linear){
-        Summed_wastewater_treatment_DMR_ML = sum(WWTP_DMR_Moore_Linear_municipal,septic_flux,ghgrp_flux,na.rm=T)
-        DMR_ML_text="Moore log-linear relationship combined with DMR"
-        WWTP_max <- max(WWTP_max,as.numeric(global(Summed_wastewater_treatment_DMR_ML,max,na.rm=T)))
-      }else if(Wastewater_Municipal_Method_GHGI){
-        Summed_wastewater_treatment_DMR_GHGI = sum(WWTP_DMR_GHGI_municipal,septic_flux,ghgrp_flux,na.rm=T)
-        DMR_GHGI_text="EPA total distributed using DMR"
-        WWTP_max <- max(WWTP_max,as.numeric(global(Summed_wastewater_treatment_DMR_GHGI,max,na.rm=T)))
-      }
-    }
-    
-    
-    
-    
     
     
     #now actually plot
     WWTP_max <- log10(WWTP_max)
     if(Wastewater_use_CWNS){
-      if(Wastewater_Municipal_Method_Moore_linear){
-        log_plot(Summed_wastewater_treatment_CWNS_ML,
-                 paste0("Wastewater Treatment Sector\n",CWNS_ML_text," (Domestic facilities)\nand GHGRP (industrial) and developed open space/low intensity\nNLCD land cover * national septic data (Septic)"),
+      if(Wastewater_state_septic){
+        log_plot(Summed_wastewater_treatment_CWNS_state,
+                 paste0("Wastewater Treatment Sector\n",CWNS_state_text," (Domestic facilities)\nand GHGRP (industrial) and developed open space/low intensity\nNLCD land cover * state septic data (Septic)"),
                  WWTP_min,WWTP_max)
-        #else if below as GHGI vs Moore can ~double emissions, which is
-        #negligible on a log scale.
-      }else if(Wastewater_Municipal_Method_GHGI){
-        log_plot(Summed_wastewater_treatment_CWNS_GHGI,
-                 paste0("Wastewater Treatment Sector\n",CWNS_GHGI_text," (Domestic facilities)\nand GHGRP (industrial) and developed open space/low intensity\nNLCD land cover * state septic data (Septic)"),
+      }
+      if(Wastewater_national_septic){
+        log_plot(Summed_wastewater_treatment_CWNS_national,
+                 paste0("Wastewater Treatment Sector\n",CWNS_national_text," (Domestic facilities)\nand GHGRP (industrial) and developed open space/low intensity\nNLCD land cover * national septic data (Septic)"),
                  WWTP_min,WWTP_max)
       }
     }
     if(Wastewater_use_DMR){
-      if(Wastewater_Municipal_Method_Moore_linear){
-        log_plot(Summed_wastewater_treatment_DMR_ML,
-                 paste0("Wastewater Treatment Sector\n",DMR_ML_text," (Domestic facilities)\nand GHGRP (industrial) and developed open space/low intensity\nNLCD land cover * national septic data (Septic)"),
+      if(Wastewater_state_septic){
+        log_plot(Summed_wastewater_treatment_DMR_state,
+                 paste0("Wastewater Treatment Sector\n",DMR_state_text," (Domestic facilities)\nand GHGRP (industrial) and developed open space/low intensity\nNLCD land cover * state septic data (Septic)"),
                  WWTP_min,WWTP_max)
-        #else if below as GHGI vs Moore can ~double emissions, which is
-        #negligible on a log scale.
-      }else if(Wastewater_Municipal_Method_GHGI){
-        log_plot(Summed_wastewater_treatment_DMR_GHGI,
-                 paste0("Wastewater Treatment Sector\n",DMR_GHGI_text," (Domestic facilities)\nand GHGRP (industrial) and developed open space/low intensity\nNLCD land cover * state septic data (Septic)"),
+      }
+      if(Wastewater_national_septic){
+        log_plot(Summed_wastewater_treatment_DMR_national,
+                 paste0("Wastewater Treatment Sector\n",DMR_national_text," (Domestic facilities)\nand GHGRP (industrial) and developed open space/low intensity\nNLCD land cover * national septic data (Septic)"),
                  WWTP_min,WWTP_max)
       }
     }
