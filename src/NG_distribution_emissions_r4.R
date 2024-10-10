@@ -363,6 +363,7 @@ NG_distribution <- function(domain,
                             output_directory,
                             inventory_year,
                             verbose,
+                            ghgrp_facility_info,
                             HIFLD_file,
                             EIA_file,
                             PHMSA_file,
@@ -436,13 +437,7 @@ NG_distribution <- function(domain,
     #and remove those that have 0 emissions for this category
     ghgrp_w_only_emissions <- ghgrp_w_only_emissions[ghgrp_w_only_emissions$Reported_CH4>0,]
     ################################################################################
-    #Download the relevant facility (e.g., location) data using the API and merge
-    
-    #see https://www.epa.gov/enviro/envirofacts-data-service-api
-    data_URLs <- paste0("https://data.epa.gov/efservice/PUB_DIM_FACILITY/JSON")
-    
-    #download data
-    ghgrp_facility_info <- fromJSON(data_URLs)
+    #Merge with location-like data
     
     #subset to the desired year
     ghgrp_facility_info <- ghgrp_facility_info[ghgrp_facility_info$year==inventory_year,]
@@ -586,7 +581,7 @@ NG_distribution <- function(domain,
       }
       GHGRP_csv$'N_of_below_grade_non_T-D_MR_stations'[A] <- answer
       
-      cat("\rFinished downloading GHGRP data for",A,"of",nrow(GHGRP_csv),"                 ")
+      cat("\rFinished downloading GHGRP data for",A,"of",nrow(GHGRP_csv),"companies                 ")
       #user update
     }
     
@@ -1038,10 +1033,14 @@ NG_distribution <- function(domain,
       # aces_res_temp <- crop(aces_res,ext(project(State_Tigerlines,aces_res))*1.2) - untested impact
       # 
       LDC_count <- nrow(all_merge_LCC)
-      all_merge_LCC$count <- 1:nrow(all_merge_LCC)
-      cover_all <- all_merge_LCC %>% 
+      if(LDC_count==1){
+        cover_all <- list(extract(aces_res,all_merge_LCC,weights=T,exact=T,cells=T))
+      }else{
+        all_merge_LCC$count <- 1:nrow(all_merge_LCC)
+        cover_all <- all_merge_LCC %>% 
         split(f=all_merge_LCC$HIFLD_SVCTERID) %>%
         lapply(function(x){cat("\rProcessing",x$count,"of",LDC_count,"LDCs using ACES                                   ");extract(aces_res,x,weights=T,exact=T,cells=T)})
+      }
       
       disaggregation(aces_res,res_totals,agg_level="LDC",NEI_input = all_merge_LCC,cover_all,out_envir=environment())
       disaggregation(aces_com,com_totals,agg_level="LDC",NEI_input = all_merge_LCC,cover_all,out_envir=environment())
@@ -1049,11 +1048,15 @@ NG_distribution <- function(domain,
     if(Use_Vulcan){
       all_merge_LCC <- project(all_merge_clean,vu_res)
       
-      LDC_count <- nrow(all_merge_LCC)
-      all_merge_LCC$count <- 1:nrow(all_merge_LCC)
-      cover_all <- all_merge_LCC %>% 
-        split(f=all_merge_LCC$HIFLD_SVCTERID) %>%
-        lapply(function(x){cat("\rProcessing",x$count,"of",LDC_count,"LDCs using vulcan                                  ");extract(vu_res,x,weights=T,exact=T,cells=T)})
+      if(LDC_count==1){
+        cover_all <- list(extract(vu_res,all_merge_LCC,weights=T,exact=T,cells=T))
+      }else{
+        LDC_count <- nrow(all_merge_LCC)
+        all_merge_LCC$count <- 1:nrow(all_merge_LCC)
+        cover_all <- all_merge_LCC %>% 
+          split(f=all_merge_LCC$HIFLD_SVCTERID) %>%
+          lapply(function(x){cat("\rProcessing",x$count,"of",LDC_count,"LDCs using vulcan                                  ");extract(vu_res,x,weights=T,exact=T,cells=T)})
+      }
       
       disaggregation(vu_res,res_totals,agg_level="LDC",NEI_input = all_merge_LCC,cover_all,out_envir=environment())
       disaggregation(vu_com,com_totals,agg_level="LDC",NEI_input = all_merge_LCC,cover_all,out_envir=environment())
@@ -1089,9 +1092,13 @@ NG_distribution <- function(domain,
       #convert state scale version to the proper crs
       all_merge_LCC_state <- project(all_merge_state_poly,aces_res)
       
-      cover_all <- all_merge_LCC_state %>% 
-        split(f=all_merge_LCC_state$STATEFP) %>%
-        lapply(function(x){extract(aces_res,x,weights=T,exact=T,cells=T)})
+      if(length(state_name_list)==1){
+        cover_all <- list(extract(aces_res,all_merge_LCC_state,weights=T,exact=T,cells=T))
+      }else{
+        cover_all <- all_merge_LCC_state %>% 
+          split(f=all_merge_LCC_state$STATEFP) %>%
+          lapply(function(x){extract(aces_res,x,weights=T,exact=T,cells=T)})
+      }
       
       disaggregation(aces_res,res_totals,agg_level="state",NEI_input = all_merge_LCC_state,cover_all,out_envir=environment())
       disaggregation(aces_com,com_totals,agg_level="state",NEI_input = all_merge_LCC_state,cover_all,out_envir=environment())
@@ -1099,9 +1106,13 @@ NG_distribution <- function(domain,
     if(Use_Vulcan){
       all_merge_LCC_state <- project(all_merge_state_poly,vu_res)
       
-      cover_all <- all_merge_LCC_state %>% 
-        split(f=all_merge_LCC_state$STATEFP) %>%
-        lapply(function(x){extract(vu_res,x,weights=T,exact=T,cells=T)})
+      if(length(state_name_list)==1){
+        cover_all <- list(extract(vu_res,all_merge_LCC_state,weights=T,exact=T,cells=T))
+      }else{
+        cover_all <- all_merge_LCC_state %>% 
+          split(f=all_merge_LCC_state$STATEFP) %>%
+          lapply(function(x){extract(vu_res,x,weights=T,exact=T,cells=T)})
+      }
       
       disaggregation(vu_res,res_totals,agg_level="state",NEI_input = all_merge_LCC_state,cover_all,out_envir=environment())
       disaggregation(vu_com,com_totals,agg_level="state",NEI_input = all_merge_LCC_state,cover_all,out_envir=environment())
@@ -1133,8 +1144,8 @@ NG_distribution <- function(domain,
       disaggregation(vu_res,res_totals,agg_level="domain",NEI_input=all_merge_LCC_domain,cover_all,out_envir=environment())
       disaggregation(vu_com,com_totals,agg_level="domain",NEI_input=all_merge_LCC_domain,cover_all,out_envir=environment())
     }
+    cat("\rFinished disaggregating emissions to pixels from the domain scale at",difftime(Sys.time(),starttime,units = "min"),"minutes since start\n")
   }
-  cat("\rFinished disaggregating emissions to pixels from the domain scale at",difftime(Sys.time(),starttime,units = "min"),"minutes since start\n")
   ################################################################################
   #write a function to save, dependent on whether or not we use XESMF
   if(XESMF){
@@ -1465,34 +1476,34 @@ NG_distribution <- function(domain,
     if(Use_ACES){
       if(NG_distribution_by_LDC){
         not_log_plot(Summed_NG_dist_ACES_byLDC,
-                     "Natural Gas Distribution emissions\nPHMSA, EIA, and GHGRP activity data combined with GHGI and\npublished emission factors at the company level and distributed using\naces residential and commercial sectoral CO2 emissions",
+                     "Natural Gas Distribution emissions\nPHMSA, EIA, and GHGRP activity data combined with GHGI and published\nemission factors at the company level and distributed using aces residential\nand commercial sectoral CO2 emissions",
                      zlim_min=zmin,zlim_max=zmax)
       }
       if(NG_distribution_by_state){
         not_log_plot(Summed_NG_dist_ACES_bystate,
-                     "Natural Gas Distribution emissions\nPHMSA, EIA, and GHGRP activity data combined with GHGI and\npublished emission factors state-summed and distributed using\naces residential and commercial sectoral CO2 emissions",
+                     "Natural Gas Distribution emissions\nPHMSA, EIA, and GHGRP activity data combined with GHGI and published\nemission factors state-summed and distributed using aces residential\nand commercial sectoral CO2 emissions",
                      zlim_min=zmin,zlim_max=zmax)
       }
       if(NG_distribution_by_domain){
         not_log_plot(Summed_NG_dist_ACES_bydomain,
-                     "Natural Gas Distribution emissions\nPHMSA, EIA, and GHGRP activity data combined with GHGI and\npublished emission factors domain-summed and distributed using\naces residential and commercial sectoral CO2 emissions",
+                     "Natural Gas Distribution emissions\nPHMSA, EIA, and GHGRP activity data combined with GHGI and published\nemission factors domain-summed and distributed using aces residential\nand commercial sectoral CO2 emissions",
                      zlim_min=zmin,zlim_max=zmax)
       }
     }
     if(Use_Vulcan){
       if(NG_distribution_by_LDC){
         not_log_plot(Summed_NG_dist_vulcan_byLDC,
-                     "Natural Gas Distribution emissions\nPHMSA, EIA, and GHGRP activity data combined with GHGI and\npublished emission factors at the company level and distributed using\nVulcan residential and commercial sectoral CO2 emissions",
+                     "Natural Gas Distribution emissions\nPHMSA, EIA, and GHGRP activity data combined with GHGI and published\nemission factors at the company level and distributed using Vulcan residential\nand commercial sectoral CO2 emissions",
                      zlim_min=zmin,zlim_max=zmax)
       }
       if(NG_distribution_by_state){
         not_log_plot(Summed_NG_dist_vulcan_bystate,
-                     "Natural Gas Distribution emissions\nPHMSA, EIA, and GHGRP activity data combined with GHGI and\npublished emission factors state-summed and distributed using\nVulcan residential and commercial sectoral CO2 emissions",
+                     "Natural Gas Distribution emissions\nPHMSA, EIA, and GHGRP activity data combined with GHGI and published\nemission factors state-summed and distributed using Vulcan residential\nand commercial sectoral CO2 emissions",
                      zlim_min=zmin,zlim_max=zmax)
       }
       if(NG_distribution_by_domain){
         not_log_plot(Summed_NG_dist_vulcan_bydomain,
-                     "Natural Gas Distribution emissions\nPHMSA, EIA, and GHGRP activity data combined with GHGI and\npublished emission factors domain-summed and distributed using\nVulcan residential and commercial sectoral CO2 emissions",
+                     "Natural Gas Distribution emissions\nPHMSA, EIA, and GHGRP activity data combined with GHGI and published\nemission factors domain-summed and distributed using Vulcan residential\nand commercial sectoral CO2 emissions",
                      zlim_min=zmin,zlim_max=zmax)
       }
     }
