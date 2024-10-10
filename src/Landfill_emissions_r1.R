@@ -147,6 +147,7 @@ Municipal_solid_waste <- function(LMOP_file,
                                   inventory_year,
                                   verbose,
                                   GHGI_landfill_total,
+                                  ghgrp_facility_info,
                                   plot_directory,
                                   County_Tigerlines,
                                   State_Tigerlines,
@@ -218,22 +219,12 @@ Municipal_solid_waste <- function(LMOP_file,
   
   rm(ghgrp_landfill_only_emissions,ghgrp_combustion_emissions,make_consistent)
   ################################################################################
-  #Download the relevant facility (e.g., location) data using the API and merge
-  
-  #see https://www.epa.gov/enviro/envirofacts-data-service-api
-  data_URLs <- paste0("https://data.epa.gov/efservice/PUB_DIM_FACILITY/STATE/=/",state_name_list,"/JSON")
-  
-  #initialize output
-  ghgrp_facility_info <- data.frame()
-  for(A in 1:length(state_name_list)){
-    # download data and read/combine in an R dataframe
-    ghgrp_facility_info <- rbind(ghgrp_facility_info,fromJSON(data_URLs[A]))
-  }
+  #Merge with location-like data
   
   #combine the datasets by ID, and year
   ghgrp_all_data <- merge(ghgrp_facility_info,ghgrp_landfill_emissions,
                           by=c("facility_id","year"), all=F)
-  
+
   #keep only data for the year of interest
   ghgrp <- ghgrp_all_data[ghgrp_all_data$year==inventory_year,]
   
@@ -250,7 +241,9 @@ Municipal_solid_waste <- function(LMOP_file,
   nonreporting_landfill_data=tapply(nonreporting_landfill_data,
                                     INDEX=nonreporting_landfill_data$facility_id,
                                     FUN=function(x){x[which.min(abs(x$year-inventory_year)),]})
-  nonreporting_landfill_data=do.call(rbind, nonreporting_landfill_data)
+  if(length(nonreporting_landfill_data)>0){
+    nonreporting_landfill_data=do.call(rbind, nonreporting_landfill_data)
+  }
 
   #add this most recent data to the GHGRP dataset
   ghgrp <- rbind(nonreporting_landfill_data,ghgrp)
@@ -260,7 +253,7 @@ Municipal_solid_waste <- function(LMOP_file,
                                                             2,FUN = function(x){as.numeric(x)})
   
   #delete all tempfiles and clean up working environment
-  rm(A,ghgrp_all_data,ghgrp_facility_info,
+  rm(ghgrp_all_data,ghgrp_facility_info,
      nonreporting_landfill_data,nonreporting_facilities,nonreporting_landfills)
   ################################################################################
   #Now convert to spatial and load/convert LMOP.  Assign GHGI_national -
