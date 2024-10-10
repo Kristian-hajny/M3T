@@ -97,8 +97,6 @@
 code_directory="~/../../Kristian/Desktop/methane_inventory/src/"
 
 input_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Raw_data_rewrite/"
-# output_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Processed_test/"
-# plot_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Figures_test/"
 output_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Processed_rewrite/"
 plot_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Figures_rewrite/"
 #if desired.  Must either be UACE code entered as numeric or exact text match
@@ -125,6 +123,18 @@ verbose=TRUE
 #sure functions still run without failing.
 testmode <- F
 testmode_vulcan <- F
+
+
+
+#overwrite these values for testing
+output_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Processed_test2/"
+plot_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Figures_test2/"
+# focus_city=FALSE
+# inventory_year=2019
+# domain=as.data.frame(cbind(c(-119.1,-116.78),
+#                            c(33.37,35.69)))
+# domain_res=0.01
+# domain_crs="epsg:4326" #lat/long
 ################################################################################
 #User input
 
@@ -315,6 +325,7 @@ if(Process_wastewater & sum(!unique(Wastewater_State_info[,4]) %in% c("scaled","
   error_found <- TRUE
   error_text <- paste0(error_text,"\n\nMust set Process_wastewater to FALSE or set Wastewater_State_info method values to either scaled or reported for all entries")
 }
+
 if(error_found){
   stop(error_text)
 }
@@ -410,7 +421,44 @@ if(class(focus_city)=="numeric"){
   focus_city_tigerlines <- "none"
 }
 
+
+#if there's only 1 state, there's no point in processing by domain and by state
+#as they're identical.
+if(length(state_name_list)==1){
+  stationary_combustion_by_domain <- FALSE
+  NG_distribution_by_domain <- FALSE
+}
+
+
 rm(UAC_year,Census_filenames,focus_city)
+
+
+################################################################################
+#Download the facility details (e.g., location) for GHGRP facilities using the
+#API.  Will be needed for several sectors.
+
+# if(Process_landfills | Process_natural_gas_distribution | Process_natural_gas_transmission | Process_wastewater){
+#see https://www.epa.gov/enviro/envirofacts-data-service-api
+data_URL <- "https://data.epa.gov/efservice/PUB_DIM_FACILITY/JSON"
+
+# download data and read in an R dataframe.  Keep only those for the
+# year/states of interest.  Cannot filter to year as previous year's data is
+# used in some functions.  Cannot filter to state as distribution needs to
+# correct some states as they list headquarters rather than area of operation.
+ghgrp_facility_info <- fromJSON(data_URL)
+
+rm(data_URL)
+# }
+
+
+################################################################################
+#one check now that we have the state list - ensure that the septic input
+#census data is for the states in the domain and only them.
+if(Process_wastewater & !(all(Wastewater_State_info$State %in% state_name_list) & all(state_name_list %in% Wastewater_State_info$State))){
+  stop("\n\nMust set Wastewater_State_info in the config for the states in the domain, and only the states in the domain - which are: ",state_name_list)
+}
+
+
 ################################################################################
 #Actually run the functions now, based on the config file
 
@@ -449,6 +497,7 @@ if(Process_landfills){
                         inventory_year=inventory_year,
                         verbose=verbose,
                         GHGI_landfill_total=GHGI_landfill_total,
+                        ghgrp_facility_info=ghgrp_facility_info,
                         plot_directory=plot_directory,
                         County_Tigerlines=County_Tigerlines,
                         State_Tigerlines=State_Tigerlines,
@@ -474,6 +523,7 @@ if(Process_natural_gas_distribution){
                   output_directory=output_directory,
                   inventory_year=inventory_year,
                   verbose=verbose,
+                  ghgrp_facility_info=ghgrp_facility_info,
                   EIA_file = file.path(input_directory,"176 Type of Operations and Sector Items.xlsx"),
                   PHMSA_file = file.path(input_directory,"annual_gas_distribution_2010_present/annual_gas_distribution_2019.xlsx"),
                   GHGI_file = file.path(input_directory,"2022_ghgi_natural_gas_systems_annex36_tables.xlsx"),
@@ -518,6 +568,7 @@ if(Process_natural_gas_transmission){
                GHGI_Pipeline=GHGI_Pipeline,
                HIFLD_compressor_file=file.path(input_directory,'Natural_Gas_Compressor_Stations.csv'),
                domain=domain,
+               ghgrp_facility_info=ghgrp_facility_info,
                state_name_list=state_name_list,
                output_directory=output_directory,
                inventory_year=inventory_year,
@@ -541,6 +592,7 @@ if(Process_stationary_combustion){
   # source(paste0(code_directory,"Inventory_based_disaggregation.R"))
   # main_config()
   # rm(code_directory)
+  # Stationary_combustion(NEI_file=file.path("~/../Desktop/nei.xlsx"),
   Stationary_combustion(NEI_file=file.path(input_directory,"NEI_2017.xlsx"),
                         domain=domain,
                         state_name_list=state_name_list,
@@ -575,7 +627,7 @@ if(Process_wastewater){
                         state_name_list=state_name_list,
                         State_Tigerlines=State_Tigerlines,
                         output_directory=output_directory)
-
+  
   # rm(list=setdiff(ls(),c("input_directory","domain","output_directory",
   #                        "inventory_year","verbose","clear","state_name_list",
   #                        "code_directory",
@@ -592,6 +644,7 @@ if(Process_wastewater){
              Wastewater_Municipal_method=Wastewater_Municipal_method,
              Wastewater_Municipal_file=Wastewater_Municipal_file,
              domain=domain,
+             ghgrp_facility_info=ghgrp_facility_info,
              state_name_list=state_name_list,
              inventory_year=inventory_year,
              National_wastewater_info=National_wastewater_info,
