@@ -546,9 +546,9 @@ Stationary_combustion <- function(NEI_file,
   ################################################################################
   #Now load in the shapefiles and ACES/Vulcan, merge geometries
   
-  merge_with_poly <- terra::merge(County_Tigerlines,df_wide,
+  merge_with_poly <- terra::merge(x = County_Tigerlines,y = df_wide,
                                   by.y=c('STATE_FIPS', 'COUNTY_FIPS'),
-                                  by.x=c('STATEFP','COUNTYFP'),all.y=T)
+                                  by.x=c('STATEFP','COUNTYFP'),all.x=T)
   
   res_totals <- c('res_petr_ER',
                   'res_wood_ER')
@@ -613,9 +613,13 @@ Stationary_combustion <- function(NEI_file,
       #Calculate per-pixel coverage for each county separately.  First split by
       #unique state-county number, then calculate per-pixel coverage, output = list
       #of spatvectors
-      cover_all_aces <- all_merge_LCC_state %>% 
-        split(f=paste0(all_merge_LCC_state$STATEFP,all_merge_LCC_state$COUNTYFP)) %>%
-        lapply(function(x){extract(aces_res,x,weights=T,exact=T,cells=T)})
+      if(length(unique(all_merge_LCC_state$COUNTYFP))==1){
+        cover_all <- list(extract(aces_res,all_merge_LCC_state,weights=T,exact=T,cells=T))
+      }else{
+        cover_all_aces <- all_merge_LCC_state %>% 
+          split(f=paste0(all_merge_LCC_state$STATEFP,all_merge_LCC_state$COUNTYFP)) %>%
+          lapply(function(x){extract(aces_res,x,weights=T,exact=T,cells=T)})
+      }
       disaggregation(aces_res,res_totals,agg_level="state",NEI_input = all_merge_LCC_state,cover_all_aces,out_envir=environment())
       disaggregation(aces_com,com_totals,agg_level="state",NEI_input=all_merge_LCC_state,cover_all_aces,out_envir=environment())
       disaggregation(aces_ind,ind_totals,agg_level="state",NEI_input=all_merge_LCC_state,cover_all_aces,out_envir=environment())
@@ -623,9 +627,13 @@ Stationary_combustion <- function(NEI_file,
     }
     if(Use_Vulcan){
       all_merge_LCC_state <- project(all_merge_state,vu_res)
-      cover_all_vulcan <- all_merge_LCC_state %>% 
-        split(f=paste0(all_merge_LCC_state$STATEFP,all_merge_LCC_state$COUNTYFP)) %>%
-        lapply(function(x){extract(vu_res,x,weights=T,exact=T,cells=T)})
+      if(length(unique(all_merge_LCC_state$COUNTYFP))==1){
+        cover_all <- list(extract(aces_res,all_merge_LCC_state,weights=T,exact=T,cells=T))
+      }else{
+        cover_all_vulcan <- all_merge_LCC_state %>% 
+          split(f=paste0(all_merge_LCC_state$STATEFP,all_merge_LCC_state$COUNTYFP)) %>%
+          lapply(function(x){extract(vu_res,x,weights=T,exact=T,cells=T)})
+      }
       disaggregation(vu_res,res_totals,agg_level="state",NEI_input=all_merge_LCC_state,cover_all_vulcan,out_envir=environment())
       disaggregation(vu_com,com_totals,agg_level="state",NEI_input=all_merge_LCC_state,cover_all_vulcan,out_envir=environment())
       disaggregation(vu_ind,ind_totals,agg_level="state",NEI_input=all_merge_LCC_state,cover_all_vulcan,out_envir=environment())
@@ -1067,36 +1075,36 @@ Stationary_combustion <- function(NEI_file,
     if(Use_ACES){
       if(stationary_combustion_by_state){
         log_plot(Summed_stationary_combustion_FF_ACES_bystate,
-                 "Stationary Combustion FF Sector\nSEDS state data scaled to match GHGI national data distributed\nto the county level via NEI, then distributed\nusing ACES residential, commercial, industrial, and electric sectoral CO2 emissions",
+                 "Stationary Combustion FF Sector\nSEDS state data scaled to match GHGI national data distributed\nto the county level via NEI, then distributed using ACES\nsectoral CO2 emissions",
                  zlim_min=stat_comb_min,zlim_max=stat_comb_FF_max)
         log_plot(Summed_stationary_combustion_wood_ACES_bystate,
-                 "Stationary Combustion Wood Sector\nSEDS state data scaled to match GHGI national data distributed\nto the county level via NEI, then distributed\nusing ACES residential, commercial, industrial, and electric sectoral CO2 emissions",
+                 "Stationary Combustion Wood Sector\nSEDS state data scaled to match GHGI national data distributed\nto the county level via NEI, then distributed using ACES\nsectoral CO2 emissions",
                  zlim_min=stat_comb_min,zlim_max=stat_comb_wood_max)
       }
       if(stationary_combustion_by_domain){
         log_plot(Summed_stationary_combustion_FF_ACES_bydomain,
-                 "Stationary Combustion FF Sector\nSEDS domain-summed data scaled to match GHGI national data distributed\nto the county level via NEI, then distributed\nusing ACES residential, commercial, industrial, and electric sectoral CO2 emissions",
+                 "Stationary Combustion FF Sector\nSEDS domain-summed data scaled to match GHGI national data distributed\nto the county level via NEI, then distributed using ACES\nsectoral CO2 emissions",
                  zlim_min=stat_comb_min,zlim_max=stat_comb_FF_max)
         log_plot(Summed_stationary_combustion_wood_ACES_bydomain,
-                 "Stationary Combustion Wood Sector\nSEDS domain-summed data scaled to match GHGI national data distributed\nto the county level via NEI, then distributed\nusing ACES residential, commercial, industrial, and electric sectoral CO2 emissions",
+                 "Stationary Combustion Wood Sector\nSEDS domain-summed data scaled to match GHGI national data distributed\nto the county level via NEI, then distributed using ACES\nsectoral CO2 emissions",
                  zlim_min=stat_comb_min,zlim_max=stat_comb_wood_max)
       }
     }
     if(Use_Vulcan){
       if(stationary_combustion_by_state){
         log_plot(Summed_stationary_combustion_FF_Vulcan_bystate,
-                 "Stationary Combustion FF Sector\nSEDS state data scaled to match GHGI national data distributed\nto the county level via NEI, then distributed\nusing Vulcan residential, commercial, industrial, and electric sectoral CO2 emissions",
+                 "Stationary Combustion FF Sector\nSEDS state data scaled to match GHGI national data distributed\nto the county level via NEI, then distributed using Vulcan\nsectoral CO2 emissions",
                  zlim_min=stat_comb_min,zlim_max=stat_comb_FF_max)
         log_plot(Summed_stationary_combustion_wood_Vulcan_bystate,
-                 "Stationary Combustion Wood Sector\nSEDS state data scaled to match GHGI national data distributed\nto the county level via NEI, then distributed\nusing Vulcan residential, commercial, industrial, and electric sectoral CO2 emissions",
+                 "Stationary Combustion Wood Sector\nSEDS state data scaled to match GHGI national data distributed\nto the county level via NEI, then distributed using Vulcan\nsectoral CO2 emissions",
                  zlim_min=stat_comb_min,zlim_max=stat_comb_wood_max)
       }
       if(stationary_combustion_by_domain){
         log_plot(Summed_stationary_combustion_FF_Vulcan_bydomain,
-                 "Stationary Combustion FF Sector\nSEDS domain-summed data scaled to match GHGI national data distributed\nto the county level via NEI, then distributed\nusing Vulcan residential, commercial, industrial, and electric sectoral CO2 emissions",
+                 "Stationary Combustion FF Sector\nSEDS domain-summed data scaled to match GHGI national data distributed\nto the county level via NEI, then distributed using Vulcan\nsectoral CO2 emissions",
                  zlim_min=stat_comb_min,zlim_max=stat_comb_FF_max)
         log_plot(Summed_stationary_combustion_wood_Vulcan_bydomain,
-                 "Stationary Combustion Wood Sector\nSEDS domain-summed data scaled to match GHGI national data distributed\nto the county level via NEI, then distributed\nusing Vulcan residential, commercial, industrial, and electric sectoral CO2 emissions",
+                 "Stationary Combustion Wood Sector\nSEDS domain-summed data scaled to match GHGI national data distributed\nto the county level via NEI, then distributed using Vulcan\nsectoral CO2 emissions",
                  zlim_min=stat_comb_min,zlim_max=stat_comb_wood_max)
       }
     }
