@@ -68,6 +68,8 @@ prep_plot_data <- function(input){
 log_plot <- function(input,title,zlim_min=NULL,zlim_max=NULL,
                      filename){
   
+  plot_type="continuous"
+  
   #set filename to the proper path and use input data as filename if none was
   #provided
   if(missing(filename)){
@@ -90,17 +92,24 @@ log_plot <- function(input,title,zlim_min=NULL,zlim_max=NULL,
     input[input>zlim_max] <- zlim_max
   }
   
+  #can't plot an all NA plot.  Would rather plot it as all 0 than not plot it.
+  if(all(is.na(values(input)) | values(input)==0)){
+    values(input) <- 0
+    plot_type="classes"
+  }
+  
   png(paste0(outputname,".png"),width = 480*2,height=480*2)
-  plot(input,mar=c(3.1, 3.1, 2.1, 7.1)+c(0,0,0,1),
-       # col=timPalette(),
-       type="continuous",
+  plot(input,mar=c(3.1, 3.1, 2.1, 7.1)+c(0,0,7,2),
+       type=plot_type,
        colNA="black",
        main=title,
        plg=list(cex=2,title="log10(nmol/m2/s)",title.cex=2),
-       pax=list(cex.axis=2),
-       xlab="Longitude",ylab="Latitude",
+       pax=list(cex.axis=2,line=2),
+       # xlab="Longitude",ylab="Latitude",
        cex.main=2,cex.axis=2,cex.lab=2,
        range=c(zlim_min,zlim_max))
+  mtext("Latitude",side = 2,line = 0,cex = 2)
+  mtext("Longitude",side = 1,line = 3.75,cex = 2)
   plot(project(County_Tigerlines,input),add=T,border="dimgrey",col=NA)
   plot(project(State_Tigerlines,input),add=T,border="white",lwd=2,col=NA)
   if(class(focus_city_tigerlines)=="SpatVector"){
@@ -149,6 +158,9 @@ log_plot <- function(input,title,zlim_min=NULL,zlim_max=NULL,
 #plot for linear scale - mostly identical
 not_log_plot <- function(input,title,zlim_min=NULL,zlim_max=NULL,
                          filename){
+  
+  plot_type="continuous"
+  
   if(missing(filename)){
     if(grepl(pattern="Summed",x=substitute(input))){
       outputname <- paste0(plot_directory,"Summed_Sectors/",substitute(input))
@@ -162,18 +174,26 @@ not_log_plot <- function(input,title,zlim_min=NULL,zlim_max=NULL,
   #Here just set 0 values to NA so that colNA applies
   input[values(input)==0] <- NA
   
+  #can't plot an all NA plot.  Would rather plot it as all 0 than not plot it.
+  if(all(is.na(values(input)) | values(input)==0)){
+    values(input) <- 0
+    plot_type="classes"
+  }
+  
   png(paste0(outputname,".png"),width = 480*2,height=480*2)
   par(mar=c(5, 4, 4, 2) + 0.1 + c(0,1,2,1))
-  plot(input,mar=c(3.1, 3.1, 2.1, 7.1)+c(0,0,0,1),
+  plot(input,mar=c(3.1, 3.1, 2.1, 7.1)+c(0,0,7,2),
        # col=timPalette(),
-       type="continuous",
+       type=plot_type,
        colNA="black",
        main=title,
        plg=list(cex=2,title="nmol/m2/s",title.cex=2),
        pax=list(cex.axis=2),
-       xlab="Longitude",ylab="Latitude",
+       # xlab="Longitude",ylab="Latitude",
        cex.main=2,cex.axis=2,cex.lab=2,
        range=c(zlim_min,zlim_max))
+  mtext("Latitude",side = 2,line = 0,cex = 2)
+  mtext("Longitude",side = 1,line = 3.75,cex = 2)
   plot(project(County_Tigerlines,input),add=T,border="dimgrey",col=NA)
   plot(project(State_Tigerlines,input),add=T,border="white",lwd=2,col=NA)
   if(class(focus_city_tigerlines)=="SpatVector"){
