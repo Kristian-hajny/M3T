@@ -126,9 +126,16 @@ testmode_vulcan <- F
 
 
 
-#overwrite these values for testing
+#just rerunning the domain to check the output is unchanged after some testing edits
 output_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Processed_test2/"
 plot_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Figures_test2/"
+
+
+
+
+#overwrite these values for testing
+# output_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Processed_test/"
+# plot_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Figures_test/"
 # focus_city=FALSE
 # inventory_year=2019
 # domain=as.data.frame(cbind(c(-119.1,-116.78),
@@ -360,12 +367,9 @@ if(testmode_vulcan){
 ################################################################################
 #load in Census tigerlines necessary for several functions
 
-#Every 10 years the census updates the urban areas
-if(inventory_year>=2010 & inventory_year<2020){
-  UAC_year <- 10
-}else if(inventory_year>=2020 & Inventory_year<2030){
-  UAC_year <- 20
-}
+#Every 10 years the census updates the urban areas.  Just round down to the
+#nearest decade.
+UAC_year <- floor(as.numeric(substring(as.character(inventory_year),3,4))/10)*10
 
 Census_filenames <- c(paste0(input_directory,"State_Tigerlines/tl_",inventory_year,"_us_state.shp"),
                       paste0(input_directory,"Urban_Tigerlines/tl_",inventory_year,"_us_uac",UAC_year,".shp"),
