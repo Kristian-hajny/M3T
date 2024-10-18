@@ -174,6 +174,8 @@ i=1
 while(i<=length(packagecheck)){
   if(length(find.package(packagecheck[i],quiet = TRUE))<1){
     install.packages(packagecheck[i],repos="https://repo.miserver.it.umich.edu/cran/")
+  }else{
+    update.packages(oldPkgs = packagecheck[i])
   }
   i <- i+1
 }
@@ -435,8 +437,6 @@ if(length(state_name_list)==1){
 
 
 rm(UAC_year,Census_filenames,focus_city)
-
-
 ################################################################################
 #Download the facility details (e.g., location) for GHGRP facilities using the
 #API.  Will be needed for several sectors.
