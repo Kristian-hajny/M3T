@@ -36,13 +36,13 @@ main_config <- function(){
   
   #Sectors to process
   {
-    Process_wetlands_and_inland_waters <- FALSE
-    Process_landfills <- FALSE
-    Process_natural_gas_distribution <- FALSE	#includes residential post-meter
-    Process_natural_gas_transmission <- FALSE
-    Process_stationary_combustion <- FALSE
-    Process_wastewater <- FALSE
-    Incorporate_remaining_sectors_from_gridded_EPA <- FALSE
+    Process_wetlands_and_inland_waters <- TRUE
+    Process_landfills <- TRUE
+    Process_natural_gas_distribution <- TRUE	#includes residential post-meter
+    Process_natural_gas_transmission <- TRUE
+    Process_stationary_combustion <- TRUE
+    Process_wastewater <- TRUE
+    Incorporate_remaining_sectors_from_gridded_EPA <- TRUE
     Combine_sectors <- FALSE #create total CH4 inventory(s) by summing across sectors
     EIA_API_key <- "1kLep4UApTZKwdOrDkW6J8qlO0niiw8ej0JPliyc"
   }
@@ -323,16 +323,30 @@ main_config <- function(){
     #National total of developed open space and developed low intensity land cover
     #from the national land cover database from Table 7 of 
     #https://doi.org/10.1016/j.isprsjprs.2020.02.019.
-    Wastewater_State_info <- data.frame("State"          =c("DE"    ,"MD"    ,"NJ"    ,"NY"      ,"PA"),
-                                        "Population"     =c(1018396 ,6164660 ,9261699 ,19677151  ,12972008),
-                                        "Septic_Fraction"=c(0.257   ,0.181   ,0.116   ,0.159     ,0.245),
-                                        "Method"         =c("scaled","scaled","scaled","reported","scaled"))
+    Wastewater_State_info <- data.frame("State"          =c("AL"    ,"AZ"    ,"AR"    ,"CA"    ,"CO"    ,"CT"    ,"DE"    ,"DC"    ,"FL"      ,"GA"    ,"ID"    ,"IL"    ,"IN"    ,"IA"    ,"KS"    ,"KY"    ,"LA"    ,"ME"    ,"MD"    ,"MA"    ,"MI"    ,"MN"    ,"MS"    ,"MO"    ,"MT"    ,"NE"    ,"NV"    ,"NH"    ,"NJ"    ,"NM"    ,"NY"      ,"NC"    ,"ND"    ,"OH"    ,"OK"    ,"OR"    ,"PA"    ,"RI"    ,"SC"    ,"SD"    ,"TN"    ,"TX"    ,"UT"    ,"VT"    ,"VA"    ,"WA"    ,"WV"    ,"WI"    ,"WY"),
+                                        "Population"     =c(4903185 ,7278717 ,3017804 ,39512223,5758736 ,3565287 ,973764  ,705749  ,21477737  ,10617423,1787065 ,12671821,6732219 ,3155070 ,2913314 ,4467673 ,4648794 ,1344212 ,6045680 ,6892503 ,9986857 ,5639632 ,2976149 ,6137428 ,1068778 ,1934408 ,3080156 ,1359711 ,8882190 ,2096829 ,19453561  ,10488084,762062  ,11689100,3956971 ,4217737 ,12801989,1059361 ,5148714 ,884659  ,6829174 ,28995881,3205958 ,623989  ,8535519 ,7614893 ,1792147 ,5822434 ,578759),
+                                        "Septic_Fraction"=c(0.4360  ,0.1700  ,0.3820  ,0.0980  ,0.1240  ,0.2860  ,0.2570  ,0.0020  ,0.1265    ,0.3680  ,0.3460  ,0.1330  ,0.3130  ,0.2320  ,0.1790  ,0.3980  ,0.2580  ,0.5130  ,0.1810  ,0.2670  ,0.2830  ,0.2530  ,0.3830  ,0.2420  ,0.3750  ,0.1780  ,0.1170  ,0.4900  ,0.1160  ,0.2550  ,0.1615    ,0.4850  ,0.2410  ,0.2150  ,0.2610  ,0.2930  ,0.2450  ,0.2860  ,0.4060  ,0.2680  ,0.3860  ,0.1810  ,0.1090  ,0.5500  ,0.2830  ,0.3100  ,0.4080  ,0.2830  ,0.2410),
+                                        "Method"         =c("scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","reported","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","reported","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled"))
+    # Wastewater_State_info <- data.frame("State"          =c("AL"    ,"AK"    ,"AZ"    ,"AR"    ,"CA"    ,"CO"    ,"CT"    ,"DE"    ,"DC"    ,"FL"      ,"GA"    ,"HI"    ,"ID"    ,"IL"    ,"IN"    ,"IA"    ,"KS"    ,"KY"    ,"LA"    ,"ME"    ,"MD"    ,"MA"    ,"MI"    ,"MN"    ,"MS"    ,"MO"    ,"MT"    ,"NE"    ,"NV"    ,"NH"    ,"NJ"    ,"NM"    ,"NY"      ,"NC"    ,"ND"    ,"OH"    ,"OK"    ,"OR"    ,"PA"    ,"RI"    ,"SC"    ,"SD"    ,"TN"    ,"TX"    ,"UT"    ,"VT"    ,"VA"    ,"WA"    ,"WV"    ,"WI"    ,"WY"),
+    #                                     "Population"     =c(4903185 ,731545  ,7278717 ,3017804 ,39512223,5758736 ,3565287 ,973764  ,705749  ,21477737  ,10617423,1415872 ,1787065 ,12671821,6732219 ,3155070 ,2913314 ,4467673 ,4648794 ,1344212 ,6045680 ,6892503 ,9986857 ,5639632 ,2976149 ,6137428 ,1068778 ,1934408 ,3080156 ,1359711 ,8882190 ,2096829 ,19453561  ,10488084,762062  ,11689100,3956971 ,4217737 ,12801989,1059361 ,5148714 ,884659  ,6829174 ,28995881,3205958 ,623989  ,8535519 ,7614893 ,1792147 ,5822434 ,578759),
+    #                                     "Septic_Fraction"=c(0.4360  ,0.2570  ,0.1700  ,0.3820  ,0.0980  ,0.1240  ,0.2860  ,0.2570  ,0.0020  ,0.1265    ,0.3680  ,0.1870  ,0.3460  ,0.1330  ,0.3130  ,0.2320  ,0.1790  ,0.3980  ,0.2580  ,0.5130  ,0.1810  ,0.2670  ,0.2830  ,0.2530  ,0.3830  ,0.2420  ,0.3750  ,0.1780  ,0.1170  ,0.4900  ,0.1160  ,0.2550  ,0.1615    ,0.4850  ,0.2410  ,0.2150  ,0.2610  ,0.2930  ,0.2450  ,0.2860  ,0.4060  ,0.2680  ,0.3860  ,0.1810  ,0.1090  ,0.5500  ,0.2830  ,0.3100  ,0.4080  ,0.2830  ,0.2410),
+    #                                     "Method"         =c("scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","reported","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","reported","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled","scaled"))
+    # Wastewater_State_info <- data.frame("State"          =c("DE"    ,"MD"    ,"NJ"    ,"NY"      ,"PA"),
+    #                                     "Population"     =c(1018396 ,6164660 ,9261699 ,19677151  ,12972008),
+    #                                     "Septic_Fraction"=c(0.257   ,0.181   ,0.116   ,0.159     ,0.245),
+    #                                     "Method"         =c("scaled","scaled","scaled","reported","scaled"))
+    # Wastewater_State_info <- data.frame("State"          =c("DE"),
+    #                                     "Population"     =c(1018396),
+    #                                     "Septic_Fraction"=c(0.257),
+    #                                     "Method"         =c("scaled"))
     Wastewater_State_info[,4] <- tolower(Wastewater_State_info[,4]) #just in case manually entered with caps
     #Pulled from census data.  method is either scaled - i.e., from an old
     #census report, or reported, i.e., use as is from a relatively recent census
     #report.  Only used if state_septic=TRUE
-    National_wastewater_info <- data.frame("Year"           =c(1990 ,2021),
-                                           "Septic_Fraction"=c(0.241,0.152))
+    National_wastewater_info <- data.frame("Year"           =c(1990 ,2019),
+                                           "Septic_Fraction"=c(0.241,0.1635))
+    # National_wastewater_info <- data.frame("Year"           =c(1990 ,2021),
+    #                                        "Septic_Fraction"=c(0.241,0.152))
     #Only needed if any states are using the scaled method.  National septic
     #fraction in the year of interest and the year that the scaled states reported a
     #septic fraction (typically 1990)
