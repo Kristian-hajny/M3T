@@ -307,6 +307,7 @@
 
 Wastewater <- function(DMR_file,
                        CWNS_file,
+                       CWNS_year,
                        output_directory,
                        Wastewater_Municipal_method,
                        Wastewater_Municipal_file,
@@ -334,44 +335,61 @@ Wastewater <- function(DMR_file,
   # First load in and prep the flow data
   
   if(Wastewater_use_CWNS){
-    cwns_2012 <- read_xlsx(CWNS_file)
-    
-    #ID any that are in the western or southern hemisphere (- coordinates)
-    Western_hemis <- grep("W",cwns_2012$LONGITUDE)
-    Southern_hemis <- grep("S",cwns_2012$LATITUDE)
-    #remove the hemisphere text so we can make numeric
-    cwns_2012$LATITUDE <- gsub("N|S","",cwns_2012$LATITUDE)
-    cwns_2012$LONGITUDE <- gsub("W|E","",cwns_2012$LONGITUDE)
-    cwns_2012$LATITUDE <- as.numeric(cwns_2012$LATITUDE)
-    cwns_2012$LONGITUDE <- as.numeric(cwns_2012$LONGITUDE)
-    #make those in the S or W hemispheres the appropriate negative coordinates
-    cwns_2012$LATITUDE[Southern_hemis] <- cwns_2012$LATITUDE[Southern_hemis]*-1
-    cwns_2012$LONGITUDE[Western_hemis] <- cwns_2012$LONGITUDE[Western_hemis]*-1
-    
-    #Pick only those entries that have lat and lon coordinates
-    cwns_2012_filt <- subset(cwns_2012,!is.na(LATITUDE) & !is.na(LONGITUDE))
-    
-    # Nearly all the entries are NAD83, but some aren't
-    # Convert everything over to WGS84
-    # Assume blank or unknown entries are NAD83
-    cwns_2012_wgs84 <- subset(cwns_2012_filt, HORIZONTAL_COORDINATE_DATUM=="World Geodetic System of 1984")
-    cwns_2012_nad27 <- subset(cwns_2012_filt, HORIZONTAL_COORDINATE_DATUM=="North American Datum of 1927")
-    cwns_2012_nad83 <- subset(cwns_2012_filt, HORIZONTAL_COORDINATE_DATUM!="North American Datum of 1927" & HORIZONTAL_COORDINATE_DATUM!="World Geodetic System of 1984")
-    
-    cwns_2012_wgs84 <- vect(cwns_2012_wgs84,geom=c("LONGITUDE","LATITUDE"))
-    cwns_2012_nad27 <- vect(cwns_2012_nad27,geom=c("LONGITUDE","LATITUDE"))
-    cwns_2012_nad83 <- vect(cwns_2012_nad83,geom=c("LONGITUDE","LATITUDE"))
-    
-    crs(cwns_2012_wgs84) <- "EPSG:4326"  # WGS84
-    crs(cwns_2012_nad27) <- "EPSG:4267"  # NAD27
-    crs(cwns_2012_nad83) <- "EPSG:4269"  # NAD83
-    
-    cwns_2012_nad27_trans <- project(cwns_2012_nad27,crs(cwns_2012_wgs84))
-    cwns_2012_nad83_trans <- project(cwns_2012_nad83,crs(cwns_2012_wgs84))
-    
-    CWNS_Municipal_flow <- rbind(cwns_2012_wgs84,cwns_2012_nad27_trans,cwns_2012_nad83_trans)
-    
-    CWNS_tot_flow <- sum(CWNS_Municipal_flow$EXIST_MUNICIPAL, na.rm=T)
+    if(CWNS_year==2012){
+      cwns_2012 <- read_xlsx(CWNS_file)
+      
+      #ID any that are in the western or southern hemisphere (- coordinates)
+      Western_hemis <- grep("W",cwns_2012$LONGITUDE)
+      Southern_hemis <- grep("S",cwns_2012$LATITUDE)
+      #remove the hemisphere text so we can make numeric
+      cwns_2012$LATITUDE <- gsub("N|S","",cwns_2012$LATITUDE)
+      cwns_2012$LONGITUDE <- gsub("W|E","",cwns_2012$LONGITUDE)
+      cwns_2012$LATITUDE <- as.numeric(cwns_2012$LATITUDE)
+      cwns_2012$LONGITUDE <- as.numeric(cwns_2012$LONGITUDE)
+      #make those in the S or W hemispheres the appropriate negative coordinates
+      cwns_2012$LATITUDE[Southern_hemis] <- cwns_2012$LATITUDE[Southern_hemis]*-1
+      cwns_2012$LONGITUDE[Western_hemis] <- cwns_2012$LONGITUDE[Western_hemis]*-1
+      
+      #Pick only those entries that have lat and lon coordinates
+      cwns_2012_filt <- subset(cwns_2012,!is.na(LATITUDE) & !is.na(LONGITUDE))
+      
+      # Nearly all the entries are NAD83, but some aren't
+      # Convert everything over to WGS84
+      # Assume blank or unknown entries are NAD83
+      cwns_2012_wgs84 <- subset(cwns_2012_filt, HORIZONTAL_COORDINATE_DATUM=="World Geodetic System of 1984")
+      cwns_2012_nad27 <- subset(cwns_2012_filt, HORIZONTAL_COORDINATE_DATUM=="North American Datum of 1927")
+      cwns_2012_nad83 <- subset(cwns_2012_filt, HORIZONTAL_COORDINATE_DATUM!="North American Datum of 1927" & HORIZONTAL_COORDINATE_DATUM!="World Geodetic System of 1984")
+      
+      cwns_2012_wgs84 <- vect(cwns_2012_wgs84,geom=c("LONGITUDE","LATITUDE"))
+      cwns_2012_nad27 <- vect(cwns_2012_nad27,geom=c("LONGITUDE","LATITUDE"))
+      cwns_2012_nad83 <- vect(cwns_2012_nad83,geom=c("LONGITUDE","LATITUDE"))
+      
+      crs(cwns_2012_wgs84) <- "EPSG:4326"  # WGS84
+      crs(cwns_2012_nad27) <- "EPSG:4267"  # NAD27
+      crs(cwns_2012_nad83) <- "EPSG:4269"  # NAD83
+      
+      cwns_2012_nad27_trans <- project(cwns_2012_nad27,crs(cwns_2012_wgs84))
+      cwns_2012_nad83_trans <- project(cwns_2012_nad83,crs(cwns_2012_wgs84))
+      
+      CWNS_Municipal_flow <- rbind(cwns_2012_wgs84,cwns_2012_nad27_trans,cwns_2012_nad83_trans)
+      
+      CWNS_tot_flow <- sum(CWNS_Municipal_flow$EXIST_MUNICIPAL, na.rm=T)
+    }else if(CWNS_year==2022){
+      Location <- read.csv(file.path(CWNS_file,"PHYSICAL_LOCATION.csv"))
+      Flow <- read.csv(file.path(CWNS_file,"FLOW.csv"))
+      Facilities <- read.csv(file.path(CWNS_file,"FACILITIES.csv"))
+      
+      Flow <- Flow[Flow$FLOW_TYPE=="Municipal Flow",]
+      Location <- Location[Location$CWNS_ID %in% Flow$CWNS_ID,]
+      Facilities <- Facilities[Facilities$CWNS_ID %in% Flow$CWNS_ID,]
+      
+      CWNS_Municipal_flow <- Location
+      CWNS_Municipal_flow$EXIST_MUNICIPAL <- Flow$CURRENT_DESIGN_FLOW[match(Flow$CWNS_ID,Location$CWNS_ID)]
+      CWNS_Municipal_flow$facility_name <- Facilities$FACILITY_NAME[match(Facilities$CWNS_ID,Location$CWNS_ID)]
+      CWNS_Municipal_flow <- vect(CWNS_Municipal_flow,geom=c("LONGITUDE","LATITUDE"),crs="EPSG:4269") # NAD83
+      
+      CWNS_tot_flow <- sum(CWNS_Municipal_flow$EXIST_MUNICIPAL, na.rm=T)
+    }
   }
   if(Wastewater_use_DMR){
     DMR_data <- read.csv(DMR_file,skip=3)
@@ -379,7 +397,8 @@ Wastewater <- function(DMR_file,
     DMR_Municipal_flow <- subset(DMR_data,!is.na(Facility_Latitude) & !is.na(Facility_Longitude))
     DMR_Municipal_flow <- vect(DMR_Municipal_flow,geom=c("Facility_Longitude","Facility_Latitude"))
     crs(DMR_Municipal_flow) <- "EPSG:4326"
-    DMR_tot_flow <- sum(DMR_data$Average_Flow__MGD_, na.rm=T)
+    # DMR_tot_flow <- sum(DMR_data$Average_Flow__MGD_, na.rm=T)
+    DMR_tot_flow <- sum(DMR_data$Average_Daily_Flow__MGD_, na.rm=T)
   }
   
   # Take total emissions for each category from the 2021 EPA report (values for 2019 in kt)
@@ -399,7 +418,7 @@ Wastewater <- function(DMR_file,
     }else{
       rast <- domain_template
     }
-
+    
     # Calculate flux in nmol/m2/s
     rast_flux <- rast*1e9/(cellSize(rast,unit="m"))  
     rast_flux[is.na(rast_flux)]<-0
@@ -431,7 +450,8 @@ Wastewater <- function(DMR_file,
       rasterize_plus(CWNS_Municipal_flow,"WWTP_CWNS_GHGI_municipal")
     }
     if(Wastewater_use_DMR){
-      DMR_Municipal_flow$emiss <- central_EPA_emiss*DMR_Municipal_flow$Average_Flow__MGD_/DMR_tot_flow   # in mol/s
+      # DMR_Municipal_flow$emiss <- central_EPA_emiss*DMR_Municipal_flow$Average_Flow__MGD_/DMR_tot_flow   # in mol/s
+      DMR_Municipal_flow$emiss <- central_EPA_emiss*DMR_Municipal_flow$Average_Daily_Flow__MGD_/DMR_tot_flow   # in mol/s
       rasterize_plus(DMR_Municipal_flow,"WWTP_DMR_GHGI_municipal")
     }
   }
@@ -450,8 +470,10 @@ Wastewater <- function(DMR_file,
       rasterize_plus(CWNS_Municipal_flow,"WWTP_CWNS_Moore_Linear_municipal")
     }
     if(Wastewater_use_DMR){
-      DMR_Municipal_flow$Average_Flow__MGD_ <- DMR_Municipal_flow$Average_Flow__MGD_*3785.41178/(24*60*60)
-      DMR_Municipal_flow$emiss <- 1.2*log10(DMR_Municipal_flow$Average_Flow__MGD_)+1
+      # DMR_Municipal_flow$Average_Flow__MGD_ <- DMR_Municipal_flow$Average_Flow__MGD_*3785.41178/(24*60*60)
+      # DMR_Municipal_flow$emiss <- 1.2*log10(DMR_Municipal_flow$Average_Flow__MGD_)+1
+      DMR_Municipal_flow$Average_Daily_Flow__MGD_ <- DMR_Municipal_flow$Average_Daily_Flow__MGD_*3785.41178/(24*60*60)
+      DMR_Municipal_flow$emiss <- 1.2*log10(DMR_Municipal_flow$Average_Daily_Flow__MGD_)+1
       DMR_Municipal_flow$emiss <- (10^(DMR_Municipal_flow$emiss))/(12.011+1.008*4)
       rasterize_plus(DMR_Municipal_flow,"WWTP_DMR_Moore_Linear_municipal")
     }
@@ -538,7 +560,7 @@ Wastewater <- function(DMR_file,
                                 as.numeric(global(state_flux*cellSize(state_flux,unit="km"),sum,na.rm=T)))
       
       # Combine across states
-      septic_flux2 <- mosaic(septic_flux2,state_flux,fun=sum)
+      septic_flux2 <- sum(septic_flux2,state_flux,na.rm=T)
     }
     cat("Finished processing septic for",Wastewater_State_info[A,1],"at",round(difftime(Sys.time(),starttime,units = "min"),2),"minutes since start\n")
   }
@@ -586,10 +608,12 @@ Wastewater <- function(DMR_file,
   #download the relevant industrial wastewater - sector data
   #(https://www.epa.gov/enviro/greenhouse-gas-model).  
   
-  data_URL <- "https://data.epa.gov/efservice/II_SUBPART_LEVEL_INFORMATION/JSON"
-  ghgrp_data <- Trycatch_downloader(data_URL,output_location=NULL,method="API",
+  # data_URL <- "https://data.epa.gov/efservice/II_SUBPART_LEVEL_INFORMATION/JSON"
+  data_URL <- "https://data.epa.gov/dmapservice/ghg.ii_subpart_level_information/json"
+  ghgrp_data <- Trycatch_downloader(data_URL,method="API",
                                     error_message = paste0("Greenhouse Gas Reporting Program data could not be downloaded using API link: ",data_URL))
-  colnames(ghgrp_data) <- c("facility_id","year","facility_name","ghg_quantity","ghg_name")
+  # colnames(ghgrp_data) <- c("facility_id","year","facility_name","ghg_quantity","ghg_name")
+  colnames(ghgrp_data) <- c("facility_id","facility_name","ghg_name","ghg_quantity","year")
   ################################################################################
   #Merge with location-like data
   
@@ -717,18 +741,27 @@ Wastewater <- function(DMR_file,
       not_log_plot(septic_flux2,filename="Wastewater_dom_septic_bystate",
                    "Domestic Wastewater - Septic\n estimated state septic distributed using \ndeveloped open space/low intensity land cover",
                    as.numeric(global(min(septic_flux,septic_flux2,na.rm=T),min,na.rm=T)),
-                   as.numeric(global(max(septic_flux,septic_flux2,na.rm=T),max,na.rm=T)))
+                   as.numeric(global(max(septic_flux,septic_flux2,na.rm=T),max,na.rm=T)),
+                   plot_directory=plot_directory,
+                   domain=domain,County_Tigerlines=County_Tigerlines,
+                   State_Tigerlines=State_Tigerlines)
     }
     
     if(Wastewater_national_septic){
       not_log_plot(septic_flux,filename="Wastewater_dom_septic_national",
                    "Domestic Wastewater - Septic\n national EPA septic distributed using \ndeveloped open space/low intensity land cover",
                    as.numeric(global(min(septic_flux,septic_flux2,na.rm=T),min,na.rm=T)),
-                   as.numeric(global(max(septic_flux,septic_flux2,na.rm=T),max,na.rm=T)))
+                   as.numeric(global(max(septic_flux,septic_flux2,na.rm=T),max,na.rm=T)),
+                   plot_directory=plot_directory,
+                   domain=domain,County_Tigerlines=County_Tigerlines,
+                   State_Tigerlines=State_Tigerlines)
     }
     
     log_plot(ghgrp_flux,filename="Wastewater_ind",
-             "Industrial Wastewater -\n GHGRP Reporters")
+             "Industrial Wastewater -\n GHGRP Reporters",
+             plot_directory=plot_directory,
+             domain=domain,County_Tigerlines=County_Tigerlines,
+             State_Tigerlines=State_Tigerlines)
     
     
     
@@ -741,28 +774,36 @@ Wastewater <- function(DMR_file,
         #set 0 to NA so the minimum ignores 0 (log plot, so 0 = -inf)
         temp <- WWTP_CWNS_Moore_Linear_municipal
         temp[temp==0] <- NA
-        WWTP_min <- min(WWTP_min,as.numeric(global(temp,min,na.rm=T)))
-        WWTP_max <- max(WWTP_max,as.numeric(global(temp,max,na.rm=T)))
+        if(!all(is.na(values(temp)))){
+          WWTP_min <- min(WWTP_min,as.numeric(global(temp,min,na.rm=T)))
+          WWTP_max <- max(WWTP_max,as.numeric(global(temp,max,na.rm=T)))
+        }
       }
       if(Wastewater_Municipal_Method_GHGI){
         temp <- WWTP_CWNS_GHGI_municipal
         temp[temp==0] <- NA
-        WWTP_min <- min(WWTP_min,as.numeric(global(temp,min,na.rm=T)))
-        WWTP_max <- max(WWTP_max,as.numeric(global(temp,max,na.rm=T)))
+        if(!all(is.na(values(temp)))){
+          WWTP_min <- min(WWTP_min,as.numeric(global(temp,min,na.rm=T)))
+          WWTP_max <- max(WWTP_max,as.numeric(global(temp,max,na.rm=T)))
+        }
       }
     }
     if(Wastewater_use_DMR){
       if(Wastewater_Municipal_Method_Moore_linear){
         temp <- WWTP_DMR_Moore_Linear_municipal
         temp[temp==0] <- NA
-        WWTP_min <- min(WWTP_min,as.numeric(global(temp,min,na.rm=T)))
-        WWTP_max <- max(WWTP_max,as.numeric(global(temp,max,na.rm=T)))
+        if(!all(is.na(values(temp)))){
+          WWTP_min <- min(WWTP_min,as.numeric(global(temp,min,na.rm=T)))
+          WWTP_max <- max(WWTP_max,as.numeric(global(temp,max,na.rm=T)))
+        }
       }
       if(Wastewater_Municipal_Method_GHGI){
         temp <- WWTP_DMR_GHGI_municipal
         temp[temp==0] <- NA
-        WWTP_min <- min(WWTP_min,as.numeric(global(temp,min,na.rm=T)))
-        WWTP_max <- max(WWTP_max,as.numeric(global(temp,max,na.rm=T)))
+        if(!all(is.na(values(temp)))){
+          WWTP_min <- min(WWTP_min,as.numeric(global(temp,min,na.rm=T)))
+          WWTP_max <- max(WWTP_max,as.numeric(global(temp,max,na.rm=T)))
+        }
       }
     }
     
@@ -775,24 +816,32 @@ Wastewater <- function(DMR_file,
       if(Wastewater_Municipal_Method_Moore_linear){
         log_plot(WWTP_CWNS_Moore_Linear_municipal,filename="Wastewater_dom_central_CWNS_Moore_linear",
                  "Domestic Wastewater -\n Moore log-linear relationship combined with\nClean Watersheds Needs Survey",
-                 WWTP_min,WWTP_max)
+                 WWTP_min,WWTP_max,plot_directory=plot_directory,
+                 domain=domain,County_Tigerlines=County_Tigerlines,
+                 State_Tigerlines=State_Tigerlines)
         #else if below as GHGI vs Moore can ~double emissions, which is
         #negligible on a log scale.
       }else if(Wastewater_Municipal_Method_GHGI){
         log_plot(WWTP_CWNS_GHGI_municipal,filename="Wastewater_dom_central_CWNS_GHGI",
                  "Domestic Wastewater -\n EPA total distributed using\nClean Watersheds Needs Survey",
-                 WWTP_min,WWTP_max)
+                 WWTP_min,WWTP_max,plot_directory=plot_directory,
+                 domain=domain,County_Tigerlines=County_Tigerlines,
+                 State_Tigerlines=State_Tigerlines)
       }
     }
     if(Wastewater_use_DMR){
       if(Wastewater_Municipal_Method_Moore_linear){
         log_plot(WWTP_DMR_Moore_Linear_municipal,filename="Wastewater_dom_central_DMR_Moore_linear",
                  "Domestic Wastewater -\n Moore log-linear relationship combined with\nDischarge Monitoring Reports",
-                 WWTP_min,WWTP_max)
+                 WWTP_min,WWTP_max,plot_directory=plot_directory,
+                 domain=domain,County_Tigerlines=County_Tigerlines,
+                 State_Tigerlines=State_Tigerlines)
       }else if(Wastewater_Municipal_Method_GHGI){
         log_plot(WWTP_DMR_GHGI_municipal,filename="Wastewater_dom_central_DMR_GHGI",
                  "Domestic Wastewater -\n EPA total distributed using\nDischarge Monitoring Reports",
-                 WWTP_min,WWTP_max)
+                 WWTP_min,WWTP_max,plot_directory=plot_directory,
+                 domain=domain,County_Tigerlines=County_Tigerlines,
+                 State_Tigerlines=State_Tigerlines)
       }
     }
     
@@ -824,27 +873,35 @@ Wastewater <- function(DMR_file,
       if(Wastewater_state_septic){
         Summed_wastewater_treatment_CWNS_state = sum(get(paste0("WWTP_CWNS_",WWTP_method)),septic_flux2,ghgrp_flux,na.rm=T)
         CWNS_state_text=paste0(WWTP_text," CWNS")
-        WWTP_max <- max(WWTP_max,as.numeric(global(Summed_wastewater_treatment_CWNS_state,max,na.rm=T)))
+        if(!all(is.na(values(Summed_wastewater_treatment_CWNS_state)))){
+          WWTP_max <- max(WWTP_max,as.numeric(global(Summed_wastewater_treatment_CWNS_state,max,na.rm=T)))
+        }
       }
       if(Wastewater_national_septic){
         Summed_wastewater_treatment_CWNS_national = sum(get(paste0("WWTP_CWNS_",WWTP_method)),septic_flux,ghgrp_flux,na.rm=T)
         CWNS_national_text=paste0(WWTP_text," CWNS")
-        WWTP_max <- max(WWTP_max,as.numeric(global(Summed_wastewater_treatment_CWNS_national,max,na.rm=T)))
+        if(!all(is.na(values(Summed_wastewater_treatment_CWNS_national)))){
+          WWTP_max <- max(WWTP_max,as.numeric(global(Summed_wastewater_treatment_CWNS_national,max,na.rm=T)))
+        }
       }
     }
     if(Wastewater_use_DMR){
       if(Wastewater_state_septic){
         Summed_wastewater_treatment_DMR_state = sum(get(paste0("WWTP_DMR_",WWTP_method)),septic_flux2,ghgrp_flux,na.rm=T)
         DMR_state_text=paste0(WWTP_text," DMR")
-        WWTP_max <- max(WWTP_max,as.numeric(global(Summed_wastewater_treatment_DMR_state,max,na.rm=T)))
+        if(!all(is.na(values(Summed_wastewater_treatment_DMR_state)))){
+          WWTP_max <- max(WWTP_max,as.numeric(global(Summed_wastewater_treatment_DMR_state,max,na.rm=T)))
+        }
       }
       if(Wastewater_national_septic){
         Summed_wastewater_treatment_DMR_national = sum(get(paste0("WWTP_DMR_",WWTP_method)),septic_flux,ghgrp_flux,na.rm=T)
         DMR_national_text=paste0(WWTP_text," DMR")
-        WWTP_max <- max(WWTP_max,as.numeric(global(Summed_wastewater_treatment_DMR_national,max,na.rm=T)))
+        if(!all(is.na(values(Summed_wastewater_treatment_DMR_national)))){
+          WWTP_max <- max(WWTP_max,as.numeric(global(Summed_wastewater_treatment_DMR_national,max,na.rm=T)))
+        }
       }
     }
-
+    
     
     
     #now actually plot
@@ -853,24 +910,32 @@ Wastewater <- function(DMR_file,
       if(Wastewater_state_septic){
         log_plot(Summed_wastewater_treatment_CWNS_state,
                  paste0("Wastewater Treatment Sector\n",CWNS_state_text," (Domestic facilities)\nand GHGRP (industrial) and developed open space/low intensity NLCD\nland cover * state septic data (Septic)"),
-                 WWTP_min,WWTP_max)
+                 WWTP_min,WWTP_max,plot_directory=plot_directory,
+                 domain=domain,County_Tigerlines=County_Tigerlines,
+                 State_Tigerlines=State_Tigerlines)
       }
       if(Wastewater_national_septic){
         log_plot(Summed_wastewater_treatment_CWNS_national,
                  paste0("Wastewater Treatment Sector\n",CWNS_national_text," (Domestic facilities)\nand GHGRP (industrial) and developed open space/low intensity NLCD\nland cover * national septic data (Septic)"),
-                 WWTP_min,WWTP_max)
+                 WWTP_min,WWTP_max,plot_directory=plot_directory,
+                 domain=domain,County_Tigerlines=County_Tigerlines,
+                 State_Tigerlines=State_Tigerlines)
       }
     }
     if(Wastewater_use_DMR){
       if(Wastewater_state_septic){
         log_plot(Summed_wastewater_treatment_DMR_state,
                  paste0("Wastewater Treatment Sector\n",DMR_state_text," (Domestic facilities)\nand GHGRP (industrial) and developed open space/low intensity NLCD\nland cover * state septic data (Septic)"),
-                 WWTP_min,WWTP_max)
+                 WWTP_min,WWTP_max,plot_directory=plot_directory,
+                 domain=domain,County_Tigerlines=County_Tigerlines,
+                 State_Tigerlines=State_Tigerlines)
       }
       if(Wastewater_national_septic){
         log_plot(Summed_wastewater_treatment_DMR_national,
                  paste0("Wastewater Treatment Sector\n",DMR_national_text," (Domestic facilities)\nand GHGRP (industrial) and developed open space/low intensity NLCD\nland cover * national septic data (Septic)"),
-                 WWTP_min,WWTP_max)
+                 WWTP_min,WWTP_max,plot_directory=plot_directory,
+                 domain=domain,County_Tigerlines=County_Tigerlines,
+                 State_Tigerlines=State_Tigerlines)
       }
     }
   }
