@@ -189,11 +189,13 @@ Transmission <- function(GHGI_file,
   #(https://www.GHGI.gov/enviro/greenhouse-gas-model).  Must download the relevant
   #data for each possible sector sGHGIrately as emissions are split by sector. The
   #total is combustion + NG systems, dominated by NG systems.  
-  data_URL <- "https://data.epa.gov/efservice/ef_w_emissions_source_ghg/json"
+  # data_URL <- "https://data.epa.gov/efservice/ef_w_emissions_source_ghg/json"
+  data_URL <- "https://data.epa.gov/dmapservice/ghg.ef_w_emissions_source_ghg/JSON"
   ghgrp_transmission_compressor_emissions <- Trycatch_downloader(URL = data_URL,method = "API",
                                                        error_message = paste0("Greenhouse Gas Reporting Program data could not be downloaded using API link: ",data_URL))
   
-  data_URL <- "https://data.epa.gov/efservice/C_SUBPART_LEVEL_INFORMATION/json"
+  # data_URL <- "https://data.epa.gov/efservice/C_SUBPART_LEVEL_INFORMATION/json"
+  data_URL <- "https://data.epa.gov/dmapservice/ghg.c_subpart_level_information/json"
   ghgrp_combustion_emissions <- Trycatch_downloader(URL = data_URL,method = "API",
                                                        error_message = paste0("Greenhouse Gas Reporting Program data could not be downloaded using API link: ",data_URL))
 
@@ -215,6 +217,7 @@ Transmission <- function(GHGI_file,
   
   #reorganize slightly to match combustion.  Below function won't work right as
   #it's a competely different table
+  ghgrp_transmission_compressor_emissions <- ghgrp_transmission_compressor_emissions[,c(1,5,3,4,2)]
   colnames(ghgrp_transmission_compressor_emissions) <- colnames(ghgrp_combustion_emissions)
   ghgrp_transmission_compressor_emissions$ghg_gas_name <- "methane"
   
@@ -439,16 +442,25 @@ Transmission <- function(GHGI_file,
   
   if(verbose){
     log_plot(compressor_flux,filename="NG_trans_compressors",
-             "NG transmission - compressors\n GHGRP reporters + average GHGI emissions distributed using Homeland\nInfrastructure Foundation-Level Database")
+             "NG transmission - compressors\n GHGRP reporters + average GHGI emissions distributed using Homeland\nInfrastructure Foundation-Level Database",
+             plot_directory=plot_directory,
+             domain=domain,County_Tigerlines=County_Tigerlines,
+             State_Tigerlines=State_Tigerlines)
     
     not_log_plot(pipes_flux,filename="NG_trans_pipes",
-                 "NG transmission - pipelines\n EIA pipeline data * GHGI EF")
+                 "NG transmission - pipelines\n EIA pipeline data * GHGI EF",
+                 plot_directory=plot_directory,
+                 domain=domain,County_Tigerlines=County_Tigerlines,
+                 State_Tigerlines=State_Tigerlines)
     
     dir.create("Summed_Sectors",showWarnings = F)
     
     Summed_NG_transmission = compressor_flux+pipes_flux
     log_plot(Summed_NG_transmission,
-             "NG Transmission Sector\nEIA for pipelines + HFILD/GHGRP\nfor compressors")
+             "NG Transmission Sector\nEIA for pipelines + HFILD/GHGRP\nfor compressors",
+             plot_directory=plot_directory,
+             domain=domain,County_Tigerlines=County_Tigerlines,
+             State_Tigerlines=State_Tigerlines)
   }
   cat("Finished natural gas transmission sector: Transmission in",round(difftime(Sys.time(),starttime,units = "min"),2),"minutes\n\n")
 }
