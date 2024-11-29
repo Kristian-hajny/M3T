@@ -384,8 +384,8 @@ Wastewater <- function(DMR_file,
       Facilities <- Facilities[Facilities$CWNS_ID %in% Flow$CWNS_ID,]
       
       CWNS_Municipal_flow <- Location
-      CWNS_Municipal_flow$EXIST_MUNICIPAL <- Flow$CURRENT_DESIGN_FLOW[match(Flow$CWNS_ID,Location$CWNS_ID)]
-      CWNS_Municipal_flow$facility_name <- Facilities$FACILITY_NAME[match(Facilities$CWNS_ID,Location$CWNS_ID)]
+      CWNS_Municipal_flow$EXIST_MUNICIPAL <- Flow$CURRENT_DESIGN_FLOW[match(Location$CWNS_ID,Flow$CWNS_ID)]
+      CWNS_Municipal_flow$facility_name <- Facilities$FACILITY_NAME[match(Location$CWNS_ID,Facilities$CWNS_ID)]
       CWNS_Municipal_flow <- vect(CWNS_Municipal_flow,geom=c("LONGITUDE","LATITUDE"),crs="EPSG:4269") # NAD83
       
       CWNS_tot_flow <- sum(CWNS_Municipal_flow$EXIST_MUNICIPAL, na.rm=T)
@@ -500,7 +500,7 @@ Wastewater <- function(DMR_file,
   Suburbia_rasterfile <- list.files(pattern=glob2rx("*NLCD_suburban.nc"),path=output_directory,full.names = T)
   
   #output from NLCD_fractions_by_state.R
-  nlcd_state_total_areas <- read.table(file.path(output_directory,"nlcd_state_total_areas.csv"),header=T,sep=",")
+  nlcd_state_total_areas <- read.table(file.path(output_directory,"NLCD_state_total_areas.csv"),header=T,sep=",")
   
   #quickly ensure that the state data is all in the same order, alphabetical
   Suburbia_rasterfile <- sort(Suburbia_rasterfile)
