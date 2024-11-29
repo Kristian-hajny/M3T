@@ -1017,7 +1017,7 @@ NG_distribution <- function(domain,
       input=crop(input,domain_reproj,snap="out")
       
       input=mask(input,domain_reproj,touches=T,updatevalue=0)
-      cover <- extract(input,domain_reproj,weights=T,exact=T,cells=T)
+      cover <- extract(input,domain_reproj,weights=T,cells=T)
       input[cover[,'cell']] <- input[cover[,'cell']]*cover[,'weight']
       input=extend(input,fill=0,
                    ext(input)+(res(project(domain_template,crs(input)))*5))
@@ -1149,6 +1149,7 @@ NG_distribution <- function(domain,
           cover_all <- all_merge_LCC %>% 
             split(f=all_merge_LCC$HIFLD_SVCTERID) %>%
             lapply(function(x){cat("\rProcessing",x$count,"of",LDC_count,"LDCs using ACES                                   ");extract(aces_res,x,weights=T,exact=T,cells=T)})
+          cover_all <- cover_all[all_merge_LCC$STATEFP]
         }
         
         disaggregation(aces_res,res_totals,agg_level="LDC",NEI_input = all_merge_LCC,cover_all,out_envir=environment())
@@ -1166,6 +1167,7 @@ NG_distribution <- function(domain,
           cover_all <- all_merge_LCC %>% 
             split(f=all_merge_LCC$HIFLD_SVCTERID) %>%
             lapply(function(x){cat("\rProcessing",x$count,"of",LDC_count,"LDCs using vulcan                                  ");extract(vu_res,x,weights=T,exact=T,cells=T)})
+          cover_all <- cover_all[all_merge_LCC$STATEFP]
         }
         
         disaggregation(vu_res,res_totals,agg_level="LDC",NEI_input = all_merge_LCC,cover_all,out_envir=environment())
@@ -1203,11 +1205,12 @@ NG_distribution <- function(domain,
         all_merge_LCC_state <- project(all_merge_state_poly,aces_res)
         
         if(length(state_name_list)==1){
-          cover_all <- list(extract(aces_res,all_merge_LCC_state,weights=T,exact=T,cells=T))
+          cover_all <- list(extract(aces_res,all_merge_LCC_state,weights=T,cells=T))
         }else{
           cover_all <- all_merge_LCC_state %>% 
             split(f=all_merge_LCC_state$STATEFP) %>%
-            lapply(function(x){extract(aces_res,x,weights=T,exact=T,cells=T)})
+            lapply(function(x){extract(aces_res,x,weights=T,cells=T)})
+          cover_all <- cover_all[all_merge_LCC_state$STATEFP]
         }
         
         disaggregation(aces_res,res_totals,agg_level="state",NEI_input = all_merge_LCC_state,cover_all,out_envir=environment())
@@ -1217,16 +1220,18 @@ NG_distribution <- function(domain,
         all_merge_LCC_state <- project(all_merge_state_poly,vu_res)
         
         if(length(state_name_list)==1){
-          cover_all <- list(extract(vu_res,all_merge_LCC_state,weights=T,exact=T,cells=T))
+          cover_all <- list(extract(vu_res,all_merge_LCC_state,weights=T,cells=T))
         }else{
           cover_all <- all_merge_LCC_state %>% 
             split(f=all_merge_LCC_state$STATEFP) %>%
-            lapply(function(x){extract(vu_res,x,weights=T,exact=T,cells=T)})
+            lapply(function(x){extract(vu_res,x,weights=T,cells=T)})
+          cover_all <- cover_all[all_merge_LCC_state$STATEFP]
         }
         
         disaggregation(vu_res,res_totals,agg_level="state",NEI_input = all_merge_LCC_state,cover_all,out_envir=environment())
         disaggregation(vu_com,com_totals,agg_level="state",NEI_input = all_merge_LCC_state,cover_all,out_envir=environment())
       }
+      gc()
       cat("\rFinished disaggregating emissions to pixels from the state scale at",round(difftime(Sys.time(),starttime,units = "min"),2),"minutes since start\n")
     }
     ################################################################################
@@ -1242,18 +1247,19 @@ NG_distribution <- function(domain,
       if(Use_ACES){
         #convert domain scale version to the proper crs
         all_merge_LCC_domain <- project(all_merge_domain_poly,aces_res)
-        cover_all <- list(extract(aces_res,all_merge_LCC_domain,weights=T,exact=T,cells=T))
+        cover_all <- list(extract(aces_res,all_merge_LCC_domain,weights=T,cells=T))
         
         disaggregation(aces_res,res_totals,agg_level="domain",NEI_input=all_merge_LCC_domain,cover_all,out_envir=environment())
         disaggregation(aces_com,com_totals,agg_level="domain",NEI_input=all_merge_LCC_domain,cover_all,out_envir=environment())
       }
       if(Use_Vulcan){
         all_merge_LCC_domain <- project(all_merge_domain_poly,vu_res)
-        cover_all <- list(extract(vu_res,all_merge_LCC_domain,weights=T,exact=T,cells=T))
+        cover_all <- list(extract(vu_res,all_merge_LCC_domain,weights=T,cells=T))
         
         disaggregation(vu_res,res_totals,agg_level="domain",NEI_input=all_merge_LCC_domain,cover_all,out_envir=environment())
         disaggregation(vu_com,com_totals,agg_level="domain",NEI_input=all_merge_LCC_domain,cover_all,out_envir=environment())
       }
+      gc()
       cat("\rFinished disaggregating emissions to pixels from the domain scale at",round(difftime(Sys.time(),starttime,units = "min"),2),"minutes since start\n")
     }
     ################################################################################
@@ -1313,9 +1319,9 @@ NG_distribution <- function(domain,
         }
       }
     }
-    rm(all_merge_LCC,LDC_count,cover_all,all_merge_state,all_merge_state_poly,
-       all_merge_LCC_state,all_merge_domain,all_merge_domain_poly,all_merge_LCC_domain)
-  # }
+    suppressWarnings(rm(all_merge_LCC,LDC_count,cover_all,all_merge_state,all_merge_state_poly,
+                        all_merge_LCC_state,all_merge_domain,all_merge_domain_poly,all_merge_LCC_domain))
+    # }
   # ################################################################################
   # #combine the division-wide runs for each case, if needed.
   # if(A>1){
