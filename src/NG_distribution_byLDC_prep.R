@@ -8,14 +8,24 @@
 {
   ################################################################################
   #User input
-  input_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Raw_data_rewrite/"
-  output_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Processed_rewrite/"
-  plot_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Figures_rewrite/"
+  input_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Raw_data_NEC/"
+  output_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Processed_NEC/"
+  plot_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Figures_NEC/"
   inventory_year=2019
-  domain=as.data.frame(cbind(c(-76.65,-73.65),
-                             c(38.97,40.97)))
-  domain_res=0.01
-  domain_crs="epsg:4326" #lat/long
+  domain <- as.data.frame(cbind(c(1545475, 2243475),
+                                c(-74025, 699975)))
+  domain_res=1000
+  domain_crs="+proj=lcc +lat_0=40 +lon_0=-97 +lat_1=33 +lat_2=45 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs"
+  
+  # input_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Raw_data_rewrite/"
+  # output_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Processed_rewrite/"
+  # plot_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Figures_rewrite/"
+  # inventory_year=2019
+  # domain=as.data.frame(cbind(c(-76.65,-73.65),
+  #                            c(38.97,40.97)))
+  # domain_res=0.01
+  # domain_crs="epsg:4326" #lat/long
+  
   
   EIA_file = file.path(input_directory,"176 Type of Operations and Sector Items.xlsx")
   PHMSA_file = file.path(input_directory,"annual_gas_distribution_2010_present/annual_gas_distribution_2019.xlsx")
@@ -33,7 +43,9 @@
   i=1
   while(i<=length(packagecheck)){
     if(length(find.package(packagecheck[i],quiet = TRUE))<1){
-      install.packages(packagecheck[i],repos="https://repo.miserver.it.umich.edu/cran/")
+      install.packages(packagecheck[i])
+    }else{
+      update.packages(oldPkgs = packagecheck[i])
     }
     i <- i+1
   }
@@ -53,16 +65,47 @@
     domain_res <- rep(domain_res,2)
   }
   
-  if(class(domain)=="SpatRaster"){
-    values(domain) <- NaN
-  }else if(class(domain)=="data.frame"){
+  if(class(domain)=="data.frame"){
     domain <- rast(nrows=diff(range(domain[,2]))/domain_res[2], 
                    ncols=diff(range(domain[,1]))/domain_res[1],
                    xmin=min(domain[,1]), xmax=max(domain[,1]),
-                   ymin=min(domain[,2]), ymax=max(domain[,2]), 
-                   crs=domain_crs)
-    rm(domain_res,domain_crs)
+                   ymin=min(domain[,2]), ymax=max(domain[,2]),
+                   vals=1)
+    domain <- as.polygons(ext(domain),crs=domain_crs)
+  }else if(class(domain)=="character"){
+    if(is.na(suppressWarnings(as.numeric(domain)))){
+      #text is actually text
+      if(nchar(domain)==2){
+        #2 letters = state abbreviation
+        State_Tigerlines <- State_Tigerlines[State_Tigerlines$STUSPS==domain,]
+        domain <- State_Tigerlines[State_Tigerlines$STUSPS==domain,]
+      }else if(domain %in% State_Tigerlines$NAME){
+        #full name of state
+        State_Tigerlines <- State_Tigerlines[State_Tigerlines$NAME==domain,]
+        domain <- State_Tigerlines[State_Tigerlines$NAME==domain,]
+      }else if(domain %in% unlist(values(Urban_Tigerlines[,3]))){
+        #full name of an urban area
+        domain <- Urban_Tigerlines[unlist(values(Urban_Tigerlines[,3]))==domain,]
+      }
+    }else{
+      #text is actually a number
+      if(nchar(domain)==2){
+        #State FIPS
+        State_Tigerlines <- State_Tigerlines[State_Tigerlines$STATEFP==domain,]
+        domain <- State_Tigerlines[State_Tigerlines$STATEFP==domain,]
+      }else if(nchar(domain)==5){
+        #urban area code
+        domain <- Urban_Tigerlines[Urban_Tigerlines$UACE10==domain,]
+      }else{
+        domain <- try(vect(domain),silent=T)
+      }
+    }
   }
+  
+  if(class(domain)!="SpatVector"){
+    stop("domain is not set to a state abbreviation, state full name, state FIPS code, urban area abbreviation, urban area full name, urban area census code, data.frame with the corners of a box, or a SpatVector file with the desired polygon.")
+  }
+
   ################################################################################
   #load in Census tigerlines necessary 
 
@@ -93,7 +136,7 @@
   County_Tigerlines <- project(County_Tigerlines,domain)
   
   #subset to just those relevant for the domain (speedier)
-  State_Tigerlines <- mask(State_Tigerlines,mask=as.polygons(domain))
+  State_Tigerlines <- mask(State_Tigerlines,mask=domain)
   County_Tigerlines <- crop(County_Tigerlines,State_Tigerlines)
   
   #sort by state abbreviation
@@ -101,7 +144,7 @@
   
   #save the states in the domain for use
   state_name_list <- State_Tigerlines$STUSPS
-  
+
   rm(Census_filenames)
   ################################################################################
   #Extend to load census data on water areas - as these should not have NG
@@ -371,7 +414,8 @@
   HIFLD_csv[,c("VAL_DATE","SOURCEDATE")] <- NA
   
   # Load the EIA company-level data
-  EIA_csv <- read_xlsx(EIA_file,skip=1,col_names = T)
+  # EIA_csv <- read_xlsx(EIA_file,skip=1,col_names = T)
+  EIA_csv <- read_xlsx(EIA_file,col_names = T)
   # Load the PHMSA data
   PHMSA_csv <- read_xlsx(PHMSA_file,skip=2,col_names = T)
   
@@ -395,7 +439,9 @@
 #identify likely matches across the 4 datasets.  These are NOT definitive.  The
 #datasets represent slightly different years and as such facilities can change
 #quite a lot (merge, split, expand, etc.).  It just identifies those with the
-#most similar activity data.  No input needed.
+#most similar activity data.  No input needed.  Once you begin editing the
+#output xl files, rename to remove the _initial so the code can find it and to
+#avoid any risk of overwriting/misunderstanding.
 
 #Here the data is saved to the input folder and should be manually edited to
 #align all of the datasets.  Users should manually compare the names and search
@@ -410,7 +456,9 @@
 #PHMSA facilities without a match should have the ID set to OTHER.  HIFLD
 #facilities without a match should be removed. Deleting the ID alone is
 #sufficient (code will remove it from there).  EIA data doesn't need to be
-#edited.  Matches must exist across all 3 datasets (HIFLD, PHMSA, EIA).
+#edited.  Matches must exist across all 3 datasets (HIFLD, PHMSA, EIA).  Any
+#GHGRP facility must match across all others.  GHGRP and PHMSA can have
+#duplicate IDs, they will be merged.
 
 #PHMSA and GHGRP (if available) provide activity data to calculate emissions,
 #HIFLD data provides polygons for each LDC operating territory, and EIA provides
@@ -600,14 +648,14 @@
   
   
   #save the xl files now for the user to edit further as needed.
-  if(overwrite_xl==T & file.exists(file.path(input_directory,"ByLDC_EIA_176_type_of_operations.xlsx"))){
-    write.xlsx(EIA_csv,file = file.path(input_directory,"ByLDC_EIA_176_type_of_operations.xlsx"),
+  if((overwrite_xl==T) | (!file.exists(file.path(input_directory,"ByLDC_EIA_176_type_of_operations_initial.xlsx")))){
+    write.xlsx(EIA_csv,file = file.path(input_directory,"ByLDC_EIA_176_type_of_operations_initial.xlsx"),
                row.names = F,showNA = F)
-    write.xlsx(PHMSA_csv_NG,file = file.path(input_directory,"ByLDC_PHMSA_annual_gas_distribution.xlsx"),
+    write.xlsx(PHMSA_csv_NG,file = file.path(input_directory,"ByLDC_PHMSA_annual_gas_distribution_initial.xlsx"),
                row.names = F,showNA = F)
-    write.xlsx(GHGRP_csv,file = file.path(input_directory,"ByLDC_GHGRP.xlsx"),
+    write.xlsx(GHGRP_csv,file = file.path(input_directory,"ByLDC_GHGRP_initial.xlsx"),
                row.names = F,showNA = F)
-    write.xlsx(HIFLD_csv,file = file.path(input_directory,"ByLDC_HIFLD_natural_gas_service_territories.xlsx"),
+    write.xlsx(HIFLD_csv,file = file.path(input_directory,"ByLDC_HIFLD_natural_gas_service_territories_initial.xlsx"),
                row.names = F,showNA = F)
   }
   
@@ -659,6 +707,17 @@
   # plot_state(HIFLD_shp,"NY")
   # plot_state(HIFLD_shp,"PA")
   # 
+  # 
+  # plot_state(HIFLD_shp,"DC")
+  # plot_state(HIFLD_shp,"MA")
+  # plot_state(HIFLD_shp,"ME") - no GHGRP data
+  # plot_state(HIFLD_shp,"NH") - no GHGRP data
+  # plot_state(HIFLD_shp,"RI") - only 1 company
+  # plot_state(HIFLD_shp,"VA")
+  # plot_state(HIFLD_shp,"VT") - only 1 company
+  # plot_state(HIFLD_shp,"WV")
+  # 
+  # 
   # #plot LDC can't use the name as LDC's often cover various states and use
   # #the same name for these different operations, but different OBJECTID's.  
   # 
@@ -681,6 +740,21 @@
   # #MD
   # plot_LDC(813)#UGI Central
   # plot_LDC(1042)#Washington Gas
+  # 
+  # 
+  # MA
+  # plot_LDC(92)#NStAR
+  # plot_LDC(938)#National Grid/Boston
+  # plot_LDC(939)#liberty utilities
+  #
+  # WV
+  # plot_LDC(228)#domionion hope
+  # plot_LDC(1106)#Mountaineer
+  # 
+  # VA
+  # plot_LDC(934)#Bluefield
+  # plot_LDC(935)#Appalachian
+  # 
 }
 
 
@@ -727,7 +801,7 @@
   sf_HIFLD_shp$SVCTERID[nrow(sf_HIFLD_shp)-2] <- 'LDC360007a'
   sf_HIFLD_shp$SVCTERID[nrow(sf_HIFLD_shp)-1] <- 'LDC360007b'
   sf_HIFLD_shp$SVCTERID[nrow(sf_HIFLD_shp)] <- 'LDC360007c'
-  sf_HIFLD_shp$NAME[nrow(sf_HIFLD_shp)-2] <- 'KEYSPAN - LONG ISLAND'
+  sf_HIFLD_shp$NAME[nrow(sf_HIFLD_shp)-2] <- 'KEYSPAN - LONG ISLAND' 
   sf_HIFLD_shp$NAME[nrow(sf_HIFLD_shp)-1] <- 'KEYSPAN - NYC'
   sf_HIFLD_shp$NAME[nrow(sf_HIFLD_shp)] <- 'NIAGARA MOHAWK'
   sf_HIFLD_shp <- sf_HIFLD_shp[sf_HIFLD_shp$SVCTERID != 'LDC360007',]
@@ -742,6 +816,30 @@
   st_geometry(sf_HIFLD_shp[which(sf_HIFLD_shp$SVCTERID == 'LDC420001'),]) <- PPL_NG_combined
   sf_HIFLD_shp <- sf_HIFLD_shp[sf_HIFLD_shp$SVCTERID != 'LDC420022',]
   
+  #VA - Merge bluefield and appalachian.  Since in this case 1 is completely within the other, union, not combine.
+  APP_combined <- st_union(sf_HIFLD_shp[which(sf_HIFLD_shp$SVCTERID %in% c("LDC510011","LDC510001")),])
+  st_geometry(sf_HIFLD_shp[which(sf_HIFLD_shp$SVCTERID == 'LDC510011'),]) <- APP_combined
+  sf_HIFLD_shp <- sf_HIFLD_shp[sf_HIFLD_shp$SVCTERID != 'LDC510001',]
+
+  # MA - GHGRP NSTAR has some of the territory HIFLD assigns to National Grid
+  # (NW of the peninsula), but it's not along county lines or similar, so I'd be
+  # arbitrarily trying to match them if matching GHGRP.  Assigning all of the 2
+  # mainland counties to NSTAR (closer match than default).
+  
+  #combine a few counties, but stop at a certain lat (other parts of an LDC that I want to leave unaffected)
+  Inland_MA_shp <- st_make_valid(st_combine(sf_county_tigerlines[which(sf_county_tigerlines$COUNTYNS %in% c("00606929","00606938")),]))
+  Inland_MA_shp <- st_crop(Inland_MA_shp,c("xmin"=-74,"xmax"=-65,"ymin"=40,"ymax"=41.95))
+  
+  # Grab the National grid and NSTAR and reassign that portion
+  NGrid_shp <- st_make_valid(sf_HIFLD_shp[which(sf_HIFLD_shp$SVCTERID == 'LDC250002'),])
+  NSTAR_shp <- st_make_valid(sf_HIFLD_shp[which(sf_HIFLD_shp$SVCTERID == 'LDC250009'),])
+  NSTAR_update <- st_union(st_intersection(NGrid_shp, Inland_MA_shp),NSTAR_shp)
+  NGrid_update <- st_difference(NGrid_shp, Inland_MA_shp)
+
+  #associate the polygons with the sf
+  st_geometry(sf_HIFLD_shp[which(sf_HIFLD_shp$SVCTERID == 'LDC250002'),]) <- st_geometry(NGrid_update)
+  st_geometry(sf_HIFLD_shp[which(sf_HIFLD_shp$SVCTERID == 'LDC250009'),]) <- st_geometry(NSTAR_update)
+
   #this shapefile bleeds over into VA, even though GHGRP and the other inputs
   #separate the data by state.  Removing the VA portion here
   sf_HIFLD_shp[which(sf_HIFLD_shp$SVCTERID=="LDC240007"),] <- st_intersection(sf_HIFLD_shp[which(sf_HIFLD_shp$SVCTERID=="LDC240007"),],
@@ -906,16 +1004,18 @@
                                       'Electric_Total_Volume_(Mcf)',
                                       'Electric_Total_Customers'))
   
+  GHGRP_cols_to_keep <- c("GHGRP_N_of_above_grade_T-D_transfer_stations",
+                          "GHGRP_N_of_above_grade_non_T-D_MR_stations",
+                          "GHGRP_N_of_below_grade_T-D_transfer_stations",
+                          "GHGRP_N_of_below_grade_non_T-D_MR_stations")
+  
   cols_to_keep <- c('EIA_Company',
                     'EIA_Company_Name',
                     'HIFLD_SVCTERID',
                     'PHMSA_State',
                     EIA_cols_to_keep,
                     PHMSA_cols_to_keep,
-                    "GHGRP_N_of_above_grade_T-D_transfer_stations",
-                    "GHGRP_N_of_above_grade_non_T-D_MR_stations",
-                    "GHGRP_N_of_below_grade_T-D_transfer_stations",
-                    "GHGRP_N_of_below_grade_non_T-D_MR_stations")
+                    GHGRP_cols_to_keep)
   
   
   #first rename all data to make it obvious where it came from - much easier to
@@ -931,10 +1031,15 @@
                                 list(PHMSA_Company_ID = PHMSA_csv_NG$PHMSA_Company_ID,
                                      PHMSA_State = PHMSA_csv_NG$PHMSA_State),
                                 sum,na.rm=T)
-
+  
+  GHGRP_agg <- aggregate(GHGRP_csv[GHGRP_cols_to_keep],
+                                list(GHGRP_Company_ID  = GHGRP_csv$GHGRP_Company_ID,
+                                     GHGRP_operating_state = GHGRP_csv$GHGRP_operating_state ),
+                                sum,na.rm=T)
+  
   EIA_PHMSA_merge <- merge(EIA_csv, PHMSA_csv_NG_agg, by.x='EIA_Company', by.y='PHMSA_Company_ID')
   EIA_PHMSA_HIFLD_merge <- merge(EIA_PHMSA_merge, HIFLD_csv, by.x='EIA_Company', by.y='HIFLD_COMPID')
-  all_merge <- merge(EIA_PHMSA_HIFLD_merge, GHGRP_csv, by.x='EIA_Company', by.y='GHGRP_Company_ID', all.x=TRUE)
+  all_merge <- merge(EIA_PHMSA_HIFLD_merge, GHGRP_agg, by.x='EIA_Company', by.y='GHGRP_Company_ID', all.x=TRUE)
   
   if(!all.equal(nrow(PHMSA_csv_NG_agg),
                nrow(all_merge),
@@ -950,7 +1055,7 @@
   ##############################################################################
   #now merge with the shapefile and then set the OTHER facilities to the
   #uncovered regions, also removing water areas.
-  
+
   all_merge_with_poly <- merge(all_merge, sf_HIFLD_shp[c('SVCTERID', 'geometry')],
                                by.x="HIFLD_SVCTERID", by.y="SVCTERID", all.x=TRUE)
   
@@ -975,8 +1080,13 @@
       
       #now save the land data not already covered by any other LDC and update
       #the SVCTERID for clarity
-      st_geometry(all_merge_sf[other_indx,]) <- st_collection_extract(st_geometry(st_make_valid(st_difference(state_land,
-                                                                                                              st_make_valid(st_union(all_merge_sf))))),"POLYGON")
+      temp <- st_geometry(st_make_valid(st_difference(state_land,
+                                                      st_make_valid(st_union(all_merge_sf)))))
+      
+      #from https://stackoverflow.com/a/45818004 - pulling just the polygons
+      #(don't want lines, or empty, or points - which can sometimes be created
+      #by st_difference)
+      st_geometry(all_merge_sf[other_indx,]) <- st_cast(temp)[which(st_is(st_cast(temp), c("POLYGON", "MULTIPOLYGON"))),]
       # st_geometry(all_merge_sf[other_indx,]) <- st_geometry(st_make_valid(st_difference(state_land,
       #                                                                                   st_make_valid(st_collection_extract(st_union(all_merge_sf),"POLYGON")))))
       # st_geometry(all_merge_sf[other_indx,]) <- st_geometry(st_simplify(all_merge_sf[other_indx,],dTolerance=500))
@@ -1039,20 +1149,28 @@
   #compare GHGRP and PHMSA miles of mains in the final files
   
   #copy the corresponding PHMSA total miles to the GHGRP file for comparison
-  GHGRP_csv$'GHGRP_Miles_of_Mains(PHMSA)' <- sapply(GHGRP_csv$`GHGRP_Company_ID`,
-                                              FUN=function(x){sum(PHMSA_csv_NG$PHMSA_MMILES_TOTAL[which(x==PHMSA_csv_NG$PHMSA_Company_ID)])})
+  GHGRP_agg <- aggregate(GHGRP_csv[,c("GHGRP_Miles_of_Mains",
+                                      "GHGRP_N_of_above_grade_T-D_transfer_stations",
+                                      "GHGRP_N_of_above_grade_non_T-D_MR_stations",
+                                      "GHGRP_N_of_below_grade_T-D_transfer_stations",
+                                      "GHGRP_N_of_below_grade_non_T-D_MR_stations")],
+                         list(GHGRP_Company_ID  = GHGRP_csv$GHGRP_Company_ID,
+                              GHGRP_operating_state = GHGRP_csv$GHGRP_operating_state),
+                         sum,na.rm=T)
+  GHGRP_agg$'GHGRP_Miles_of_Mains(PHMSA)' <- sapply(GHGRP_agg$`GHGRP_Company_ID`,
+                                              FUN=function(x){sum(PHMSA_csv_NG_agg$PHMSA_MMILES_TOTAL[which(x==PHMSA_csv_NG_agg$PHMSA_Company_ID)])})
   #this utility exists in GHGRP, but has no shape file so has to be manually
   #copied over (just 1 of many "OTHER"s in PHMSA).  
-  GHGRP_csv$'GHGRP_Miles_of_Mains(PHMSA)'[GHGRP_csv$GHGRP_facility_id==1007356] <- 12028
+  GHGRP_agg$'GHGRP_Miles_of_Mains(PHMSA)'[GHGRP_agg$GHGRP_facility_id==1007356] <- 12028
   
   #user update check - PHMSA and GHGRP should agree very well.  Any that differ
   #a lot could be due to mislabeling.  If it was left blank in GHGRP, set to 0
   #delta.
-  GHGRP_PHMSA_comparison <- abs(GHGRP_csv$'GHGRP_Miles_of_Mains(PHMSA)' - GHGRP_csv$GHGRP_Miles_of_Mains)/mean(c(GHGRP_csv$'GHGRP_Miles_of_Mains(PHMSA)',GHGRP_csv$GHGRP_Miles_of_Mains))*100
-  GHGRP_PHMSA_comparison[is.na(GHGRP_csv$`GHGRP_Company_ID`)] <- 0
+  GHGRP_PHMSA_comparison <- abs(GHGRP_agg$'GHGRP_Miles_of_Mains(PHMSA)' - GHGRP_agg$GHGRP_Miles_of_Mains)/mean(c(GHGRP_agg$'GHGRP_Miles_of_Mains(PHMSA)',GHGRP_agg$GHGRP_Miles_of_Mains))*100
+  GHGRP_PHMSA_comparison[is.na(GHGRP_agg$`GHGRP_Company_ID`)] <- 0
   if(max(GHGRP_PHMSA_comparison)>5){
-    View(GHGRP_csv[GHGRP_PHMSA_comparison>5,c("facility_name","Miles_of_Mains","Miles_of_Mains(PHMSA)")])
-    stop("Double check the GHGRP facilities:\n",paste(GHGRP_csv$facility_name[GHGRP_PHMSA_comparison>5],collapse = "\n"),"\n\nas the miles of mains was >5% different than the corresponding PHMSA facility.  One of them is likely wrong.")
+    View(GHGRP_agg[GHGRP_PHMSA_comparison>5,c("GHGRP_facility_name","PHMSA_Miles_of_Mains","Miles_of_Mains(PHMSA)")])
+    stop("Double check the GHGRP facilities:\n",paste(GHGRP_agg$facility_name[GHGRP_PHMSA_comparison>5],collapse = "\n"),"\n\nas the miles of mains was >5% different than the corresponding PHMSA facility.  One of them is likely wrong.")
   }
   rm(GHGRP_PHMSA_comparison)
   ##############################################################################
@@ -1074,18 +1192,18 @@
   # for PA this means the average stations_per_mile value for reporters included
   # here does not equal the default stations_per_mile value assigned to
   # non-reporters below.
-  main_miles_ghgrp <- aggregate(GHGRP_csv$`GHGRP_Miles_of_Mains(PHMSA)`,
-                                list(State=GHGRP_csv$GHGRP_operating_state),
+  main_miles_ghgrp <- aggregate(GHGRP_agg$`GHGRP_Miles_of_Mains(PHMSA)`,
+                                list(State=GHGRP_agg$GHGRP_operating_state),
                                 sum,
                                 na.rm=TRUE)
-  above_grade_MnR <- aggregate((GHGRP_csv$`GHGRP_N_of_above_grade_T-D_transfer_stations` +
-                                  GHGRP_csv$`GHGRP_N_of_above_grade_non_T-D_MR_stations`),
-                               list(State=GHGRP_csv$GHGRP_operating_state),
+  above_grade_MnR <- aggregate((GHGRP_agg$`GHGRP_N_of_above_grade_T-D_transfer_stations` +
+                                  GHGRP_agg$`GHGRP_N_of_above_grade_non_T-D_MR_stations`),
+                               list(State=GHGRP_agg$GHGRP_operating_state),
                                sum,
                                na.rm=TRUE)
-  below_grade_MnR <- aggregate((GHGRP_csv$`GHGRP_N_of_below_grade_non_T-D_MR_stations` +
-                                  GHGRP_csv$`GHGRP_N_of_below_grade_T-D_transfer_stations`),
-                               list(State=GHGRP_csv$GHGRP_operating_state),
+  below_grade_MnR <- aggregate((GHGRP_agg$`GHGRP_N_of_below_grade_non_T-D_MR_stations` +
+                                  GHGRP_agg$`GHGRP_N_of_below_grade_T-D_transfer_stations`),
+                               list(State=GHGRP_agg$GHGRP_operating_state),
                                sum,
                                na.rm=TRUE)
   
