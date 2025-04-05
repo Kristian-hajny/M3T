@@ -88,6 +88,7 @@ log_plot <- function(input,title,zlim_min=NULL,zlim_max=NULL,
   #plot it.
   if(all(is.na(values(input)) | values(input)==0)){
     plot_type="classes"
+    values(input) <- 0
     
     png(paste0(outputname,".png"),width = 480*2,height=480*2)
     plot(mask(input,domain),mar=c(3.1, 3.1, 2.1, 7.1)+c(0,0,7,2),
@@ -224,6 +225,7 @@ not_log_plot <- function(input,title,zlim_min=NULL,zlim_max=NULL,
   
   if(all(is.na(values(input)) | values(input)==0)){
     plot_type="classes"
+    values(input) <- 0
     
     png(paste0(outputname,".png"),width = 480*2,height=480*2)
     plot(mask(input,domain),mar=c(3.1, 3.1, 2.1, 7.1)+c(0,0,7,2),
