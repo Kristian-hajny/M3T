@@ -9,8 +9,9 @@ Description:
 Usage:
 
      Stationary_combustion(
-       NEI_file,
+       input_directory,
        domain,
+       domain_template,
        state_name_list,
        output_directory,
        inventory_year,
@@ -28,32 +29,19 @@ Usage:
        stationary_combustion_emission_factors,
        EIA_API_key,
        plot_directory,
-       State_Tigerlines,
-       focus_city_tigerlines
+       State_Tigerlines
      )
      
 Arguments:
 
-NEI_file: Character providing the full filepath to the NEI county level
-          CO data for the states within the domain. This data is
-          available at
-          <https://www.epa.gov/air-emissions-inventories/2017-national-emissions-inventory-nei-data>.
-          At the bottom of the page there is a data query - to download
-          the desired file the national/state/county value should be
-          set to county, the geographic aggregation should be set to
-          the states of interest (hold control and click to select
-          multiple), and the CAP should be set to carbon monoxide.  The
-          resulting excel file has columns for different variables and
-          rows for different sector - county - fuel combinations.  The
-          variables are State, State FIPS, County, Sector, County FIPS,
-          Pollutant, Pollutant Type, Emissions, and Unit of Measure,
-          though the county, pollutant, pollutant type, and unit of
-          measure are unused.  There is an example file in the
-          package's datasets folder that has been successfully used in
-          this code available for reference.
+input_directory: Character providing the full filepath to save/load raw
+          input data
 
-  domain: SpatRaster providing the desired output grid, including the
-          desired resolution and coordinate reference system
+  domain: SpatVector polygon outlining the desired output area
+
+domain_template: SpatRaster providing the desired output grid,
+          including the desired resolution and coordinate reference
+          system
 
 state_name_list: Character vector listing all states within the desired
           domain
@@ -72,13 +60,15 @@ inventory_year: Character indicating the desired year of data to use.
 County_Tigerlines: SpatVector.  United States Census Bureau county
           shapefile downloaded in Main.
 
-Use_ACES: Logical indicating whether or not to use ACES to disaggregate
-          from county-level to pixel level emissions.  Either ACES or
-          Vulcan must be used, though both can be.
+Use_ACES: Logical. Pulled from config file. indicating whether or not
+          to use ACES to disaggregate from county-level to pixel level
+          emissions.  Either ACES or Vulcan must be used, though both
+          can be.
 
-Use_Vulcan: Logical indicating whether or not to use Vulcan to
-          disaggregate from county-level to pixel level emissions.
-          Either ACES or Vulcan must be used, though both can be.
+Use_Vulcan: Logical. Pulled from config file. indicating whether or not
+          to use Vulcan to disaggregate from county-level to pixel
+          level emissions. Either ACES or Vulcan must be used, though
+          both can be.
 
 ACES_directory: Character providing the full path to a folder
           containing the ACES sectoral CO2 inventories.  Must include
@@ -86,11 +76,11 @@ ACES_directory: Character providing the full path to a folder
           sectors.  ACES v2.0 is available at
           <https://doi.org/10.3334/ORNLDAAC/1943>, though the hourly
           file should be averaged across hours to create an annually
-          averaged inventory. Code to do this on a linux-based HPC
-          system is available as the script "Annualize_ACES_seawulf.R"
-          and the accompanying batch script "Annualize_ACES.sh".  The
-          year closest to "inventory_year" is used, but those further
-          from that year are considered if the closest is unavailable.
+          averaged inventory. There is a function to do this as well,
+          though it is quite time consuming given the amount of data
+          that needs to be downloaded.  The year closest to
+          "inventory_year" is used, but those further from that year
+          are considered if the closest is unavailable.
 
 vulcan_directory: Character providing the full path to a folder
           containing the Vulcan sectoral CO2 inventories.  Must include
@@ -101,10 +91,11 @@ vulcan_directory: Character providing the full path to a folder
           is used.  As all years are contained in the same file, it
           does not search for other years.
 
-ACES_year: Numeric providing the year of ACES data to use
+ACES_year: Numeric providing the year of ACES data to use, calculated
+          in Main.
 
 vulcan_band: Numeric providing the band of Vulcan data to use (1-6 =
-          2010 - 2015)
+          2010 - 2015), calculated in Main.
 
 stationary_combustion_by_state: Logical. Pulled from config file.
           indicating whether state-toal emissions should be distributed
@@ -161,21 +152,15 @@ State_Tigerlines: SpatVector.  United States Census Bureau county
           <https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html>.
           Only relevant if verbose=TRUE.
 
-focus_city_tigerlines: SpatVector.  United States Census Bureau county
-          shapefile.  Available at
-          <https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html>.
-          Only relevant if a focus city was set in main and
-          verbose=TRUE.
-
 Details:
 
      This function calculates and grids methane emissions from
      stationary combustion. It uses the Energy Information
      Administration's (EIA) State Energy Data System (SEDS),
      Environmental Protection Agency's (EPA) Greenhouse Gas Inventory
-     (GHGI), EPA National Emissions Inventory (NEI) and either the
-     Vulcan or Anthropogenic Carbon Emission System (ACES) CO2
-     inventory.  First, the ratio of SEDS national consumption by
+     (GHGI), EPA National Emissions Inventory (NEI) and the Vulcan
+     and/or Anthropogenic Carbon Emission System (ACES) CO2
+     inventories.  First, the ratio of SEDS national consumption by
      fuel-sector combination to the equivalent GHGI data is applied to
      SEDS state data so that they are approximately consistent with the
      GHGI.  The state total consumption is then converted to emissions
@@ -190,8 +175,8 @@ Details:
      using NEI CO concentrations to calculate weighting values for each
      county (i.e., county CO / domain total CO).
 
-     Lastly, county total emissions are distributed using the ACES or
-     Vulcan CO2 inventory.
+     Lastly, county total emissions are distributed using the ACES
+     and/or Vulcan CO2 inventories.
 
      This entire process is done separately for each fuel and sector
      using the GHGI, SEDS, and NEI data that are broken down by sector
@@ -202,7 +187,7 @@ Details:
      exist in the U.S. anymore and residential gas is ignored as it is
      accounted for elsewhere.
 
-     The necessary SEDS data will be automatically downloaded.
+     The necessary SEDS and NEI data will be automatically downloaded.
 
      The GHGI is intended to capture all national emissions.  The SEDS
      consumption data provides state-level consumption broken down by
@@ -210,8 +195,8 @@ Details:
      electricity) and sector (residential, commercial, industrial,
      electric, transportation).  The NEI data being used provides CO
      emissions at the county level.  The GHGI is available starting in
-     1990 and is generally about 2 yearrs behind present day.  SEDS
-     data is available starting in 1960 and generally is about 2 years
+     1990 and is generally about 2 years behind present day.  SEDS data
+     is available starting in 1960 and generally is about 2 years
      behind present day.  NEI data is available beginning in at least
      1990, is released every three years, and generally takes three
      years to complete (i.e., 2023 NEI is released in 2026).  All data
@@ -262,18 +247,18 @@ Examples:
                   ncols=diff(range(grid_bbox[,1]))/grid_res, xmin=min(grid_bbox[,1]),
                   xmax=max(grid_bbox[,1]), ymin=min(grid_bbox[,2]), ymax=max(grid_bbox[,2]),
                   crs=grid_crs)
-     Urban_Tigerlines <- vect("~/../Desktop/Urban_Tigerlines/tl_2018_us_uac10.shp")
-     focus_city <- terra::subset(Urban_Tigerlines,Urban_Tigerlines$NAME10 %in% "Philadelphia, PA--NJ--DE--MD")
-     Stationary_combustion(NEI_file="~/../Desktop/NEI_2017.xlsx",
-                           domain=grid,
+     grid_vect <- as.polygons(ext(grid),crs=grid_crs)
+     Stationary_combustion(domain=grid_vect,
+                           domain_template=grid,
                            state_name_list=c("DE","MD","NJ","NY","PA"),
-                           output_directory="~/../Desktop/",
+                           input_directory="~/../Desktop/in/",
+                           output_directory="~/../Desktop/out/",
                            inventory_year=2018,
                            verbose=TRUE,
                            Use_ACES=TRUE,
                            Use_Vulcan=TRUE,
-                           ACES_directory="~/../Desktop/Inventories/ACES_v2.0",
-                           vulcan_directory="~/../Desktop/Inventories/Vulcan_v3.0",
+                           ACES_directory="~/../Desktop/in/Inventories/ACES_v2.0",
+                           vulcan_directory="~/../Desktop/in/Inventories/Vulcan_v3.0",
                            ACES_year=2017,
                            vulcan_band=6,
                            stationary_combustion_by_state=TRUE,
@@ -310,8 +295,7 @@ Examples:
                              "ind_wood"=30,
                              "elec_wood"=30),
                            EIA_API_key=user_key,
-                           State_Tigerlines=vect("~/../Desktop/State_Tigerlines/tl_2018_us_state.shp"),
-                           County_Tigerlines=vect("~/../Desktop/County_Tigerlines/tl_2018_us_county.shp"),
-                           focus_city_tigerlines=focus_city,
+                           State_Tigerlines=vect("~/../Desktop/in/State_Tigerlines/tl_2018_us_state.shp"),
+                           County_Tigerlines=vect("~/../Desktop/in/County_Tigerlines/tl_2018_us_county.shp"),
                            plot_directory="~/../Desktop/plots/")
      

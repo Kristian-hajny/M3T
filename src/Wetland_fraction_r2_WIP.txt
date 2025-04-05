@@ -13,7 +13,11 @@ Usage:
        input_directory,
        output_directory,
        domain,
-       state_name_list
+       domain_template,
+       state_name_list,
+       Use_SOCCR1,
+       Use_SOCCR2,
+       Include_freshwater
      )
      
 Arguments:
@@ -24,11 +28,24 @@ input_directory: Character providing the full filepath to save/load
 output_directory: Character providing the full filepath to save
           processed data
 
-  domain: SpatRaster providing the desired output grid, including the
-          desired resolution and coordinate reference system
+  domain: SpatVector polygon outlining the desired output area
+
+domain_template: SpatRaster providing the desired output grid,
+          including the desired resolution and coordinate reference
+          system
 
 state_name_list: Character vector listing all states within the desired
           domain
+
+Use_SOCCR1: Logical.  Pulled from config file.  Indicating whether or
+          not to calculate emissions using SOCCR1.
+
+Use_SOCCR2: Logical.  Pulled from config file.  Indicating whether or
+          not to calculate emissions using SOCCR2.
+
+Include_freshwater: Logical.  Pulled from config file.  Indicating
+          whether or not to calculate emissions for freshwater wetlands
+          using Rosentreter et al.
 
 Details:
 
@@ -52,6 +69,9 @@ Details:
 
      The NWI data for each state will be automatically downloaded.
      This can be up to several GB per state.
+
+     Given the high resolution polygons and significant number being
+     processed, this function can be time consuming.
 
      The NWI is a biannually updated dataset including the extent and
      type of wetlands across the United States.  It is available at
@@ -82,12 +102,17 @@ Examples:
      grid_res=0.01
      grid_crs="epsg:4326"
      grid <- rast(nrows=diff(range(grid_bbox[,2]))/grid_res,
-                 ncols=diff(range(grid_bbox[,1]))/grid_res, xmin=min(grid_bbox[,1]),
-                 xmax=max(grid_bbox[,1]), ymin=min(grid_bbox[,2]), ymax=max(grid_bbox[,2]),
-                 crs=grid_crs)
+                  ncols=diff(range(grid_bbox[,1]))/grid_res, xmin=min(grid_bbox[,1]),
+                  xmax=max(grid_bbox[,1]), ymin=min(grid_bbox[,2]), ymax=max(grid_bbox[,2]),
+                  crs=grid_crs)
+     grid_vect <- as.polygons(ext(grid),crs=grid_crs)
      
-     NWI_Wetland_fraction(input_directory="~/../Desktop/input/",
-                          output_directory="~/../Desktop/",
-                          domain=grid,
+     NWI_Wetland_fraction(input_directory="~/../Desktop/in/",
+                          output_directory="~/../Desktop/out/",
+                          Use_SOCCR1=TRUE,
+                          Use_SOCCR2=TRUE,
+                          Include_freshwater=TRUE,
+                          domain=grid_vect,
+                          domain_template=grid,
                           state_name_list=c("DE","MD","NJ","NY","PA"))
      

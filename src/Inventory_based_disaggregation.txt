@@ -25,10 +25,10 @@ input_inventory: SpatRaster.  Either a Vulcan or ACES sectoral
           <https://doi.org/10.3334/ORNLDAAC/1943> and Vulcan is
           available at <https://doi.org/10.3334/ORNLDAAC/1741>. Annual
           mean files should be used for Vulcan.  The hourly ACES file
-          should be averaged across hours to create an annually
-          averaged inventory. Code to do this on a linux-based HPC
-          system is available as the script "Annualize_ACES_seawulf.R"
-          and the accompanying batch script "Annualize_ACES.sh".
+          should be averaged across hours to create an annual mean
+          inventory. There is a function to do this as well, though it
+          is quite time consuming given the amount of data that needs
+          to be downloaded.
 
   totals: Character vector.  Various subsectors to run through the
           disaggregation process.
@@ -47,23 +47,26 @@ cover_all: List of matrices.  Each entry in the list is a separate
           This allows for better accounting for pixels that are on the
           borders of states/counties.
 
-out_envir: Environment.  Where to assign output data.
+out_envir: Environment.  Where to assign output data.  Should be the
+          environment of `stationary_combustion` or `NG_distribution`
+          as the output will be used and exported there.
 
 Details:
 
      This function is intended to be used by `stationary_combustion`
-     and `NG_distribution`.  For each pixel it calculates the ratio of
-     CO2 from that pixel to the state/county it is in.  This is
-     combined with the state/county total CH4 emissions to disaggregate
-     the emissions to the pixel-scale.  If there are no emissions for
-     the state/county then the entire area is assigned an equal
-     fraction of emissions.  This is done using sectoral (residential,
-     commercial, industrial, electric) CO2 inventories.
+     and `NG_distribution`.  For each pixel it takes the ratio of CO2
+     from that pixel to the total CO2 for the state/county it is in as
+     input.  This is combined with the state/county total CH4 emissions
+     (also input) to disaggregate the emissions to the pixel-scale.  If
+     there are no emissions for the state/county then the entire area
+     is assigned an equal fraction of emissions.  This is done using
+     sectoral (residential, commercial, industrial, electric) CO2
+     inventories.
 
      ACES is available at <https://doi.org/10.3334/ORNLDAAC/1943> and
      Vulcan is available at <https://doi.org/10.3334/ORNLDAAC/1741>.
 
-     See references Vulcan and, ACES
+     See references Vulcan and ACES
 
 Value:
 

@@ -1,26 +1,31 @@
-Create gridded methane emissions maps for waste water treatment plants
+Create gridded methane emissions maps for wastewater treatment plants
 and septic systems
 
 Description:
 
-     `Wastewater` writes 4 netcdf files of gridded methane emissions -
-     1 for municipal wastewater treatment facilities, 1 for industrial
-     wastewater treatment facilities, and 2 for septic systems.  Also
-     writes 5 csvs, 2 for municipal facilities, 2 for industrial
-     facilities, and 1 for septic systems with all but the septic
-     systems file being optional.
+     `Wastewater` writes up to 7 netcdf files of gridded methane
+     emissions - 1 - 4 for municipal wastewater treatment facilities, 1
+     for industrial wastewater treatment facilities, and 1 - 2 for
+     septic systems.  Also writes up to 11 csvs, up to 8 for municipal
+     facilities, 2 for industrial facilities, and 1 for septic systems
+     with all csvs being optional.
 
 Usage:
 
      Wastewater(
+       input_directory,
        DMR_file,
        CWNS_file,
        output_directory,
-       Wastewater_Municipal_method,
-       Wastewater_Municipal_file,
+       Wastewater_use_CWNS,
+       Wastewater_use_DMR,
+       Wastewater_Municipal_Method_Moore_linear,
+       Wastewater_Municipal_Method_Moore_EF,
+       Wastewater_Municipal_Method_GHGI,
        domain,
+       domain_template,
+       ghgrp_facility_info,
        inventory_year,
-       state_name_list,
        National_wastewater_info,
        Wastewater_State_info,
        GHGI_national_wastewater_nonseptic,
@@ -29,12 +34,14 @@ Usage:
        Total_national_open_or_low_int_area,
        State_Tigerlines,
        County_Tigerlines,
-       focus_city_tigerlines,
        plot_directory,
        verbose
      )
      
 Arguments:
+
+input_directory: Character providing the full filepath to save/load raw
+          input data
 
 DMR_file: Character providing the full filepath to the discharge
           monitoring report data available at
@@ -52,11 +59,14 @@ DMR_file: Character providing the full filepath to the discharge
           reference.
 
 CWNS_file: Character providing the full filepath to the 2012 Clean
-          Watershed Needs report data available at
-          <https://www.epa.gov/cwns/clean-watersheds-needs-survey-cwns-2012-report-and-data>.
-          Find the data download link near the bottom of the page.
-          This will download all data as an access database.  To
-          convert to a useable excel file:
+          Watershed Needs report data or the folder containing the 2022
+          data from the report - available at
+          <https://www.epa.gov/cwns/clean-watersheds-needs-survey-cwns-2012-report-and-data>
+          and
+          <https://www.epa.gov/cwns/clean-watersheds-needs-survey-cwns-2022-report-and-data>,
+          respectively. For 2012, find the data download link near the
+          bottom of the page.  This will download all data as an access
+          database.  To convert to a useable excel file:
 
             * Open mdb file in Microsoft Access
 
@@ -89,23 +99,51 @@ CWNS_file: Character providing the full filepath to the 2012 Clean
           that has been successfully used in this code available for
           reference.
 
+          For the 2022 data there is a link to the data dashboard which
+          has a data download tab.  Download the data as CSVs.
+
 output_directory: Character providing the full filepath to save
           processed data
 
-Wastewater_Municipal_method: Character.  Pulled from config file.
-          Either "Moore_linear" or "GHGI" to indicate the desired
-          method to estimate municipal wastewater emissions.
+Wastewater_use_CWNS: Logical.  Pulled from config file.  Indicating
+          whether or not to use the clean watershed needs survey to get
+          the flow for municipal wastewater treatment plants.  Either
+          CWNS or the DMR data must be used, though both can be.
 
-Wastewater_Municipal_file: Character.  Pulled from config file.  Either
-          "DMR" or "CWNS" to indicate the desired input data.
+Wastewater_use_DMR: Logical.  Pulled from config file.  Indicating
+          whether or not to use discharge monitoring report data to get
+          the flow for municipal wastewater treatment plants.  Either
+          CWNS or the DMR data must be used, though both can be.
 
-  domain: SpatRaster providing the desired output grid, including the
-          desired resolution and coordinate reference system
+Wastewater_Municipal_Method_Moore_linear: Logical.  Pulled from config
+          file.  Indicating whether or not to use the log-log linear
+          relationship between flow and emissions determined in Moore
+          et al.  Either moore linear, moore EF, or the GHGI must be
+          used, though any combination can be.
+
+Wastewater_Municipal_Method_Moore_EF: Logical.  Pulled from config
+          file. Indicating whether or not to use the emission factor to
+          relate flow and emissions determined in Moore et al.  Either
+          moore linear, moore EF, or the GHGI must be used, though any
+          combination can be.
+
+Wastewater_Municipal_Method_GHGI: Logical.  Pulled from config file.
+          Indicating whether or not to downscale the greenhouse gas
+          inventory national total emissions using flow as the proxy.
+          Either moore linear, moore EF, or the GHGI must be used,
+          though any combination can be.
+
+  domain: SpatVector polygon outlining the desired output area
+
+domain_template: SpatRaster providing the desired output grid,
+          including the desired resolution and coordinate reference
+          system
+
+ghgrp_facility_info: Data.frame with the GHGRP location data for all
+          years and states.  See
+          https://www.epa.gov/enviro/envirofacts-data-service-api
 
 inventory_year: Numeric indicating the desired year of data to use.
-
-state_name_list: Character vector listing all states within the desired
-          domain
 
 National_wastewater_info: Data frame with 2 columns and 2 rows.  Pulled
           from config file.  The first column is "Year" listing the
@@ -164,21 +202,17 @@ County_Tigerlines: SpatVector.  United States Census Bureau county
           <https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html>.
           Only relevant if verbose=TRUE.
 
-focus_city_tigerlines: SpatVector.  United States Census Bureau county
-          shapefile.  Available at
-          <https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html>.
-          Only relevant if a focus city was set in main and
-          verbose=TRUE.
-
 plot_directory: Character providing the full filepath to save figures.
           Only relevant if verbose = TRUE.
 
  verbose: Logical indicating whether to save additional output.  This
-          includes 4 csv files, 2 providing summarized and 2 providing
-          detailed information for all landfills within the domain,
-          separated between LMOP and GHGRP.  It also includes 2 plots
-          of the gridded methane emissions on log scales, one for LMOP
-          facilities and one for GHGRP facilities.
+          includes up to 11 csv files including summarized and detailed
+          information for all municipal wastewater treatment plants
+          within the domain and industrial wastewater plants.  It also
+          includes up to 5 plots of the gridded methane emissions.  Up
+          to 2 for municipal wastewater treatment facilities, up to 2
+          for septic, and 1 for industrial wastewater treatment
+          facilities
 
 Details:
 
@@ -204,19 +238,20 @@ Details:
      Enforcement and Compliance History Online (ECHO) tool at
      <https://echo.epa.gov/trends/loading-tool/water-pollution-search>.
      The CWNS is produced infrequently while DMR data is regularly
-     updated, though the products do differ.  Facility locations and
-     total effluent flow is used from these files.  The calculation
-     method can then either be set to disaggregate the EPA Greenhouse
-     Gas Inventory (GHGI) national total emissions to these facilities,
-     scaled by flow, or calculate emissions for each facility using a
-     log-linear relationship between flow and emissions (log10(CH4
-     emissions in g/s) = 1.2*log10(flow in m3/s)+1) as determined by
-     Moore et al.  Moore et al. measured emission rates at 63
-     wastewater treatment facilities to develop this relationship,
-     which using DMR flow rates suggests nearly 2x the emissions as the
-     GHGI as of 2023 when their paper was written.  Note the authors
-     actually used emission factors with organic loading rather than
-     this log-linear relationship to scale emissions.
+     updated, though the facilities and their data can differ between
+     these products.  Facility locations and total effluent flow is
+     used from these files.  The calculation method can then either be
+     set to disaggregate the EPA Greenhouse Gas Inventory (GHGI)
+     national total emissions to these facilities, scaled by flow, or
+     calculate emissions for each facility using a log-linear
+     relationship between flow and emissions (log10(CH4 emissions in
+     g/s) = 1.2*log10(flow in m3/s)+1) as determined by Moore et al.
+     Moore et al.  measured emission rates at 63 wastewater treatment
+     facilities to develop this relationship, which suggests nearly 2x
+     the emissions as the GHGI using DMR flow rates as of 2023 when
+     their paper was written.  Note the authors actually used emission
+     factors with organic loading rather than this log-linear
+     relationship to scale emissions.
 
      GHGRP data is used for any and all industrial wastewater treatment
      facilities.  The necessary GHGRP data will be automatically
@@ -224,7 +259,7 @@ Details:
 
      For septic emissions the output from `NLCD_open_and_low_int` is
      used.  This provides the fractional coverage of the 2 landcover
-     types (developed, open space and developed, low intensity) the
+     types (developed, open space and developed, low intensity) for the
      domain, separated by state.  Their are 2 approaches to calculate
      methane emissions from these.
 
@@ -238,15 +273,15 @@ Details:
 
      Option 2 - we can instead take state-reported total emissions
      rather than using national emissions.  Some states report the
-     number of people in the state using septic systems to the American
-     Housing Survey in the Plumbing, Water, and Sewage Disposal survey,
-     available here
+     fraction of people in the state using septic systems to the
+     American Housing Survey in the Plumbing, Water, and Sewage
+     Disposal survey, available here
      <https://www.census.gov/programs-surveys/ahs/data/interactive/ahstablecreator.html?s_areas=00000&s_year=2021&s_tablename=TABLE1&s_bygroup1=1&s_bygroup2=1&s_filtergroup1=1&s_filtergroup2=1>.
      Note this data is reported every other year, not annually. For
      states that don't, the 1990 census data on septic fraction is
      available here
      <https://www.census.gov/data/tables/time-series/dec/coh-sewage.html>
-     and this can be scaled using the change in the national septic
+     and this will be scaled using the change in the national septic
      fraction from 1990 (from census) to the desired year (from the
      housing survey).  This new fraction can be combined with up to
      date population data available from the census
@@ -273,14 +308,16 @@ Details:
 
 Value:
 
-     Nothing is returned from the function, but the main outputs are 4
-     netcdf files of the methane emissions from wastewater.  They are
-     titled "Wastewater_ind.nc" for industrial wastewater,
-     "Wastewater_dom_central.nc" for municipal wastewater,
-     "Wastewater_dom_septic_bystate.nc" for septic emissions using
-     state-specific septic fractions, and
-     "Wastewater_dom_septic_national.nc" for septic emissions using
-     GHGI national emissions.
+     Nothing is returned from the function, but the main outputs are up
+     to 7 netcdf files of the methane emissions from wastewater.  They
+     are titled "Wastewater_ind.nc" for industrial wastewater,
+     "Wastewater_X_Y_dom_central.nc" for municipal wastewater,
+     "Wastewater_dom_septic_Z.nc" for septic emissions.  X is the input
+     data used for the wastewater treatment plants - CWNS or DMR, Y is
+     the method of converting to emissions - GHGI for downscaling GHGI
+     totals proportionally with flow or ML for applying the moore et
+     al. log-linear relationship between flow and emissions, and Z is
+     the approach used for septic emissions - bystate or national.
 
      The csv "WWTP_septic_method_comparison.csv" is also saved and
      provides the population, septic fraction, method (scaled or
@@ -289,12 +326,12 @@ Value:
      and national approach for each state separately.
 
      If verbose is set to TRUE, then "WWTP_industrial.csv",
-     "WWTP_industrial_all.csv", "WWTP_municipal.csv", and
-     "WWTP_municipal_all.csv" are also saved.  The simpler csvs include
-     only the name, location, and assigned emissions for facilities
-     within the domain that were pulled from the corresponding input
-     file.  The _all files include all variables that were in the
-     corresponding input file for the same facilities.
+     "WWTP_industrial_all.csv", "WWTP_X_Y_municipal.csv", and
+     "WWTP_X_Y_municipal_all.csv" are also saved.  The simpler csvs
+     include only the name, location, and assigned emissions for
+     facilities within the domain that were pulled from the
+     corresponding input file.  The _all files include all variables
+     that were in the corresponding input file for the same facilities.
 
 Author(s):
 
@@ -311,20 +348,23 @@ Examples:
      grid_res=0.01
      grid_crs="epsg:4326"
      grid <- rast(nrows=diff(range(grid_bbox[,2]))/grid_res,
-                 ncols=diff(range(grid_bbox[,1]))/grid_res, xmin=min(grid_bbox[,1]),
-                 xmax=max(grid_bbox[,1]), ymin=min(grid_bbox[,2]), ymax=max(grid_bbox[,2]),
-                 crs=grid_crs)
+                  ncols=diff(range(grid_bbox[,1]))/grid_res, xmin=min(grid_bbox[,1]),
+                  xmax=max(grid_bbox[,1]), ymin=min(grid_bbox[,2]), ymax=max(grid_bbox[,2]),
+                  crs=grid_crs)
+     grid_vect <- as.polygons(ext(grid),crs=grid_crs)
      
-     Urban_Tigerlines <- vect("~/../Desktop/Urban_Tigerlines/tl_2018_us_uac10.shp")
-     focus_city <- terra::subset(Urban_Tigerlines,Urban_Tigerlines$NAME10 %in% "Philadelphia, PA--NJ--DE--MD")
-     
-     Wastewater(DMR_file='~/../Desktop/DMR_2022_from_8_10_2023.csv',
-                CWNS_file='~/../Desktop/CWNS_merged_data_2012.xlsx',
-                output_directory="~/../Desktop/",
-                Wastewater_Municipal_method="Moore_linear",
-                Wastewater_Municipal_file="DMR",
-                domain=grid,
-                state_name_list=c("DE","MD","NJ","NY","PA"),
+     Wastewater(DMR_file='~/../Desktop/in/DMR_2022_from_8_10_2023.csv',
+                CWNS_file='~/../Desktop/in/CWNS_merged_data_2012.xlsx',
+                input_directory="~/../Desktop/in/",
+                output_directory="~/../Desktop/out/",
+                Wastewater_use_CWNS=TRUE,
+                Wastewater_use_DMR=TRUE,
+                Wastewater_Municipal_Method_Moore_linear=TRUE,
+                Wastewater_Municipal_Method_Moore_EF=FALSE,
+                Wastewater_Municipal_Method_GHGI=TRUE,
+                domain=grid_vect,
+                domain_template=grid,
+                ghgrp_facility_info="~/../Desktop/in/GHGRP/facility_info.csv",
                 inventory_year=2018,
                 National_wastewater_info=data.frame("Year"=c(1990,2018),
                                                     "Septic_Fraction"=c(0.241,0.171)),
@@ -337,8 +377,7 @@ Examples:
                 GHGI_septic_EF=10.7,
                 Total_national_open_or_low_int_area=352032,
                 verbose=TRUE,
-                State_Tigerlines=vect("~/../Desktop/State_Tigerlines/tl_2018_us_state.shp"),
-                County_Tigerlines=vect("~/../Desktop/County_Tigerlines/tl_2018_us_county.shp"),
-                focus_city_tigerlines=focus_city,
+                State_Tigerlines=vect("~/../Desktop/in/State_Tigerlines/tl_2018_us_state.shp"),
+                County_Tigerlines=vect("~/../Desktop/in/County_Tigerlines/tl_2018_us_county.shp"),
                 plot_directory="~/../Desktop/plots/")
      

@@ -9,21 +9,27 @@ Description:
 Usage:
 
      Transmission(
+       input_directory,
        GHGI_file,
-       GHGI_Emissions_sheet,
-       GHGI_Activity_sheet,
+       GHGI_transmission_compressors,
+       GHGI_Pipeline,
+       HIFLD_compressor_file,
        domain,
+       domain_template,
+       ghgrp_facility_info,
        state_name_list,
        output_directory,
        inventory_year,
        verbose,
        plot_directory,
        County_Tigerlines,
-       State_Tigerlines,
-       focus_city_tigerlines
+       State_Tigerlines
      )
      
 Arguments:
+
+input_directory: Character providing the full filepath to save/load raw
+          input data
 
 GHGI_file: Character providing the full filepath to the GHGI Annex 3.6
           excel file. This data is available at
@@ -37,18 +43,30 @@ GHGI_file: Character providing the full filepath to the GHGI Annex 3.6
           package's datasets folder that has been successfully used in
           this code available for reference.
 
-GHGI_Emissions_sheet: Character providing the sheet name in "GHGI_file"
-          that provides the "CH4 Emissions for Natural Gas Systems, by
-          Segment and Source, for All Years".  The sheet name as of the
-          2022 GHGI is "3.6-1".
+GHGI_transmission_compressors: Character or data.frame.  Pulled from
+          config file. Either GHGI to indicate the GHGI file should be
+          used to pull emissions and activity data or a data frame
+          providing the needed values.
 
-GHGI_Activity_sheet: Character providing the sheet name in "GHGI_file"
-          that provides the "Activity Data for Natural Gas Systems
-          Sources, for All Years".  The sheet name as of the 2022 GHGI
-          is "3.6-7".
+GHGI_Pipeline: Character or data.frame.  Pulled from config file.
+          Either GHGI to indicate the GHGI file should be used to pull
+          emissions and activity data or a data frame providing the
+          needed values.
 
-  domain: SpatRaster providing the desired output grid, including the
-          desired resolution and coordinate reference system
+HIFLD_compressor_file: Character providing the full filepath to the
+          HIFLD compressor data.  As this file is now deprecated and no
+          replacement has been created, it currently must be provided
+          as part of the package.
+
+  domain: SpatVector polygon outlining the desired output area
+
+domain_template: SpatRaster providing the desired output grid,
+          including the desired resolution and coordinate reference
+          system
+
+ghgrp_facility_info: Data.frame with the GHGRP location data for all
+          years and states.  See
+          https://www.epa.gov/enviro/envirofacts-data-service-api
 
 state_name_list: Character vector listing all states within the desired
           domain
@@ -75,12 +93,6 @@ State_Tigerlines: SpatVector.  United States Census Bureau county
           <https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html>.
           Only relevant if verbose=TRUE.
 
-focus_city_tigerlines: SpatVector.  United States Census Bureau county
-          shapefile.  Available at
-          <https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html>.
-          Only relevant if a focus city was set in main and
-          verbose=TRUE.
-
 Details:
 
      This function calculates and grids methane emissions from natural
@@ -88,14 +100,16 @@ Details:
      Foundation-Level Data (HIFLD), Environmental Protection Agency's
      (EPA) Greenhouse Gas Inventory (GHGI), EPA Greenhouse Gas
      Reporting Program (GHGRP) and Energy Information Administration
-     (EIA) Energy Atlas data.  First the relevant data is pulled from
-     the GHGI Annex file.
+     (EIA) Energy Atlas data.
+
+     The necessary GHGRP and EIA data will be automatically downloaded.
 
      For pipelines the GHGI data includes the emissions and activity
      data for pipeline leaks, meter and regulating stations, and
      venting.  An emission factor in mols of methane per meter of
      pipeline per second can then be calculated.  This emission factor
-     is then applied to the EIA inter/intrastate pipeline data.
+     is then applied to the EIA inter/intrastate pipeline location
+     data.
 
      For compressors the GHGI data includes the emissions and activity
      data for compressor station fugitive emissions, dehydrator vents,
@@ -111,15 +125,9 @@ Details:
      report their emissions to the GHGRP, so only a subset will be
      overwritten using GHGRP data.  The GHGRP compressor emissions are
      scaled so that the average emissions within the domain are equal
-     to the national average calculated from the GHGI.  As their is not
+     to the national average calculated from the GHGI.  As there is not
      a common identifier between the GHGRP and HIFLD datasets, the
-     nearest facility is considered the matching facility, though an
-     error is flagged if a GHGRP compressor has no matching HIFLD
-     compressor within 1 km.
-
-     The necessary GHGRP compressor location/emissions data, EIA
-     pipeline data and HIFLD compressor location data will be
-     automatically downloaded.
+     nearest facility is considered the matching facility.
 
      The GHGRP includes only facilities that emit at least 25,000
      metric tons of carbon dioxide equivalent while the GHGI is
@@ -130,15 +138,13 @@ Details:
      The GHGRP is at the facility scale while the GHGI is national
      totals.
 
-     The EIA pipeline data being used was last updated January 2020.
      The HIFLD compressor data being used was last updated December
-     2022.
+     2022.  It has since been deprecated, but as there is no
+     replacement available, it is still being used.
 
      The GHGI is available at
      <https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks>,
      the GHGRP is available at <https://ghgdata.epa.gov/ghgp/main.do>,
-     the HIFLD data is available at
-     <https://hifld-geoplatform.hub.arcgis.com/datasets/geoplatform::natural-gas-compressor-stations/about>,
      and the EIA data is available at
      <https://atlas.eia.gov/datasets/eia::natural-gas-interstate-and-intrastate-pipelines/about>.
 
@@ -176,18 +182,20 @@ Examples:
                   ncols=diff(range(grid_bbox[,1]))/grid_res, xmin=min(grid_bbox[,1]),
                   xmax=max(grid_bbox[,1]), ymin=min(grid_bbox[,2]), ymax=max(grid_bbox[,2]),
                   crs=grid_crs)
-     Urban_Tigerlines <- vect("~/../Desktop/Urban_Tigerlines/tl_2018_us_uac10.shp")
-     focus_city <- terra::subset(Urban_Tigerlines,Urban_Tigerlines$NAME10 %in% "Philadelphia, PA--NJ--DE--MD")
-     Transmission(GHGI_file="~/../Desktop/2022_ghgi_natural_gas_systems_annex36_tables.xlsx",
-                           GHGI_Emissions_sheet="3.6-1",
-                           GHGI_Activity_sheet="3.6-7",
-                           domain=grid,
+     grid_vect <- as.polygons(ext(grid),crs=grid_crs)
+     Transmission(GHGI_file="~/../Desktop/in/2022_ghgi_natural_gas_systems_annex36_tables.xlsx",
+                           GHGI_transmission_compressors="GHGI",
+                           GHGI_Pipeline="GHGI",
+                           HIFLD_compressor_file="~/../Desktop/in/Natural_Gas_Compressor_Stations.csv",
+                           ghgrp_facility_info="~/../Desktop/in/GHGRP/facility_info.csv",
+                           domain=grid_vect,
+                           domain_template=grid,
                            state_name_list=c("DE","MD","NJ","NY","PA"),
-                           output_directory="~/../Desktop/",
+                           output_directory="~/../Desktop/out/",
+                           input_directory="~/../Desktop/in/",
                            inventory_year=2018,
                            verbose=TRUE,
-                           State_Tigerlines=vect("~/../Desktop/State_Tigerlines/tl_2018_us_state.shp"),
-                           County_Tigerlines=vect("~/../Desktop/County_Tigerlines/tl_2018_us_county.shp"),
-                           focus_city_tigerlines=focus_city,
+                           State_Tigerlines=vect("~/../Desktop/in/State_Tigerlines/tl_2018_us_state.shp"),
+                           County_Tigerlines=vect("~/../Desktop/in/County_Tigerlines/tl_2018_us_county.shp"),
                            plot_directory="~/../Desktop/plots/")
      

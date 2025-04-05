@@ -2,7 +2,7 @@ Config file utilized by main
 
 Description:
 
-     This function provides the main with all emission factors, and
+     This function provides the main with all emission factors and
      similar user-edited input data as well as options for which
      sectors to run and, when applicable, which variations to run.
 
@@ -12,7 +12,7 @@ Usage:
      
 Details:
 
-     This fuunction is intended to be the location for all user edited
+     This function is intended to be the location for all user edited
      variables other than inputs to the main `CH4_inventory_build`
      function.
 
