@@ -7,7 +7,18 @@ Description:
 
 Usage:
 
-     log_plot(input, title, zlim_min = NULL, zlim_max = NULL, filename)
+     log_plot(
+       input,
+       title,
+       zlim_min = NULL,
+       zlim_max = NULL,
+       filename,
+       plot_directory,
+       domain,
+       County_Tigerlines,
+       State_Tigerlines,
+       Urban_Tigerlines
+     )
      
 Arguments:
 
@@ -67,7 +78,18 @@ Description:
 
 Usage:
 
-     not_log_plot(input, title, zlim_min = NULL, zlim_max = NULL, filename)
+     not_log_plot(
+       input,
+       title,
+       zlim_min = NULL,
+       zlim_max = NULL,
+       filename,
+       plot_directory,
+       domain,
+       County_Tigerlines,
+       State_Tigerlines,
+       Urban_Tigerlines
+     )
      
 Arguments:
 

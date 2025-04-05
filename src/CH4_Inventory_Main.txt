@@ -10,23 +10,25 @@ Description:
 Usage:
 
      CH4_inventory_build(
-       input_directory =
-         "G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Raw_data_rewrite/",
-       output_directory =
-         "G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Processed_rewrite/",
-       code_directory = "~/../../Kristian/Desktop/methane_inventory/src/",
-       plot_directory =
-         "G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Figures_rewrite/",
-       focus_city = "Philadelphia, PA--NJ--DE--MD",
-       inventory_year = 2019,
+       input_directory,
+       output_directory,
+       code_directory,
+       plot_directory,
+       inventory_year,
        domain = as.data.frame(cbind(c(-76.65, -73.65), c(38.97, 40.97))),
        domain_res = 0.01,
        domain_crs = "epsg:4326",
-       ACES_directory =
-         "G:/My Drive/Shepson Group Drive/General Inventories and Shapefiles/Inventories/ACES_v2.0",
-       vulcan_directory =
-         "G:/My Drive/Shepson Group Drive/General Inventories and Shapefiles/Inventories/Vulcan_v3.0",
-       verbose = TRUE
+       ACES_directory,
+       vulcan_directory,
+       verbose,
+       EIA_file,
+       GHGI_file,
+       HIFLD_compressor_file,
+       NLCD_file,
+       NALCMS_file,
+       DMR_file,
+       CWNS_file,
+       watershed_shapefile
      )
      
 Arguments:
@@ -40,35 +42,38 @@ code_directory: Character providing the full filepath to source all
 plot_directory: Character providing the full filepath to save figures.
           Only relevant if verbose = TRUE.
 
-focus_city: Character or numeric or a vector of characters or numerics.
-          Each character must exactly match the Census name, which can
-          be found at
-          <https://www.census.gov/programs-surveys/geography/guidance/geo-areas/urban-rural.html>
-          for the 2020 census and at
-          <https://www2.census.gov/geo/pdfs/maps-data/maps/reference/2010UAUC_List.pdf>
-          for the 2010 census.  Years rely on the naming scheme of the
-          most recent census, so e.g., 2018 would rely on the 2010
-          names.
-
-          Each numeric must exactly match the code given to the urban
-          area, also detailed in the above documents.
-
-          This will be used to subset the urban area census outlines
-          and used in any visualizations.
-
 inventory_year: Numeric indicating the desired year of data to use.
+          The closest available will be used for datasets that are not
+          provided annually.
 
-  domain: SpatRaster providing the desired output grid, including the
-          desired resolution and coordinate reference system or a 2x2
-          data frame.  For the data frame, the first column would be x
-          values, the second column y values, and the first row would
-          be the minima, the second row the maxima. This is used to
-          build a SpatRaster.
+  domain: data.frame or character.  If data.frame, provides the corner
+          coordinates of the desired region to process.  The first
+          column would be x values, the second column y values, and the
+          first row would be the minima, the second row the maxima.
+          These must be provided in the appropriate units for the
+          domain_crs parameter (e.g., decimal degrees for a lat/long
+          projection).  If character, it indicates the desired region
+          using census Tigerlines.  It can be a state abbreviation,
+          state name, state FIPS code (as a character), Urban Area
+          name, or Urban Area Census Code.  For example: "DE",
+          "Delaware", and "10" are all equivalent and "Long Neck, DE"
+          and "51202" are equivalent.  Names must match exactly and
+          FIPS or urban area codes must include leading 0's.  Lists of
+          the names and codes for all urban areas for the most recent
+          census are available at
+          <https://www.census.gov/programs-surveys/geography/guidance/geo-areas/urban-rural.html>.
+          Links to previous census urban areas are on the same page.  A
+          list with state fips codes is available here
+          <https://www.census.gov/library/reference/code-lists/ansi.html>.
 
 domain_res: Numeric providing the resolution for the domain.  Can be
-          length 1 or 2 (x,y).
+          length 1 for equal x and y resolution or length 2 (x, y).
 
-domain_crs: Character providing the projection of the domain
+domain_crs: Character providing the projection of the domain in PROJ
+          string
+          (<https://proj.org/en/stable/operations/projections/index.html>)
+          or EPSG codes (<https://epsg.io/>) or WKT
+          (<https://docs.ogc.org/is/12-063r5/12-063r5.html>) formats.
 
 ACES_directory: Character providing the full filepath to a folder with
           sectoral Anthropogenic Carbon Emission System (ACES)
@@ -84,15 +89,47 @@ vulcan_directory: Character providing the full filepath to a folder
           gridded for multiple sectors as well as sector and subsector
           visuals.
 
+EIA_file: Character providing the full filepath to the EIA form 176
+          data in xlsx format available at
+          <https://www.eia.gov/naturalgas/ngqs/#?report=RP4&year1=2020&year2=2020&company=Name>.
+
+GHGI_file: Character providing the full filepath to the GHGI natural
+          gas systems annex file in xlsx format available at
+          <https://www.epa.gov/ghgemissions/natural-gas-and-petroleum-systems-ghg-inventory-additional-information-1990-2022-ghg>.
+
+HIFLD_compressor_file: Character providing the full filepath to the
+          HIFLD natural gas transmission compressor data in csv format.
+          This data has been deprecated and is no longer available from
+          HIFLD.
+
+NALCMS_file: Character providing the full filepath to the NALCMS
+          landcover data in tif format available at
+          <http://www.cec.org/north-american-land-change-monitoring-system/>.
+
+DMR_file: Character providing the full filepath to the DMR wastewater
+          treatment plant data in csv format available at
+          <https://echo.epa.gov/trends/loading-tool/water-pollution-search>.
+
+CWNS_file: Character providing the full filepath to the CWNS wastewater
+          treatment plant data.  For 2012 this should be in xlsx format
+          and for 2022 this should be a folder with multiple csv's. The
+          2012 CWNS is available at
+          <https://ordspub.epa.gov/ords/cwns2012/f?p=cwns2012:25:> and
+          the 2022 CWNS is available at
+          <https://sdwis.epa.gov/ords/sfdw_pub/r/sfdw/cwns_pub/data-download?session=8491118346746>.
+
+watershed_shapefile: Character providing the full filepath to the
+          watershed polygons in shapefile format available at
+          <http://www.cec.org/north-american-environmental-atlas/watersheds/>.
+
 Details:
 
      This function will source all other functions and the config,
-     create the domain from the input data in the case that a
-     SpatRaster was not provided, and download some files (Census
-     tigerlines) that will be needed for multiple sectors.  It will
-     then use the information in the config file and inputs to run
-     every relevant sector.  As such, the inputs to this function and
-     the config may require user editing.
+     create the domain from the input data, and download some files
+     (Census tigerlines, ghgrp location/name data) that will be needed
+     for multiple sectors.  It will then use the information in the
+     config file and inputs to run every relevant sector.  As such, the
+     inputs to this function and the config may require user editing.
 
      See references Vulcan and ACES
 

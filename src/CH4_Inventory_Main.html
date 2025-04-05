@@ -30,23 +30,25 @@ the config file and inputs.
 <h3>Usage</h3>
 
 <pre><code class='language-R'>CH4_inventory_build(
-  input_directory =
-    "G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Raw_data_rewrite/",
-  output_directory =
-    "G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Processed_rewrite/",
-  code_directory = "~/../../Kristian/Desktop/methane_inventory/src/",
-  plot_directory =
-    "G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Figures_rewrite/",
-  focus_city = "Philadelphia, PA--NJ--DE--MD",
-  inventory_year = 2019,
+  input_directory,
+  output_directory,
+  code_directory,
+  plot_directory,
+  inventory_year,
   domain = as.data.frame(cbind(c(-76.65, -73.65), c(38.97, 40.97))),
   domain_res = 0.01,
   domain_crs = "epsg:4326",
-  ACES_directory =
-    "G:/My Drive/Shepson Group Drive/General Inventories and Shapefiles/Inventories/ACES_v2.0",
-  vulcan_directory =
-    "G:/My Drive/Shepson Group Drive/General Inventories and Shapefiles/Inventories/Vulcan_v3.0",
-  verbose = TRUE
+  ACES_directory,
+  vulcan_directory,
+  verbose,
+  EIA_file,
+  GHGI_file,
+  HIFLD_compressor_file,
+  NLCD_file,
+  NALCMS_file,
+  DMR_file,
+  CWNS_file,
+  watershed_shapefile
 )
 </code></pre>
 
@@ -69,42 +71,41 @@ other functions and the config.</p>
 <p>Character providing the full filepath to save figures.
 Only relevant if verbose = TRUE.</p>
 </td></tr>
-<tr><td><code id="focus_city">focus_city</code></td>
-<td>
-<p>Character or numeric or a vector of characters or numerics.
-Each character must exactly match the Census name, which can be found at
-<a href="https://www.census.gov/programs-surveys/geography/guidance/geo-areas/urban-rural.html">https://www.census.gov/programs-surveys/geography/guidance/geo-areas/urban-rural.html</a>
-for the 2020 census and at
-<a href="https://www2.census.gov/geo/pdfs/maps-data/maps/reference/2010UAUC_List.pdf">https://www2.census.gov/geo/pdfs/maps-data/maps/reference/2010UAUC_List.pdf</a>
-for the 2010 census.  Years rely on the naming scheme of the most recent
-census, so e.g., 2018 would rely on the 2010 names.
-</p>
-<p>Each numeric must exactly match the code given to the urban area, also
-detailed in the above documents.
-</p>
-<p>This will be used to subset the urban area census outlines and used in any
-visualizations.</p>
-</td></tr>
 <tr><td><code id="inventory_year">inventory_year</code></td>
 <td>
-<p>Numeric indicating the desired year of data to use.</p>
+<p>Numeric indicating the desired year of data to use.  The
+closest available will be used for datasets that are not provided annually.</p>
 </td></tr>
 <tr><td><code id="domain">domain</code></td>
 <td>
-<p>SpatRaster providing the desired output grid, including the
-desired resolution and coordinate reference system or a 2x2 data frame.  For
-the data frame, the first column would be x values, the second column y
-values, and the first row would be the minima, the second row the maxima.
-This is used to build a SpatRaster.</p>
+<p>data.frame or character.  If data.frame, provides the corner
+coordinates of the desired region to process.  The first column would be x
+values, the second column y values, and the first row would be the minima,
+the second row the maxima.  These must be provided in the appropriate units
+for the domain_crs parameter (e.g., decimal degrees for a lat/long
+projection).  If character, it indicates the desired region using census
+Tigerlines.  It can be a state abbreviation, state name, state FIPS code (as
+a character), Urban Area name, or Urban Area Census Code.  For example:
+&quot;DE&quot;, &quot;Delaware&quot;, and &quot;10&quot; are all equivalent and &quot;Long Neck, DE&quot; and
+&quot;51202&quot; are equivalent.  Names must match exactly and FIPS or urban area
+codes must include leading 0's.  Lists of the names and codes for all urban
+areas for the most recent census are available at
+<a href="https://www.census.gov/programs-surveys/geography/guidance/geo-areas/urban-rural.html">https://www.census.gov/programs-surveys/geography/guidance/geo-areas/urban-rural.html</a>.
+Links to previous census urban areas are on the same page.  A list with
+state fips codes is available here
+<a href="https://www.census.gov/library/reference/code-lists/ansi.html">https://www.census.gov/library/reference/code-lists/ansi.html</a>.</p>
 </td></tr>
 <tr><td><code id="domain_res">domain_res</code></td>
 <td>
 <p>Numeric providing the resolution for the domain.  Can be
-length 1 or 2 (x,y).</p>
+length 1 for equal x and y resolution or length 2 (x, y).</p>
 </td></tr>
 <tr><td><code id="domain_crs">domain_crs</code></td>
 <td>
-<p>Character providing the projection of the domain</p>
+<p>Character providing the projection of the domain in PROJ
+string (<a href="https://proj.org/en/stable/operations/projections/index.html">https://proj.org/en/stable/operations/projections/index.html</a>)
+or EPSG codes (<a href="https://epsg.io/">https://epsg.io/</a>) or WKT
+(<a href="https://docs.ogc.org/is/12-063r5/12-063r5.html">https://docs.ogc.org/is/12-063r5/12-063r5.html</a>) formats.</p>
 </td></tr>
 <tr><td><code id="ACES_directory">ACES_directory</code></td>
 <td>
@@ -125,20 +126,64 @@ annual, sectoral Vulcan inventory files.  Vulcan v3.0 is available at
 includes easier to read csv files of the data that has been gridded for
 multiple sectors as well as sector and subsector visuals.</p>
 </td></tr>
+<tr><td><code id="EIA_file">EIA_file</code></td>
+<td>
+<p>Character providing the full filepath to the EIA form 176 data
+in xlsx format available at
+<a href="https://www.eia.gov/naturalgas/ngqs/#?report=RP4&amp;year1=2020&amp;year2=2020&amp;company=Name">https://www.eia.gov/naturalgas/ngqs/#?report=RP4&amp;year1=2020&amp;year2=2020&amp;company=Name</a>.</p>
+</td></tr>
+<tr><td><code id="GHGI_file">GHGI_file</code></td>
+<td>
+<p>Character providing the full filepath to the GHGI natural gas
+systems annex file in xlsx format available at
+<a href="https://www.epa.gov/ghgemissions/natural-gas-and-petroleum-systems-ghg-inventory-additional-information-1990-2022-ghg">https://www.epa.gov/ghgemissions/natural-gas-and-petroleum-systems-ghg-inventory-additional-information-1990-2022-ghg</a>.</p>
+</td></tr>
+<tr><td><code id="HIFLD_compressor_file">HIFLD_compressor_file</code></td>
+<td>
+<p>Character providing the full filepath to the
+HIFLD natural gas transmission compressor data in csv format.  This data has
+been deprecated and is no longer available from HIFLD.</p>
+</td></tr>
+<tr><td><code id="NALCMS_file">NALCMS_file</code></td>
+<td>
+<p>Character providing the full filepath to the NALCMS
+landcover data in tif format available at
+<a href="http://www.cec.org/north-american-land-change-monitoring-system/">http://www.cec.org/north-american-land-change-monitoring-system/</a>.</p>
+</td></tr>
+<tr><td><code id="DMR_file">DMR_file</code></td>
+<td>
+<p>Character providing the full filepath to the DMR wastewater
+treatment plant data in csv format available at
+<a href="https://echo.epa.gov/trends/loading-tool/water-pollution-search">https://echo.epa.gov/trends/loading-tool/water-pollution-search</a>.</p>
+</td></tr>
+<tr><td><code id="CWNS_file">CWNS_file</code></td>
+<td>
+<p>Character providing the full filepath to the CWNS wastewater
+treatment plant data.  For 2012 this should be in xlsx format and for 2022
+this should be a folder with multiple csv's. The 2012 CWNS is available at
+<a href="https://ordspub.epa.gov/ords/cwns2012/f?p=cwns2012:25:">https://ordspub.epa.gov/ords/cwns2012/f?p=cwns2012:25:</a> and the 2022
+CWNS is available at
+<a href="https://sdwis.epa.gov/ords/sfdw_pub/r/sfdw/cwns_pub/data-download?session=8491118346746">https://sdwis.epa.gov/ords/sfdw_pub/r/sfdw/cwns_pub/data-download?session=8491118346746</a>.</p>
+</td></tr>
+<tr><td><code id="watershed_shapefile">watershed_shapefile</code></td>
+<td>
+<p>Character providing the full filepath to the
+watershed polygons in shapefile format available at
+<a href="http://www.cec.org/north-american-environmental-atlas/watersheds/">http://www.cec.org/north-american-environmental-atlas/watersheds/</a>.</p>
+</td></tr>
 </table>
 
 
 <h3>Details</h3>
 
 <p>This function will source all other functions and the config, create
-the domain from the input data in the case that a SpatRaster was not
-provided, and download some files (Census tigerlines) that will be needed
-for multiple sectors.  It will then use the information in the config file
-and inputs to run every relevant sector.  As such, the inputs to this
-function and the config may require user editing.
+the domain from the input data, and download some files (Census tigerlines, 
+ghgrp location/name data) that will be needed for multiple sectors.  It will
+then use the information in the config file and inputs to run every relevant
+sector.  As such, the inputs to this function and the config may require 
+user editing.
 </p>
-<p>See references
-<a href="https://doi.org/10.1029/2020JD032974">Vulcan</a> and
+<p>See references <a href="https://doi.org/10.1029/2020JD032974">Vulcan</a> and
 <a href="https://doi.org/10.1002/2017JD027359">ACES</a>
 </p>
 
