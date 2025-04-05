@@ -506,11 +506,11 @@ Municipal_solid_waste <- function(input_directory,
     zlim_min <- log10(min(global(ghgrp_reported,min,na.rm=T),
                           global(ghgrp_modeled,min,na.rm=T),
                           global(ghgrp_collection_efficiency,min,na.rm=T),
-                          global(LMOP_flux,min,na.rm=T)))
+                          global(LMOP_flux,min,na.rm=T),na.rm=T))
     zlim_max <- log10(max(global(ghgrp_reported,max,na.rm=T),
                           global(ghgrp_modeled,max,na.rm=T),
                           global(ghgrp_collection_efficiency,max,na.rm=T),
-                          global(LMOP_flux,max,na.rm=T)))
+                          global(LMOP_flux,max,na.rm=T),na.rm=T))
     
     log_plot(ghgrp_reported,filename="MSW_GHGRP_reported",
              "Municipal Solid Waste -\n GHGRP reporters",
