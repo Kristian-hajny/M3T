@@ -57,9 +57,6 @@
 #'@param EIA_file Character providing the full filepath to the EIA form 176 data
 #'  in xlsx format available at
 #'  \url{https://www.eia.gov/naturalgas/ngqs/#?report=RP4&year1=2020&year2=2020&company=Name}.
-#'@param GHGI_file Character providing the full filepath to the GHGI natural gas
-#'  systems annex file in xlsx format available at
-#'  \url{https://www.epa.gov/ghgemissions/natural-gas-and-petroleum-systems-ghg-inventory-additional-information-1990-2022-ghg}.
 #'@param HIFLD_compressor_file Character providing the full filepath to the
 #'  HIFLD natural gas transmission compressor data in csv format.  This data has
 #'  been deprecated and is no longer available from HIFLD.
@@ -89,12 +86,20 @@
 #'                     output_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Processed_rewrite/",
 #'                     code_directory="~/../../Kristian/Desktop/methane_inventory/src/",
 #'                     plot_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Figures_rewrite/",
-#'                     focus_city="Philadelphia, PA--NJ--DE--MD",
 #'                     inventory_year=2019,
 #'                     domain=as.data.frame(cbind(c(-76.65,-73.65),
 #'                                                c(38.97,40.97))),
 #'                     domain_res=0.01,
 #'                     domain_crs="epsg:4326",
+#'                     NALCMS_file = "G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Large inventory files/NA_NALCMS_landcover_2020_30m/data/NA_NALCMS_landcover_2020_30m.tif",
+#'                     NLCD_file = "G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Large inventory files/nlcd_2019_land_cover_l48_20210604/nlcd_2019_land_cover_l48_20210604.img",
+#'                     ACES_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Large inventory files/ACES V2.0",
+#'                     vulcan_directory="G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Large inventory files/Vulcan_v3.0",
+#'                     DMR_file = "~/../../Kristian/Desktop/methane_inventory/src/Data/DMR_2019_from_11_1_2024.csv",
+#'                     CWNS_file = "~/../../Kristian/Desktop/methane_inventory/src/Data/CWNS_merged_data_2012_KH.xlsx",
+#'                     EIA_file = "~/../../Kristian/Desktop/methane_inventory/src/Data/EIA_company_report_2019.xlsx",
+#'                     HIFLD_compressor_file="~/../../Kristian/Desktop/methane_inventory/src/Data/Natural_Gas_Compressor_Stations.csv",
+#'                     watershed_shapefile="~/../../Kristian/Desktop/methane_inventory/src/Data/watersheds_shapefile/watershed_p_v2.shp"
 #'                     ACES_directory="G:/My Drive/Shepson Group Drive/General Inventories and Shapefiles/Inventories/ACES_v2.0",
 #'                     vulcan_directory="G:/My Drive/Shepson Group Drive/General Inventories and Shapefiles/Inventories/Vulcan_v3.0",
 #'                     verbose=TRUE)
@@ -122,7 +127,6 @@ CH4_inventory_build <- function(input_directory,
                                 vulcan_directory,
                                 verbose,
                                 EIA_file,
-                                GHGI_file,
                                 HIFLD_compressor_file,
                                 NLCD_file,
                                 NALCMS_file,
@@ -618,7 +622,6 @@ CH4_inventory_build <- function(input_directory,
                     ghgrp_facility_info=ghgrp_facility_info,
                     EIA_file = EIA_file,
                     PHMSA_file = PHMSA_file,
-                    GHGI_file = GHGI_file,
                     GHGI_MnR = GHGI_MnR,
                     GHGI_maintenance = GHGI_maintenance,
                     GHGI_meters = GHGI_meters,
@@ -640,7 +643,6 @@ CH4_inventory_build <- function(input_directory,
   }
   if(Process_natural_gas_transmission){
     Transmission(input_directory=input_directory,
-                 GHGI_file=GHGI_file,
                  GHGI_transmission_compressors=GHGI_transmission_compressors,
                  GHGI_Pipeline=GHGI_Pipeline,
                  HIFLD_compressor_file=HIFLD_compressor_file,
