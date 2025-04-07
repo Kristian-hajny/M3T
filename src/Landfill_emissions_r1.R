@@ -411,9 +411,9 @@ Municipal_solid_waste <- function(input_directory,
   ################################################################################
   #Download, load in, and prepare LMOP data
   
-  LMOP_file <- file.path(input_directory,"LMOP_landfill_only.xlsx")
+  LMOP_file <- list.files(input_directory,pattern="*LMOP_landfill_only.xlsx",full.names = T)
   
-  if(!file.exists(LMOP_file)){
+  if(identical(LMOP_file,character(0))){
     #download the webpage and load in the HTML
     data_URL <- paste0("https://www.epa.gov/lmop/landfill-technical-data")
     download_dest <- tempfile(fileext = ".html")
@@ -428,6 +428,11 @@ Municipal_solid_waste <- function(input_directory,
     #still be up to date though.  
     Matchtext <- regexpr("https://.{1,60}landfilllmopdata.xlsx",HTML_data)
     data_URL2 <- substring(HTML_data,Matchtext[1],Matchtext[1]+attr( Matchtext , "match.length")-1)
+    
+    #Use regex to save the year of the dataset as part of the download for
+    #clarity
+    LMOP_yr <- substr(data_URL2,regexpr("20??",data_URL2)[1],regexpr("20??",data_URL2)[1]+3)
+    LMOP_file <- paste0(input_directory,"/",LMOP_yr,"_LMOP_landfill_only.xlsx")
     Trycatch_downloader(URL = data_URL2,method = "save",output_location = LMOP_file,
                         error_message = paste0("LMOP data could not be downloaded from webpage:\n",data_URL2,"\nMake sure the main EPA page for it is still accurate:\n",data_URL))
     unlink(download_dest)
