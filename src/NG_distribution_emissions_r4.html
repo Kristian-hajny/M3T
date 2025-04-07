@@ -38,7 +38,6 @@ emissions from natural gas distribution sources, as well as optional visuals
   ghgrp_facility_info,
   EIA_file,
   PHMSA_file,
-  GHGI_file,
   GHGI_MnR,
   GHGI_maintenance,
   GHGI_meters,
@@ -129,19 +128,6 @@ page.  If running at the LDC level the file must be edited such that there
 is a consistent identifier with other input data (EIA, HIFLD, GHGRP).  There
 is an example file in the package's datasets folder that has been
 successfully used in this code available for reference.</p>
-</td></tr>
-<tr><td><code id="GHGI_file">GHGI_file</code></td>
-<td>
-<p>Character providing the full filepath to the GHGI Annex 3.6
-excel file. This data is available at
-<a href="https://www.epa.gov/ghgemissions/natural-gas-and-petroleum-systems-ghg-inventory-additional-information-1990-2020-ghg">https://www.epa.gov/ghgemissions/natural-gas-and-petroleum-systems-ghg-inventory-additional-information-1990-2020-ghg</a>
-for the 2022 GHGI.  In the GHGI Annexes, available at
-<a href="https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks-1990-2020">https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks-1990-2020</a>,
-there is a link to the file in Section 3.6: &quot;Methodology for Estimating CH4,
-CO2, and N2O Emissions from Natural Gas Systems&quot;.  The excel file has
-multiple sheets, each of which has a separate layout.  There is an example
-file in the package's datasets folder that has been successfully used in
-this code available for reference.</p>
 </td></tr>
 <tr><td><code id="GHGI_MnR">GHGI_MnR</code></td>
 <td>
@@ -400,15 +386,23 @@ to capture all national emissions. All other datasets are meant to be
 inclusive of national facilities. All data is annual.  The GHGI is national
 totals while all other datasets are at the facility scale.
 </p>
-<p>GHGRP data and the HIFLD shapefile will be automatically downloaded.
+<p>GHGRP data, GHGI data, and the HIFLD shapefile will be automatically 
+downloaded.
 </p>
-<p>The GHGRP is available at <a href="https://ghgdata.epa.gov/ghgp/main.do">https://ghgdata.epa.gov/ghgp/main.do</a>. The
-GHGI is available at
-<a href="https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks">https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks</a>.
-For individual LDC metering and regulating station counts, among other
+<p>The GHGRP is available at <a href="https://ghgdata.epa.gov/ghgp/main.do">https://ghgdata.epa.gov/ghgp/main.do</a>. For
+individual LDC metering and regulating station counts, among other
 variables, one must filter to the natural gas local distribution companies
 sector, select an individual facility and select &quot;View reported data&quot;.  The
-HIFLD dataset is available at
+GHGI is available at
+<a href="https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks">https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks</a>.
+The necessary GHGI Annex data is available at
+<a href="https://www.epa.gov/ghgemissions/natural-gas-and-petroleum-systems-ghg-inventory-additional-information-1990-2022-ghg">https://www.epa.gov/ghgemissions/natural-gas-and-petroleum-systems-ghg-inventory-additional-information-1990-2022-ghg</a>
+for the 2024 GHGI.  In the GHGI Annexes, available at
+<a href="https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks-1990-2022">https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks-1990-2022</a>,
+for 2024 there is a link to the file in Section 3.6: &quot;Methodology for
+Estimating CH4, CO2, and N2O Emissions from Natural Gas Systems&quot;.  The excel
+file has multiple sheets, each of which has a separate layout.  The HIFLD
+dataset is available at
 <a href="https://hifld-geoplatform.hub.arcgis.com/datasets/geoplatform::natural-gas-service-territories/about">https://hifld-geoplatform.hub.arcgis.com/datasets/geoplatform::natural-gas-service-territories/about</a>
 and can be donwloaded as both a shapefile or a csv. EIA form 176 is
 available at
@@ -479,7 +473,6 @@ NG_distribution(domain=grid_vect,
                 ghgrp_facility_info="~/../Desktop/in/GHGRP/facility_info.csv",
                 EIA_file = "~/../Desktop/in/176 Type of Operations and Sector Items.xlsx",
                 PHMSA_file = "~/../Desktop/in/annual_gas_distribution_2010_present/annual_gas_distribution_2019.xlsx",
-                GHGI_file = "~/../Desktop/in/2022_ghgi_natural_gas_systems_annex36_tables.xlsx",
                 GHGI_MnR="GHGI",
                 GHGI_maintenance="GHGI",
                 GHGI_meters="GHGI",
