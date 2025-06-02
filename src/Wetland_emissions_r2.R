@@ -124,7 +124,11 @@ SOCCR_Wetlands <- function(output_directory,
                            verbose,
                            County_Tigerlines,
                            State_Tigerlines,
-                           watershed_shapefile){
+                           watershed_shapefile,
+                           Use_NLCD,
+                           Use_NALCMS,
+                           Use_Wetcharts,
+                           Wetcharts_model_subset){
   
   ## Wetland_emissions_r2.R
   ## In use: 2021-11-02 20:00
@@ -135,6 +139,9 @@ SOCCR_Wetlands <- function(output_directory,
   
   starttime <- Sys.time()
   cat("Starting wetland sector: SOCCR_Wetlands\n")
+  
+  Wetland_output_directory <- paste0(output_directory,"Wetlands/")
+  dir.create(Wetland_output_directory,showWarnings = F)
   ################################################################################
   #load in the watersheds and prepare for use with SOCCR2 EFs
   
@@ -185,7 +192,7 @@ SOCCR_Wetlands <- function(output_directory,
   #load in and process the Wetland_fraction_r1 output to convert from wetland
   #coverage to wetland emissions
   
-  NWI_files <- list.files(paste0(output_directory,"/Wetland_NWI/"),".tiff",full.names = T)
+  NWI_files <- list.files(paste0(Wetland_output_directory,"/processed_NWI_data/"),".tiff",full.names = T)
   NWI_filetypes <- sapply(strsplit(basename(gsub(".tiff","",(NWI_files))),"_"),"[[",2)
   
   SOCCR_wetland_types <- c("M2","E2","PFO","PNF")
@@ -275,9 +282,9 @@ SOCCR_Wetlands <- function(output_directory,
     SOCCR1_flux <- mask(SOCCR1_flux,domain)
     cover <- extract(SOCCR1_flux,domain,weights=T,cells=T)
     SOCCR1_flux[cover[,'cell']] <- SOCCR1_flux[cover[,'cell']]*cover[,'weight']
-    
-    writeCDF(sum(SOCCR1_flux,na.rm=T),
-             file.path(output_directory,'SOCCR1.nc'),
+    SOCCR1_flux <- sum(SOCCR1_flux,na.rm=T)
+    writeCDF(SOCCR1_flux,
+             file.path(Wetland_output_directory,'SOCCR1.nc'),
              force_v4=TRUE,
              varname='methane_emissions',
              unit='nmol/m2/s',
@@ -292,8 +299,9 @@ SOCCR_Wetlands <- function(output_directory,
       cover <- extract(SOCCR2_flux,domain,weights=T,cells=T)
     }
     SOCCR2_flux[cover[,'cell']] <- SOCCR2_flux[cover[,'cell']]*cover[,'weight']
-    writeCDF(sum(SOCCR2_flux,na.rm=T),
-             file.path(output_directory,'SOCCR2.nc'),
+    SOCCR2_flux <- sum(SOCCR2_flux,na.rm=T)
+    writeCDF(SOCCR2_flux,
+             file.path(Wetland_output_directory,'SOCCR2.nc'),
              force_v4=TRUE,
              varname='methane_emissions',
              unit='nmol/m2/s',
@@ -308,8 +316,9 @@ SOCCR_Wetlands <- function(output_directory,
       cover <- extract(Freshwater_flux,domain,weights=T,cells=T)
     }
     Freshwater_flux[cover[,'cell']] <- Freshwater_flux[cover[,'cell']]*cover[,'weight']
-    writeCDF(sum(Freshwater_flux,na.rm=T),
-             file.path(output_directory,'Freshwater.nc'),
+    Freshwater_flux <- sum(Freshwater_flux,na.rm=T)
+    writeCDF(Freshwater_flux,
+             file.path(Wetland_output_directory,'Freshwater.nc'),
              force_v4=TRUE,
              varname='methane_emissions',
              unit='nmol/m2/s',
@@ -319,6 +328,64 @@ SOCCR_Wetlands <- function(output_directory,
   }
 
   ################################################################################
+  #Create a sector total, 1 per variant.  This is the only reason this function
+  #requires wetcharts variant info
+  
+  if(Include_freshwater){
+    partial_total <- Freshwater_flux
+  }else{
+    partial_total <- domain_template
+    values(partial_total) <- 0
+  }
+  
+  if(Use_Wetcharts){
+    for(B in 1:length(Wetcharts_model_subset)){
+      if(Use_NLCD){
+        NLCD_Downscaled_Averaged_wetcharts <- rast(paste0(Wetland_output_directory,'/Wetcharts_NLCD_Downscaled_subset_',B,'.nc'))
+        writeCDF(NLCD_Downscaled_Averaged_wetcharts+partial_total,
+                 file.path(output_directory,paste0('Wetland_sector_total_Wetcharts_NLCD_subset_',B,'.nc')),
+                 force_v4=TRUE,
+                 varname='methane_emissions',
+                 unit='nmol/m2/s',
+                 longname='Methane emissions from wetlands and optionally freshwater',
+                 missval=-9999,
+                 overwrite=TRUE)
+      }
+      if(Use_NALCMS){
+        NALCMS_Downscaled_Averaged_wetcharts <- rast(paste0(Wetland_output_directory,'/Wetcharts_NALCMS_Downscaled_subset_',B,'.nc'))
+        writeCDF(NALCMS_Downscaled_Averaged_wetcharts+partial_total,
+                 file.path(output_directory,paste0('Wetland_sector_total_Wetcharts_NALCMS_subset_',B,'.nc')),
+                 force_v4=TRUE,
+                 varname='methane_emissions',
+                 unit='nmol/m2/s',
+                 longname='Methane emissions from wetlands and optionally freshwater',
+                 missval=-9999,
+                 overwrite=TRUE)
+      }
+    }
+  }
+  if(Use_SOCCR1){
+    writeCDF(SOCCR1_flux+partial_total,
+             file.path(output_directory,paste0('Wetland_sector_total_SOCCR1.nc')),
+             force_v4=TRUE,
+             varname='methane_emissions',
+             unit='nmol/m2/s',
+             longname='Methane emissions from wetlands and optionally freshwater',
+             missval=-9999,
+             overwrite=TRUE)
+  }
+  if(Use_SOCCR2){
+    writeCDF(SOCCR2_flux+partial_total,
+             file.path(output_directory,paste0('Wetland_sector_total_SOCCR2.nc')),
+             force_v4=TRUE,
+             varname='methane_emissions',
+             unit='nmol/m2/s',
+             longname='Methane emissions from wetlands and optionally freshwater',
+             missval=-9999,
+             overwrite=TRUE)
+  }
+  
+  ################################################################################
   #visuals
   
   if(verbose){
@@ -326,19 +393,16 @@ SOCCR_Wetlands <- function(output_directory,
     zlim_min <- -3
     zlim_max <- 0
     if(Use_SOCCR1){
-      SOCCR1_flux <- sum(SOCCR1_flux,na.rm=T)
       if(!all(is.na(values(SOCCR1_flux)))){
         zlim_max <- max(zlim_max,as.numeric(global(SOCCR1_flux,max,na.rm=T)))
       }
     }
     if(Use_SOCCR2){
-      SOCCR2_flux <- sum(SOCCR2_flux,na.rm=T)
       if(!all(is.na(values(SOCCR2_flux)))){
         zlim_max <- max(zlim_max,as.numeric(global(SOCCR2_flux,max,na.rm=T)))
       }
     }
     if(Include_freshwater){
-      Freshwater_flux <- sum(Freshwater_flux,na.rm=T)
       if(!all(is.na(values(Freshwater_flux)))){
         zlim_max <- max(zlim_max,as.numeric(global(Freshwater_flux,max,na.rm=T)))
       }
@@ -376,3 +440,4 @@ SOCCR_Wetlands <- function(output_directory,
   }
   cat("Finished wetland sector: SOCCR_Wetlands in",round(difftime(Sys.time(),starttime,units = "min"),2),"minutes\n\n")
 }
+
