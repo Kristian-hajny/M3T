@@ -48,7 +48,12 @@ main_config <- function(){
     Process_wastewater <- TRUE
     Process_wetlands_and_inland_waters <- TRUE
     Incorporate_remaining_sectors_from_gridded_EPA <- TRUE
-    Combine_sectors <- FALSE #create total CH4 inventory(s) by summing across sectors - not yet developed
+    
+    #create total CH4 inventory(s) by summing across sectors.  Caution - if many
+    #options are enabled, this could create > 1,000 unique combinations, all of
+    #which will be generated.
+    Combine_sectors <- TRUE
+    
     #API key to access SEDS data API.  The API is described at
     #\url{https://www.eia.gov/opendata/} and one can register for a key with a
     #link on the right hand side of this page.
@@ -203,6 +208,13 @@ main_config <- function(){
     ##2 wetcharts outputs
     # Wetcharts_model_subset <- list(c(1913,1914,1923,1924,1933,1934,2913,2914,2924), #Ma subset
     #                                c(1913,1914,1924,1933,1934,2914,2924)) #Nesser subset
+    
+    
+    #combining sectors
+    #An option to not only create total methane inventories, but also separate
+    #thermogenic and nonthermogenic totals.  Note this will increase the number
+    #of output files by a factor of 3.
+    separate_thermo=FALSE
   }
   
   
@@ -215,18 +227,18 @@ main_config <- function(){
     #Landfills
     #total national municipal landfill emissions from the GHGI.  In a table
     #titled CH4 emissions from Landfills (kt)
-    # GHGI_landfill_total <- 3924 #Gg CH4/yr, newer GHGI value for 2019
+    GHGI_landfill_total <- 3924 #Gg CH4/yr, newer GHGI value for 2019
     # GHGI_landfill_total <- 3943 #Gg CH4/yr older GHGI value for 2019
-    GHGI_landfill_total <- 3978 #Gg CH4/yr from Joe
+    # GHGI_landfill_total <- 3978 #Gg CH4/yr from Joe
     
     
     
     
     #Natural Gas Distribution
     #pipeline emission factors from Weller et al., 2020 (doi:https://doi.org/10.1021/acs.est.0c00437)
-    GHGI_natural_gas_pipeline_emission_factors <- data.frame("Leaks_per_mile"         =c(0.51,1.00,0.61,0.43),
+    natural_gas_pipeline_emission_factors <- data.frame("Leaks_per_mile"              =c(0.51,1.00,0.61,0.43),
                                                              "Avg_emissions_mol_per_s"=c(2.24,1.72,2.00,2.03)/(16.043*60)) #converting from g/min to mol/s
-    rownames(GHGI_natural_gas_pipeline_emission_factors) <- c("Bare_Steel",
+    rownames(natural_gas_pipeline_emission_factors) <- c("Bare_Steel",
                                                               "Cast_Iron",
                                                               "Coated_steel",
                                                               "Plastic")
@@ -289,36 +301,36 @@ main_config <- function(){
     #The desired inventory year (or closest available) should be used.  Res =
     #residential, Com = commercial, Ind = industrial, elec = electric.  Petr =
     #petroleum.
-    # stationary_combustion_GHGI_data <- data.frame("State"="US_EPA",
-    #                                               "com_coal"=17,
-    #                                               "ind_coal"=517,
-    #                                               "elec_coal"=10181,
-    #                                               "res_petr"=995,
-    #                                               "com_petr"=815,
-    #                                               "ind_petr"=1984,
-    #                                               "elec_petr"=189,
-    #                                               "com_gas"=3647,
-    #                                               "ind_gas"=9482,
-    #                                               "elec_gas"=11658,
-    #                                               "res_wood"=546,
-    #                                               "com_wood"=84,
-    #                                               "ind_wood"=1407,
-    #                                               "elec_wood"=201) #2024 GHGI values for 2019
     stationary_combustion_GHGI_data <- data.frame("State"="US_EPA",
                                                   "com_coal"=17,
                                                   "ind_coal"=517,
-                                                  "elec_coal"=10554,
-                                                  "res_petr"=975,
-                                                  "com_petr"=801,
-                                                  "ind_petr"=2062,
-                                                  "elec_petr"=42,
+                                                  "elec_coal"=10181,
+                                                  "res_petr"=995,
+                                                  "com_petr"=815,
+                                                  "ind_petr"=1984,
+                                                  "elec_petr"=189,
                                                   "com_gas"=3647,
-                                                  "ind_gas"=9484,
-                                                  "elec_gas"=11553,
-                                                  "res_wood"=544,
+                                                  "ind_gas"=9482,
+                                                  "elec_gas"=11658,
+                                                  "res_wood"=546,
                                                   "com_wood"=84,
                                                   "ind_wood"=1407,
-                                                  "elec_wood"=68) #2022 GHGI values for 2019
+                                                  "elec_wood"=201) #2024 GHGI values for 2019
+    # stationary_combustion_GHGI_data <- data.frame("State"="US_EPA",
+    #                                               "com_coal"=17,
+    #                                               "ind_coal"=517,
+    #                                               "elec_coal"=10554,
+    #                                               "res_petr"=975,
+    #                                               "com_petr"=801,
+    #                                               "ind_petr"=2062,
+    #                                               "elec_petr"=42,
+    #                                               "com_gas"=3647,
+    #                                               "ind_gas"=9484,
+    #                                               "elec_gas"=11553,
+    #                                               "res_wood"=544,
+    #                                               "com_wood"=84,
+    #                                               "ind_wood"=1407,
+    #                                               "elec_wood"=68) #2022 GHGI values for 2019
     
     #All emission factors below are in g/GJ.  Emission factors are IPCC defaults
     #except for electric natural gas.  They can be viewed in IPCC 2006 volume 2:
@@ -390,39 +402,39 @@ main_config <- function(){
     # included.
     
     #My updates to Joe's values given some errors in Joe's
-    # Wetland_EFs <- data.frame("E2_Atlantic"=c(10.3,20.43), 
-    #                           "M2_Atlantic"=c(10.3,20.43),
-    #                           "E2_Gulf"=    c(10.3,27.47), 
-    #                           "M2_Gulf"=    c(10.3,27.47),
-    #                           "E2_Pacific"= c(10.3,21.87), 
-    #                           "M2_Pacific"= c(10.3,21.87),
-    #                           "E2_Hudson"=  c(10.3,21.87), 
-    #                           "M2_Hudson"=  c(10.3,21.87),
-    #                           "PFO"=        c(36  ,24.74),
-    #                           "PNF"=        c(36  ,33.28),
-    #                           "L1"=5,
-    #                           "L2"=5,
-    #                           "R1"=7.88,
-    #                           "R2"=7.88,
-    #                           "R3"=7.88,
-    #                           "R4"=7.88)
-    #Joe's values
-    Wetland_EFs <- data.frame("E2_Atlantic"=c(1.3,20.44), 
-                              "M2_Atlantic"=c(1.3,20.44),
-                              "E2_Gulf"=    c(1.3,20.44), 
-                              "M2_Gulf"=    c(1.3,20.44),
-                              "E2_Pacific"= c(1.3,20.44), 
-                              "M2_Pacific"= c(1.3,20.44),
-                              "E2_Hudson"=  c(1.3,20.44), 
-                              "M2_Hudson"=  c(1.3,20.44),
-                              "PFO"=        c(7.6,18.52),
-                              "PNF"=        c(7.6,19.71),
+    Wetland_EFs <- data.frame("E2_Atlantic"=c(10.3,20.43),
+                              "M2_Atlantic"=c(10.3,20.43),
+                              "E2_Gulf"=    c(10.3,27.47),
+                              "M2_Gulf"=    c(10.3,27.47),
+                              "E2_Pacific"= c(10.3,21.87),
+                              "M2_Pacific"= c(10.3,21.87),
+                              "E2_Hudson"=  c(10.3,21.87),
+                              "M2_Hudson"=  c(10.3,21.87),
+                              "PFO"=        c(36  ,24.74),
+                              "PNF"=        c(36  ,33.28),
                               "L1"=5,
                               "L2"=5,
                               "R1"=7.88,
                               "R2"=7.88,
                               "R3"=7.88,
                               "R4"=7.88)
+    #Joe's values
+    # Wetland_EFs <- data.frame("E2_Atlantic"=c(1.3,20.44), 
+    #                           "M2_Atlantic"=c(1.3,20.44),
+    #                           "E2_Gulf"=    c(1.3,20.44), 
+    #                           "M2_Gulf"=    c(1.3,20.44),
+    #                           "E2_Pacific"= c(1.3,20.44), 
+    #                           "M2_Pacific"= c(1.3,20.44),
+    #                           "E2_Hudson"=  c(1.3,20.44), 
+    #                           "M2_Hudson"=  c(1.3,20.44),
+    #                           "PFO"=        c(7.6,18.52),
+    #                           "PNF"=        c(7.6,19.71),
+    #                           "L1"=5,
+    #                           "L2"=5,
+    #                           "R1"=7.88,
+    #                           "R2"=7.88,
+    #                           "R3"=7.88,
+    #                           "R4"=7.88)
     rownames(Wetland_EFs) <- c("SOCCR1","SOCCR2")
 
     # convert from g CH4 per m2 per yr to nmol/m2/s
@@ -435,10 +447,10 @@ main_config <- function(){
     #nonseptic is the sum of all other entries in the table.  The GHGI is
     #available at
     #\url{https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks}
-    GHGI_national_wastewater_septic <- 232 #kt CH4/yr
-    GHGI_national_wastewater_nonseptic <- 250 #kt CH4/yr - 1990-2019 GHGI
-    # GHGI_national_wastewater_septic <- 227 #kt CH4/yr
-    # GHGI_national_wastewater_nonseptic <- 246 #kt CH4/yr, 1990-2023 GHGI values
+    # GHGI_national_wastewater_septic <- 232 #kt CH4/yr
+    # GHGI_national_wastewater_nonseptic <- 250 #kt CH4/yr - 1990-2019 GHGI
+    GHGI_national_wastewater_septic <- 227 #kt CH4/yr
+    GHGI_national_wastewater_nonseptic <- 246 #kt CH4/yr, 1990-2023 GHGI values
     
     #Emission factor from the GHGI table titled Variables and Data Sources for
     #CH4 Emissions from Septic Systems.  The GHGI is available at
@@ -488,10 +500,15 @@ main_config <- function(){
     #                                     "Population"     =c(3565287 ,973764  ,6892503 ,8882190 ,19453561  ,12801989),
     #                                     "Septic_Fraction"=c(0.286   ,0.257   ,0.267   ,0.116   ,0.161     ,0.245),
     #                                     "Method"         =c("scaled","scaled","scaled","scaled","reported","scaled"))
-    Wastewater_State_info <- data.frame("State"          =c("DE"),
-                                        "Population"     =c(1018396),
-                                        "Septic_Fraction"=c(0.257),
-                                        "Method"         =c("scaled"))
+    # Wastewater_State_info <- data.frame("State"          =c("DE"),
+    #                                     "Population"     =c(1018396),
+    #                                     "Septic_Fraction"=c(0.257),
+    #                                     "Method"         =c("scaled"))
+    Wastewater_State_info <- data.frame("State"          =c("DC"    ,"MD"    ,"VA"    ,"WV"),
+                                        "Population"     =c(705749  ,6045680 ,8535519 ,1792147),
+                                        "Septic_Fraction"=c(0.0020  ,0.1810  ,0.2830  ,0.4080),
+                                        "Method"         =c("scaled","scaled","scaled","scaled"))
+    
     
     #Only needed if any states are using the scaled method.  National septic
     #fraction in the year of interest and the year that the scaled states reported a
