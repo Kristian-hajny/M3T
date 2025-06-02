@@ -156,6 +156,9 @@ Transmission <- function(input_directory,
   
   starttime <- Sys.time()
   cat("Starting natural gas transmission sector: Transmission\n")
+  
+  Transmission_output_directory <- paste0(output_directory,"NG_transmission/")
+  dir.create(Transmission_output_directory,showWarnings = F)
   ################################################################################
   #checked and all input data matches the old equivalent
   
@@ -540,17 +543,17 @@ Transmission <- function(input_directory,
   if(verbose){
     if(nrow(compressors_final)>0){
       # Save point sources as csv files - first just the raw dataframe
-      write.csv(compressors_final, file.path(output_directory,"NG_trans_compressors_all.csv"))
+      write.csv(compressors_final, file.path(Transmission_output_directory,"NG_trans_compressors_all.csv"))
       
       # Now just the names, coordinates and emissions
       compressors_output <- data.frame(compressors_final$NAME,crds(compressors_final),compressors_final$emiss)
       names(compressors_output) <- c('Site_Name','Longitude','Latitude','Emission_mol_per_s')
-      write.csv(compressors_output,file.path(output_directory,"NG_trans_compressors.csv"),row.names=FALSE)
+      write.csv(compressors_output,file.path(Transmission_output_directory,"NG_trans_compressors.csv"),row.names=FALSE)
     }
   }
   
   writeCDF(pipes_flux,
-           file.path(output_directory,"NG_trans_pipes.nc"),
+           file.path(Transmission_output_directory,"NG_trans_pipes.nc"),
            force_v4=TRUE,
            varname='methane_emissions',
            unit='nmol/m2/s',
@@ -559,11 +562,23 @@ Transmission <- function(input_directory,
            overwrite=TRUE)
   
   writeCDF(compressor_flux,
-           file.path(output_directory,"NG_trans_compressors.nc"),
+           file.path(Transmission_output_directory,"NG_trans_compressors.nc"),
            force_v4=TRUE,
            varname='methane_emissions',
            unit='nmol/m2/s',
            longname='Methane emissions from natural gas transmission compressor stations',
+           missval=-9999,
+           overwrite=TRUE)
+  
+  ################################################################################
+  #Create a sector total
+  
+  writeCDF(pipes_flux+compressor_flux,
+           file.path(output_directory,paste0('NG_transmission_sector_total.nc')),
+           force_v4=TRUE,
+           varname='methane_emissions',
+           unit='nmol/m2/s',
+           longname='Methane emissions from natural gas transmission',
            missval=-9999,
            overwrite=TRUE)
   
