@@ -72,7 +72,12 @@
 
 
 Combine_inventories <- function(output_directory,
-                                separate_thermo){
+                                separate_thermo,
+                                plot_directory,
+                                County_Tigerlines,
+                                State_Tigerlines,
+                                domain_template,
+                                verbose){
   
   starttime <- Sys.time()
   cat("Starting the process of combining emissions across all sectors: Combine_inventories\n")
@@ -180,6 +185,7 @@ Combine_inventories <- function(output_directory,
   Possible_combinations <- expand.grid(lapply(all_options,local_get),stringsAsFactors = F)
   Possible_combination_filenames <- expand.grid(lapply(all_filename_options,local_get),stringsAsFactors = F)
   
+  all_combinations_rast <- domain_template
   for(A in 1:nrow(Possible_combinations)){
     #For the each unique combination, identify the relevant variable_rast
     #layers.  The as.vector... is simply to split stationary combustion into 2
@@ -188,6 +194,10 @@ Combine_inventories <- function(output_directory,
     
     #sum across sectors, include the sectors that don't have options, save
     out_rast <- sum(c(variable_rast[[indx]],set_rast))
+    if(verbose){
+      all_combinations_rast <- c(all_combinations_rast,out_rast)
+    }
+    
     writeCDF(out_rast,paste0(Combined_output_directory,"Combined_inventory_combination_",
                              sprintf(paste0("%0",nchar(nrow(Possible_combination_filenames)),"d"),A),
                              ".nc"),overwrite=T)
@@ -244,5 +254,18 @@ Combine_inventories <- function(output_directory,
       cat("\rFinished creating unique thermogenic and non-thermogenic inventory",A,"of",nrow(Possible_combinations),"   ")
     }
   }
-  cat("\nFinished the process of combining emissions across all sectors: Combine_inventories in",round(difftime(Sys.time(),starttime,units = "min"),2),"minutes\n\n")
+  ################################################################################
+  #plot average across all combinations
+  
+  if(verbose){
+    Summed_final_inventory <- mean(all_combinations_rast,na.rm=T)
+    log_plot(Summed_final_inventory,
+             "Final Inventory -\nAveraged across all variations\nSaturated low end",
+             plot_directory=plot_directory,
+             domain=domain,County_Tigerlines=County_Tigerlines,
+             zlim_min=-4,
+             State_Tigerlines=State_Tigerlines)
+    
+  }
+  cat("\nFinished the process of combining emissions across all sectors: Combine_inventories in",round(difftime(Sys.time(),starttime,units = "min"),2),"minutes")
 }

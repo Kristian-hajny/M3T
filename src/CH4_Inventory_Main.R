@@ -830,7 +830,12 @@ CH4_inventory_build <- function(input_directory,
   }
   if(Combine_sectors){
     Combine_inventories(output_directory=output_directory,
-                        separate_thermo=separate_thermo)
+                        separate_thermo=separate_thermo,
+                        plot_directory=plot_directory,
+                        County_Tigerlines=County_Tigerlines,
+                        State_Tigerlines=State_Tigerlines,
+                        domain_template=domain_template,
+                        verbose=verbose)
   }
 }
 
