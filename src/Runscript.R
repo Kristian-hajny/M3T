@@ -22,7 +22,6 @@ CH4_inventory_build(input_directory="~/../../Kristian/Desktop/testrun/in/",
                     CWNS_file = "~/../../Kristian/Desktop/methane_inventory/src/Data/2022CWNS_NATIONAL_APR2024/",
                     EIA_file = "~/../../Kristian/Desktop/methane_inventory/src/Data/EIA_company_report_2019.xlsx",
                     PHMSA_file = "~/../../Kristian/Desktop/methane_inventory/src/Data/PHMSA_annual_gas_distribution_2010_present/annual_gas_distribution_2019.xlsx",
-                    HIFLD_compressor_file="~/../../Kristian/Desktop/methane_inventory/src/Data/Natural_Gas_Compressor_Stations.csv",
+                    HIFLD_compressor_file="~/../../Kristian/Desktop/methane_inventory/src/Data/Natural_Gas_Compressor_Stations_updated.csv",
                     watershed_shapefile="~/../../Kristian/Desktop/methane_inventory/src/Data/watersheds_shapefile/watershed_p_v2.shp",
                     Wetcharts_file = "G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Large inventory files/WetCHARTs_v1_3_3_2019.nc")
-
