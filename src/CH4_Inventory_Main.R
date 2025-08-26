@@ -137,16 +137,11 @@ CH4_inventory_build <- function(input_directory,
                                 PHMSA_file,
                                 watershed_shapefile,
                                 Wetcharts_file){
-
-  ################################################################################
-  #do not save data for XESMF reprojection in Python - just reproject with
-  #Terra.
-  XESMF <- F
-  ################################################################################
-  #load all packages necessary throughout processsing
   
+  ################################################################################
+  #load all packages necessary throughout processing
   packagecheck <- c("terra", "ncdf4", "readxl","jsonlite","dplyr")
-
+  
   #quick way to install only packages that are not already installed and make
   #sure they're up to date
   i=1
@@ -187,40 +182,65 @@ CH4_inventory_build <- function(input_directory,
   dir.create(file.path(input_directory,"NEI"),showWarnings = F)
   
   ################################################################################
-  #load in the many relevant functions and the config file
-  
-  #Load in a function to disaggregate total emissions using ACES/Vulcan or both
-  #within sub-domains (state, entire domain)
-  source(paste0(code_directory,"Inventory_based_disaggregation.R"))
-  
-  #Load in a few functions for consistent, basic plotting
-  source(paste0(code_directory,"Plotting_individual_sectors.R"))
-  
   #Load in the config file full of emission factors and other details needed for
   #processing some sectors
   source(paste0(code_directory,"CH4_inventory_config.R"))
   
-  #load in the functions for each sector (only run later if config set
-  #accordingly)
-  source(paste0(code_directory,"Landfill_emissions_r1.R"))
-  source(paste0(code_directory,"stationary_combustion_r4.R"))
-  source(paste0(code_directory,"NLCD_fractions_by_state.R"))
-  source(paste0(code_directory,"WWTP_emissions_r3.R"))
-  source(paste0(code_directory,"NG_transmission_emissions_r1.R"))
-  source(paste0(code_directory,"NG_distribution_emissions_r4.R"))
-  source(paste0(code_directory,"Prepare_ACES_Vulcan.R"))
-  source(paste0(code_directory,"Prepare_GEPA.R"))
-  source(paste0(code_directory,"WETCHARTS_downscaling.R"))
-  source(paste0(code_directory,"Wetland_fraction_r2_WIP.R"))
-  source(paste0(code_directory,"Wetland_emissions_r2.R"))
-  source(paste0(code_directory,"Combiner.R"))
+  #run the config and pull all user-set variables from it
+  main_config()
+  ################################################################################
+  #Get the years for ACES and Vulcan based on the input year.
   
+  if(Use_ACES & (Process_stationary_combustion | Process_natural_gas_distribution)){
+    #year of ACES data, will be part of the filename
+    ACES_year <- (2012:2017)[which.min(abs(2012:2017 - inventory_year))]
+    if(inventory_year!=ACES_year){
+      cat("ACES does not include",inventory_year,"using",ACES_year,"as the nearest data available\n")
+    }
+  }
+  
+  if(Use_Vulcan & (Process_stationary_combustion | Process_natural_gas_distribution)){
+    #year of Vulcan data.  Assuming Vulcan v3.0, 1 - 6 corresponding to years
+    #2010 - 2015
+    vulcan_band <- which.min(abs(2010:2015 - inventory_year))
+    if(inventory_year!=(2010:2015)[vulcan_band]){
+      cat("Vulcan does not include",inventory_year,"using",(2010:2015)[vulcan_band],"as the nearest data available\n")
+    }
+  }
+  
+  ################################################################################
+  #save the config and input data from this point to a text file for reference
+  #with the output
+  
+  sink(file = file.path(output_directory,"Config_settings.txt"),type='output')
+  
+  #loop through all objects in the environment, except functions, and save them to
+  #the file.
+  for(object in setdiff(ls(envir = environment()),ls.str(mode = "function"))){
+    cat(object,"=\n")
+    temp_data <- get(object)
+    #only include row names if they exist, not just row numbers (confusing to
+    #read).  Use print for tables/lists (outputs ~formatted) and cat for
+    #number/text.
+    if(class(temp_data)=="data.frame"){
+      if(rownames(temp_data)[1]=="1"){
+        print(temp_data,quote = FALSE,row.names=F,width=300)
+      }else{
+        print(temp_data,quote = FALSE,width=300)
+      }
+    }else if(class(temp_data)=="list"){
+      print(temp_data,quote = FALSE,width=300)
+    }else{
+      cat(temp_data)
+    }
+    #add some blank lines between entries for easier reading
+    cat("\n")
+    cat("\n")
+  }
+  closeAllConnections()
   ################################################################################
   #some early error checking, mostly looking at config.  Are the options
   #acceptable, properly formatted, etc.?
-  
-  #run the config and pull all user-set variables from it
-  main_config()
   
   error_text <- "The below errors were found based on the config data:\n"
   error_found <- FALSE
@@ -308,63 +328,33 @@ CH4_inventory_build <- function(input_directory,
     error_text <- paste0(error_text,"\n\nMust set Process_wastewater to FALSE or set Wastewater_State_info method values to either scaled or reported for all entries")
   }
   
-  if(Combine_sectors & !all(Process_landfills,Process_natural_gas_distribution,Process_stationary_combustion,Process_natural_gas_transmission,Process_wastewater,Process_wetlands_and_inland_waters,Incorporate_remaining_sectors_from_gridded_EPA)){
-    error_found <- TRUE
-    error_text <- paste0(error_text,"\n\nMust set Combine_sectors to FALSE or set all sectors to TRUE")
-  }
   
   #check with Israel, need to add checks for data types throughout too
   ################################################################################
-  #Get the years for ACES and Vulcan based on the input year.
+  #load in the many relevant functions
   
-  if(Use_ACES & (Process_stationary_combustion | Process_natural_gas_distribution)){
-    #year of ACES data, will be part of the filename
-    ACES_year <- (2012:2017)[which.min(abs(2012:2017 - inventory_year))]
-    if(inventory_year!=ACES_year){
-      cat("ACES does not include",inventory_year,"using",ACES_year,"as the nearest data available\n")
-    }
-  }
+  #Load in a function to disaggregate total emissions using ACES/Vulcan or both
+  #within sub-domains (state, entire domain)
+  source(paste0(code_directory,"Inventory_based_disaggregation.R"))
   
-  if(Use_Vulcan & (Process_stationary_combustion | Process_natural_gas_distribution)){
-    #year of Vulcan data.  Assuming Vulcan v3.0, 1 - 6 corresponding to years
-    #2010 - 2015
-    vulcan_band <- which.min(abs(2010:2015 - inventory_year))
-    if(inventory_year!=(2010:2015)[vulcan_band]){
-      cat("Vulcan does not include",inventory_year,"using",(2010:2015)[vulcan_band],"as the nearest data available\n")
-    }
-  }
+  #Load in a few functions for consistent, basic plotting
+  source(paste0(code_directory,"Plotting_individual_sectors.R"))
   
-  ################################################################################
-  #save the config and input data from this point to a text file for reference
-  #with the output
-
-  sink(file = file.path(output_directory,"Config_settings.txt"),type='output')
-
-  #loop through all objects in the environment, except functions, and save them to
-  #the file.
-  for(object in setdiff(ls(envir = environment()),ls.str(mode = "function"))){
-    cat(object,"=\n")
-    temp_data <- get(object)
-    #only include row names if they exist, not just row numbers (confusing to
-    #read).  Use print for tables/lists (outputs ~formatted) and cat for
-    #number/text.
-    if(class(temp_data)=="data.frame"){
-      if(rownames(temp_data)[1]=="1"){
-        print(temp_data,quote = FALSE,row.names=F,width=300)
-      }else{
-        print(temp_data,quote = FALSE,width=300)
-      }
-    }else if(class(temp_data)=="list"){
-      print(temp_data,quote = FALSE,width=300)
-    }else{
-      cat(temp_data)
-    }
-    #add some blank lines between entries for easier reading
-    cat("\n")
-    cat("\n")
-  }
-  closeAllConnections()
-
+  #load in the functions for each sector (only run later if config set
+  #accordingly)
+  source(paste0(code_directory,"Landfill_emissions_r1.R"))
+  source(paste0(code_directory,"stationary_combustion_r4.R"))
+  source(paste0(code_directory,"NLCD_fractions_by_state.R"))
+  source(paste0(code_directory,"WWTP_emissions_r3.R"))
+  source(paste0(code_directory,"NG_transmission_emissions_r1.R"))
+  source(paste0(code_directory,"NG_distribution_emissions_r4.R"))
+  source(paste0(code_directory,"Prepare_ACES_Vulcan.R"))
+  source(paste0(code_directory,"Prepare_GEPA.R"))
+  source(paste0(code_directory,"WETCHARTS_downscaling.R"))
+  source(paste0(code_directory,"Wetland_fraction_r2_WIP.R"))
+  source(paste0(code_directory,"Wetland_emissions_r2.R"))
+  source(paste0(code_directory,"Combiner.R"))
+  
   ################################################################################
   #writing a function to simplify the code a bit.  Just a trycatch for
   #downloading data that pauses for a second if the download fails, then tries
@@ -387,10 +377,10 @@ CH4_inventory_build <- function(input_directory,
         #save to file
         if(method=="save"){
           download.file(URL,destfile=output_location,quiet = T,method="curl")
-        #load in as JSON
+          #load in as JSON
         }else if(method=="JSON"){
           fromJSON(URL)
-        #load in as SpatVector
+          #load in as SpatVector
         }else if(method=="vect"){
           vect(URL)
         },
@@ -454,7 +444,7 @@ CH4_inventory_build <- function(input_directory,
     cat("2011 has no urban area census tigerlines - using 2012 instead (only relevant if defining domain using urban area)\n")
     Census_filenames[2] <- paste0(input_directory,"Urban_Tigerlines/tl_2012_us_uac",UAC_year,".shp")
   }
-
+  
   
   #only download if not already available
   if(!all(file.exists(Census_filenames))){
@@ -488,7 +478,7 @@ CH4_inventory_build <- function(input_directory,
   State_Tigerlines <- vect(Census_filenames[1])
   County_Tigerlines <- vect(Census_filenames[3])
   Urban_Tigerlines <- vect(Census_filenames[2])
-
+  
   #project to match the domain (crs)
   State_Tigerlines <- project(State_Tigerlines,domain_crs)
   County_Tigerlines <- project(County_Tigerlines,domain_crs)
@@ -496,7 +486,7 @@ CH4_inventory_build <- function(input_directory,
   
   #remove UAC_year
   names(Urban_Tigerlines) <- sapply(names(Urban_Tigerlines),FUN=function(x){substr(x,1,nchar(x)-2)})
-
+  
   #names for these are also formatted differently, just in that they include
   #UAC_year.
   if(inventory_year==2010){
@@ -514,7 +504,7 @@ CH4_inventory_build <- function(input_directory,
     # domain=data.frame("lon"=c(-76.65,-73.65),
     #                   "lat"=c(38.97,40.97))
     
-    domain <- rast(nrows=diff(range(domain[,2]))/domain_res[2], 
+    domain <- rast(nrows=diff(range(domain[,2]))/domain_res[2],
                    ncols=diff(range(domain[,1]))/domain_res[1],
                    xmin=min(domain[,1]), xmax=max(domain[,1]),
                    ymin=min(domain[,2]), ymax=max(domain[,2]),
@@ -541,7 +531,7 @@ CH4_inventory_build <- function(input_directory,
         #full name of an urban area
         domain <- Urban_Tigerlines[unlist(values(Urban_Tigerlines[,3]))==domain,]
       }
-    #text is actually a number
+      #text is actually a number
     }else{
       if(nchar(domain)==2){
         #State FIPS
@@ -557,9 +547,9 @@ CH4_inventory_build <- function(input_directory,
   if(class(domain)!="SpatVector"){
     stop("domain is not set to a state abbreviation, state full name, state FIPS code, urban area abbreviation, urban area full name, urban area census code, data.frame with the corners of a box, or a SpatVector file with the desired polygon.")
   }
-
+  
   domain_template <- rast(domain,resolution=domain_res,crs=domain_crs,vals=NA)
-
+  
   ################################################################################
   # Now crop/mask the tigerlines to the domain
   
@@ -589,7 +579,7 @@ CH4_inventory_build <- function(input_directory,
   ################################################################################
   #Download the facility details (e.g., location) for GHGRP facilities using the
   #API.  Will be needed for several sectors.
-
+  
   if(Process_landfills | Process_natural_gas_distribution | Process_natural_gas_transmission | Process_wastewater){
     GHGRP_facility_info_file <- file.path(input_directory,"GHGRP","facility_info.csv")
     
@@ -601,7 +591,7 @@ CH4_inventory_build <- function(input_directory,
       #https://www.epa.gov/enviro/envirofacts-data-service-api
       data_URL <- "https://data.epa.gov/dmapservice/ghg.pub_dim_facility/CSV"
       Trycatch_downloader(URL = data_URL,method = "save",output_location = GHGRP_facility_info_file,
-                                                 error_message = paste0("Greenhouse Gas Reporting Program data could not be downloaded using API link: ",data_URL))
+                          error_message = paste0("Greenhouse Gas Reporting Program data could not be downloaded using API link: ",data_URL))
     }
     
     #read in the data and update the county fips and zip with leading zeroes
@@ -625,9 +615,9 @@ CH4_inventory_build <- function(input_directory,
   #letting them run
   if(Process_wastewater & file_test("-f",CWNS_file) & any(grepl("SC",state_name_list))){
     error_found <- TRUE
-    error_text <- paste0(error_text,"\n\nSC did not report to the 2012 clean watershed needs survey. Please use an alternative input dataset if SC is within the domain.")
+    error_text <- paste0(error_text,"\n\nSC did not report to the 2012 clean watershed needs survey. Please use an alternative input dataset if SC is within the domain.\n\nAdditionally, note that downscaling GHGI data will apportion SC wastewater emissions to other states due to this.")
   }
-
+  
   if(error_found){
     stop(error_text)
   }
@@ -746,7 +736,7 @@ CH4_inventory_build <- function(input_directory,
                           state_name_list=state_name_list,
                           State_Tigerlines=State_Tigerlines,
                           output_directory=output_directory)
-
+    
     Wastewater(input_directory=input_directory,
                DMR_file=DMR_file,
                CWNS_file=CWNS_file,
@@ -835,6 +825,7 @@ CH4_inventory_build <- function(input_directory,
                         County_Tigerlines=County_Tigerlines,
                         State_Tigerlines=State_Tigerlines,
                         domain_template=domain_template,
+                        domain=domain,
                         verbose=verbose)
   }
 }
