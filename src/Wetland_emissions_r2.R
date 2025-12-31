@@ -49,11 +49,11 @@
 #'  shapefile.  Available at
 #'  \url{https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html}.
 #'  Only relevant if verbose=TRUE.
-#'@param State_Tigerlines SpatVector.  United States Census Bureau county
+#'@param State_CB SpatVector.  United States Census Bureau county
 #'  shapefile.  Available at
 #'  \url{https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html}.
 #'  Only relevant if verbose=TRUE.
-#'@param  watershed_shapefile Character.  Commission for Environmental
+#'@param  Watershed_file Character.  Commission for Environmental
 #'  Cooperation watershed shapefile.  Available at
 #'  \url{http://www.cec.org/north-american-environmental-atlas/watersheds/}.
 #'  Only relevant if USE_SOCCR2 = TRUE.
@@ -101,16 +101,20 @@
 #'                Wetland_EFs=EFs,
 #'                verbose=TRUE,
 #'                County_Tigerlines=vect("~/../Desktop/in/County_Tigerlines/tl_2018_us_county.shp"),
-#'                State_Tigerlines=vect("~/../Desktop/in/State_Tigerlines/tl_2018_us_state.shp"),
-#'                watershed_shapefile="~/../Desktop/in/watersheds_shapefile/watershed_p_v2.shp")
+#'                State_CB=vect("~/../Desktop/in/State_CB/tl_2018_us_state.shp"),
+#'                Watershed_file="~/../Desktop/in/watersheds_shapefile/watershed_p_v2.shp")
 #'
 #'@author Joe Pitt, \email{madeup@@wisc.edu}
 #'@author Kris Hajny, \email{blank@@fake.edu}
 #'@author Israel Lopez-Coto, \email{test@@test.edu}
-#'@reference \href{https://doi.org/10.4319/lo.2012.57.2.0597}{McDonald et al.}
-#'@reference \href{https://doi.org/10.1038/s41561-021-00715-2}{Rosentreter et
+#'@references \href{https://doi.org/10.4319/lo.2012.57.2.0597}{McDonald et al.}
+#'@references \href{https://doi.org/10.1038/s41561-021-00715-2}{Rosentreter et
 #'  al.}
 #'@export
+#'@seealso 
+#' * [CH4_inventory_build()] Calculates methane inventory using settings provided in config.
+#' * [Disaggregate_Wetcharts()] Calculates methane emissions for the wetland sector using wetcharts instead.
+#' * [NWI_Wetland_fraction()] Calculates the fraction of wetland land cover by wetland type in each pixel.
 
 
 SOCCR_Wetlands <- function(output_directory,
@@ -123,8 +127,8 @@ SOCCR_Wetlands <- function(output_directory,
                            Wetland_EFs,
                            verbose,
                            County_Tigerlines,
-                           State_Tigerlines,
-                           watershed_shapefile,
+                           State_CB,
+                           Source_Watershed_file,
                            Use_NLCD,
                            Use_NALCMS,
                            Use_Wetcharts,
@@ -137,50 +141,66 @@ SOCCR_Wetlands <- function(output_directory,
   # These overlap somewhat, so crop each to the squares within each state
   # Then add together and assign fluxes to each class
   
+  
+  # convert from g CH4 per m2 per yr to nmol/m2/s
+  Wetland_EFs=Wetland_EFs*1E9/(16.043*365.25*24*60*60)      
+  
   starttime <- Sys.time()
   cat("Starting wetland sector: SOCCR_Wetlands\n")
   
-  Wetland_output_directory <- paste0(output_directory,"Wetlands/")
+  Wetland_output_directory <- file.path(output_directory,"Wetlands")
   dir.create(Wetland_output_directory,showWarnings = F)
+  
+  ################################################################################
+  #access the watersheds shapefile
+  
+  Watershed_file <- file.path(input_directory,"Watersheds_Shapefile/NA_Watersheds/data/watershed_p_v2.shp")
+  
+  if(Source_Watershed_file=="download"){
+    dir.create(file.path(input_directory,"Watersheds"),showWarnings = F)
+    #download the data.  URL is slightly different than the catalog.  See
+    #https://www.cec.org/north-american-environmental-atlas/watersheds/
+    data_URL <- paste0("https://www.cec.org/files/atlas_layers/0_reference/0_04_watersheds/watersheds_shapefile.zip")
+    temp_out <- tempfile(fileext = ".zip")
+    Trycatch_downloader(data_URL,output_location=temp_out,
+                        method="save",
+                        error_message=paste0("\nFailed to download watershed shapefile at URL",data_URL))
+    utils::unzip(temp_out,,exdir = input_directory)
+  }else if(Source_Watershed_file=="default"){
+    #UPDATE TO ZENODO
+  }else{
+    invisible(file.copy(Source_Watershed_file,Watershed_file,overwrite = T))
+  }
+  
   ################################################################################
   #load in the watersheds and prepare for use with SOCCR2 EFs
   
   if(Use_SOCCR2){
-    watershed <- vect(watershed_shapefile)
+    watershed <- terra::vect(Watershed_file)
     
     #we only care about NAW1 in English, so aggregate all polygons to this level
     #and remove extra data
     watershed <- watershed["NAW1_EN"]
-    watershed <- aggregate(watershed,by="NAW1_EN")
-    watershed <- crop(watershed,project(domain_template,crs(watershed))*1.1)
-    expanded_watershed <- buffer(watershed,2E4)
-    watershed <- aggregate(expanded_watershed-watershed+watershed,"NAW1_EN")
-    watershed <- project(watershed,crs(domain))
+    watershed <- terra::aggregate(watershed,by="NAW1_EN")
+    watershed <- terra::crop(watershed,terra::project(domain_template,terra::crs(watershed))*1.1)
+    expanded_watershed <- terra::buffer(watershed,2E4)
+    watershed <- terra::aggregate(expanded_watershed-watershed+watershed,"NAW1_EN")
+    watershed <- terra::project(watershed,terra::crs(domain))
     
-    if(Include_freshwater){
-      #now associate the corresponding EF to each region
-      regional_EFs <- data.frame(t(Wetland_EFs["SOCCR2",c("E2_Atlantic","E2_Gulf","E2_Pacific","E2_Hudson")]),
-                                 t(Wetland_EFs["SOCCR2",c("M2_Atlantic","M2_Gulf","M2_Pacific","M2_Hudson")]),
-                                 Wetland_EFs["SOCCR2","PFO"],
-                                 Wetland_EFs["SOCCR2","PNF"],
-                                 Wetland_EFs["SOCCR2","L1"],
-                                 Wetland_EFs["SOCCR2","L2"],
-                                 Wetland_EFs["SOCCR2","R1"],
-                                 Wetland_EFs["SOCCR2","R2"],
-                                 Wetland_EFs["SOCCR2","R3"],
-                                 Wetland_EFs["SOCCR2","R4"],
-                                 "Region"=c("Atlantic Ocean","Gulf of Mexico","Pacific Ocean","Hudson Bay"))
-      colnames(regional_EFs) <- c("E2","M2","PFO","PNF","L1","L2","R1","R2","R3","R4","Region")
-      watershed <- merge(watershed,regional_EFs,by.x="NAW1_EN",by.y="Region")
-    }else{
-      regional_EFs <- data.frame(t(Wetland_EFs["SOCCR2",c("E2_Atlantic","E2_Gulf","E2_Pacific","E2_Hudson")]),
-                                 t(Wetland_EFs["SOCCR2",c("M2_Atlantic","M2_Gulf","M2_Pacific","M2_Hudson")]),
-                                 Wetland_EFs["SOCCR2","PFO"],
-                                 Wetland_EFs["SOCCR2","PNF"],
-                                 "Region"=c("Atlantic Ocean","Gulf of Mexico","Pacific Ocean","Hudson Bay"))
-      colnames(regional_EFs) <- c("E2","M2","PFO","PNF","Region")
-      watershed <- merge(watershed,regional_EFs,by.x="NAW1_EN",by.y="Region")
-    }
+    #now associate the corresponding EF to each region
+    regional_EFs <- data.frame(t(Wetland_EFs["SOCCR2",c("E2_Atlantic","E2_Gulf","E2_Pacific","E2_Hudson")]),
+                               t(Wetland_EFs["SOCCR2",c("M2_Atlantic","M2_Gulf","M2_Pacific","M2_Hudson")]),
+                               Wetland_EFs["SOCCR2","PFO"],
+                               Wetland_EFs["SOCCR2","PNF"],
+                               Wetland_EFs["SOCCR2","L1"],
+                               Wetland_EFs["SOCCR2","L2"],
+                               Wetland_EFs["SOCCR2","R1"],
+                               Wetland_EFs["SOCCR2","R2"],
+                               Wetland_EFs["SOCCR2","R3"],
+                               Wetland_EFs["SOCCR2","R4"],
+                               "Region"=c("Atlantic Ocean","Gulf of Mexico","Pacific Ocean","Hudson Bay"))
+    colnames(regional_EFs) <- c("E2","M2","PFO","PNF","L1","L2","R1","R2","R3","R4","Region")
+    watershed <- terra::merge(watershed,regional_EFs,by.x="NAW1_EN",by.y="Region")
   }
   
   #update wetland EF to simplify SOCCR1 since SOCCR2 E2 and M2 have already been
@@ -206,7 +226,7 @@ SOCCR_Wetlands <- function(output_directory,
   if(Use_SOCCR1 | Use_SOCCR2){
     #load in the first files to build the output
     subset_files <- NWI_files[grep(SOCCR_wetland_types[1],NWI_files)]
-    subset_data <- rast(subset_files)
+    subset_data <- terra::rast(subset_files)
     
     #given NWI extends somewhat beyond state bounds, there is overlap.  So max
     #should combine them akin to sum, but without double counting.
@@ -219,7 +239,7 @@ SOCCR_Wetlands <- function(output_directory,
       SOCCR1_flux <- subset_data*Wetland_EFs_subset["SOCCR1",SOCCR_wetland_types[1]]
     }
     if(Use_SOCCR2){
-      temp <- rasterize(watershed,subset_data,field=SOCCR_wetland_types[1])
+      temp <- terra::rasterize(watershed,subset_data,field=SOCCR_wetland_types[1])
       SOCCR2_flux <- temp*subset_data
     }
     
@@ -227,7 +247,7 @@ SOCCR_Wetlands <- function(output_directory,
     #new layers of soccr1_flux and soccr2_flux
     for(i in 2:length(SOCCR_wetland_types)){
       subset_files <- NWI_files[grep(SOCCR_wetland_types[i],NWI_files)]
-      subset_data <- rast(subset_files)
+      subset_data <- terra::rast(subset_files)
       subset_data <- max(subset_data)
       names(subset_data) <- SOCCR_wetland_types[i]
       all_frac <- all_frac+subset_data
@@ -235,154 +255,125 @@ SOCCR_Wetlands <- function(output_directory,
         SOCCR1_flux <- c(SOCCR1_flux,subset_data*Wetland_EFs_subset["SOCCR1",SOCCR_wetland_types[i]]) 
       }
       if(Use_SOCCR2){
-        temp <- rasterize(watershed,subset_data,field=SOCCR_wetland_types[i])
+        temp <- terra::rasterize(watershed,subset_data,field=SOCCR_wetland_types[i])
         SOCCR2_flux <- c(SOCCR2_flux,temp*subset_data)
       }
     }
   }
   
-  
-  
   #repeat the process for freshwater
-  if(Include_freshwater){
-    subset_files <- NWI_files[grep(Freshwater_wetland_types[1],NWI_files)]
-    subset_data <- rast(subset_files)
+  subset_files <- NWI_files[grep(Freshwater_wetland_types[1],NWI_files)]
+  subset_data <- terra::rast(subset_files)
+  subset_data <- max(subset_data)
+  names(subset_data) <- Freshwater_wetland_types[1]
+  if(Use_SOCCR1 | Use_SOCCR2){
+    all_frac <- all_frac+subset_data
+  }else{
+    all_frac <- subset_data
+  }
+  Freshwater_flux <- subset_data*Wetland_EFs_subset["SOCCR1",Freshwater_wetland_types[1]]
+  
+  for(i in 2:length(Freshwater_wetland_types)){
+    subset_files <- NWI_files[grep(Freshwater_wetland_types[i],NWI_files)]
+    subset_data <- terra::rast(subset_files)
     subset_data <- max(subset_data)
-    names(subset_data) <- Freshwater_wetland_types[1]
-    if(Use_SOCCR1 | Use_SOCCR2){
-      all_frac <- all_frac+subset_data
-    }else{
-      all_frac <- subset_data
-    }
-    Freshwater_flux <- subset_data*Wetland_EFs_subset["SOCCR1",Freshwater_wetland_types[1]]
-    
-    for(i in 2:length(Freshwater_wetland_types)){
-      subset_files <- NWI_files[grep(Freshwater_wetland_types[i],NWI_files)]
-      subset_data <- rast(subset_files)
-      subset_data <- max(subset_data)
-      all_frac <- all_frac+subset_data
-      names(subset_data) <- Freshwater_wetland_types[i]
-      Freshwater_flux <- c(Freshwater_flux,subset_data*Wetland_EFs_subset["SOCCR1",Freshwater_wetland_types[i]])
-    }
+    all_frac <- all_frac+subset_data
+    names(subset_data) <- Freshwater_wetland_types[i]
+    Freshwater_flux <- c(Freshwater_flux,subset_data*Wetland_EFs_subset["SOCCR1",Freshwater_wetland_types[i]])
   }
   
-  # # Check that the fractions are always between 0 and 1
-  # max_frac <- unlist(global(all_frac,max,na.rm=T))*100
-  # min_frac <- unlist(global(all_frac,min,na.rm=T))*100
-  # if(max_frac>100.1){
-  #   stop(paste0("some pixels have over 100% wetland coverage.  Range is ",min_frac,"% to ",max_frac,"%"))
-  # }
   ################################################################################
   #save the output
   
   if(Use_SOCCR1){
     #crop/mask to exact domain and account for pixels partially within a
     #polygonal domain
-    SOCCR1_flux <- crop(SOCCR1_flux,domain_template)
-    SOCCR1_flux <- mask(SOCCR1_flux,domain)
-    cover <- extract(SOCCR1_flux,domain,weights=T,cells=T)
+    SOCCR1_flux <- terra::crop(SOCCR1_flux,domain_template)
+    SOCCR1_flux <- terra::mask(SOCCR1_flux,domain)
+    cover <- terra::extract(SOCCR1_flux,domain,weights=T,cells=T)
     SOCCR1_flux[cover[,'cell']] <- SOCCR1_flux[cover[,'cell']]*cover[,'weight']
     SOCCR1_flux <- sum(SOCCR1_flux,na.rm=T)
-    writeCDF(SOCCR1_flux,
-             file.path(Wetland_output_directory,'SOCCR1.nc'),
-             force_v4=TRUE,
-             varname='methane_emissions',
-             unit='nmol/m2/s',
-             longname='Methane emissions from National Wetland Inventory separated by classes, using fluxes from the SOCCR1 report',
-             missval=-9999,
-             overwrite=TRUE)
+    writeCDF_no_newline(SOCCR1_flux,
+                        file.path(Wetland_output_directory,'SOCCR1.nc'),
+                        force_v4=TRUE,
+                        varname='methane_emissions',
+                        unit='nmol/m2/s',
+                        longname='Methane emissions from National Wetland Inventory separated by classes, using fluxes from the SOCCR1 report',
+                        missval=-9999,
+                        overwrite=TRUE)
   }
   if(Use_SOCCR2){
-    SOCCR2_flux <- crop(SOCCR2_flux,domain_template)
-    SOCCR2_flux <- mask(SOCCR2_flux,domain)
+    SOCCR2_flux <- terra::crop(SOCCR2_flux,domain_template)
+    SOCCR2_flux <- terra::mask(SOCCR2_flux,domain)
     if(!Use_SOCCR1){
-      cover <- extract(SOCCR2_flux,domain,weights=T,cells=T)
+      cover <- terra::extract(SOCCR2_flux,domain,weights=T,cells=T)
     }
     SOCCR2_flux[cover[,'cell']] <- SOCCR2_flux[cover[,'cell']]*cover[,'weight']
     SOCCR2_flux <- sum(SOCCR2_flux,na.rm=T)
-    writeCDF(SOCCR2_flux,
-             file.path(Wetland_output_directory,'SOCCR2.nc'),
-             force_v4=TRUE,
-             varname='methane_emissions',
-             unit='nmol/m2/s',
-             longname='Methane emissions from National Wetland Inventory separated by classes, using fluxes from the SOCCR2 report',
-             missval=-9999,
-             overwrite=TRUE)
+    writeCDF_no_newline(SOCCR2_flux,
+                        file.path(Wetland_output_directory,'SOCCR2.nc'),
+                        force_v4=TRUE,
+                        varname='methane_emissions',
+                        unit='nmol/m2/s',
+                        longname='Methane emissions from National Wetland Inventory separated by classes, using fluxes from the SOCCR2 report',
+                        missval=-9999,
+                        overwrite=TRUE)
   }
-  if(Include_freshwater){
-    Freshwater_flux <- crop(Freshwater_flux,domain_template)
-    Freshwater_flux <- mask(Freshwater_flux,domain)
-    if(!(Use_SOCCR1 | Use_SOCCR2)){
-      cover <- extract(Freshwater_flux,domain,weights=T,cells=T)
-    }
-    Freshwater_flux[cover[,'cell']] <- Freshwater_flux[cover[,'cell']]*cover[,'weight']
-    Freshwater_flux <- sum(Freshwater_flux,na.rm=T)
-    writeCDF(Freshwater_flux,
-             file.path(Wetland_output_directory,'Freshwater.nc'),
-             force_v4=TRUE,
-             varname='methane_emissions',
-             unit='nmol/m2/s',
-             longname='Methane emissions from National Wetland Inventory separated by classes, using the median flux from Rosentreter et al. (2021) for lakes and rivers',
-             missval=-9999,
-             overwrite=TRUE)
+  Freshwater_flux <- terra::crop(Freshwater_flux,domain_template)
+  Freshwater_flux <- terra::mask(Freshwater_flux,domain)
+  if(!(Use_SOCCR1 | Use_SOCCR2)){
+    cover <- terra::extract(Freshwater_flux,domain,weights=T,cells=T)
   }
-
+  Freshwater_flux[cover[,'cell']] <- Freshwater_flux[cover[,'cell']]*cover[,'weight']
+  Freshwater_flux <- sum(Freshwater_flux,na.rm=T)
+  writeCDF_no_newline(Freshwater_flux,
+                      file.path(Wetland_output_directory,'Freshwater.nc'),
+                      force_v4=TRUE,
+                      varname='methane_emissions',
+                      unit='nmol/m2/s',
+                      longname='Methane emissions from National Wetland Inventory separated by classes, using the median flux from Rosentreter et al. (2021) for lakes and rivers',
+                      missval=-9999,
+                      overwrite=TRUE)
+  
   ################################################################################
   #Create a sector total, 1 per variant.  This is the only reason this function
   #requires wetcharts variant info
   
-  if(Include_freshwater){
-    partial_total <- Freshwater_flux
-  }else{
-    partial_total <- domain_template
-    values(partial_total) <- 0
-  }
+  #start with freshwater (no variants)
+  partial_total <- Freshwater_flux
   
   if(Use_Wetcharts){
     for(B in 1:length(Wetcharts_model_subset)){
-      if(Use_NLCD){
-        NLCD_Downscaled_Averaged_wetcharts <- rast(paste0(Wetland_output_directory,'/Wetcharts_NLCD_Downscaled_subset_',B,'.nc'))
-        writeCDF(NLCD_Downscaled_Averaged_wetcharts+partial_total,
-                 file.path(output_directory,paste0('Wetland_sector_total_Wetcharts_NLCD_subset_',B,'.nc')),
-                 force_v4=TRUE,
-                 varname='methane_emissions',
-                 unit='nmol/m2/s',
-                 longname='Methane emissions from wetlands and optionally freshwater',
-                 missval=-9999,
-                 overwrite=TRUE)
-      }
-      if(Use_NALCMS){
-        NALCMS_Downscaled_Averaged_wetcharts <- rast(paste0(Wetland_output_directory,'/Wetcharts_NALCMS_Downscaled_subset_',B,'.nc'))
-        writeCDF(NALCMS_Downscaled_Averaged_wetcharts+partial_total,
-                 file.path(output_directory,paste0('Wetland_sector_total_Wetcharts_NALCMS_subset_',B,'.nc')),
-                 force_v4=TRUE,
-                 varname='methane_emissions',
-                 unit='nmol/m2/s',
-                 longname='Methane emissions from wetlands and optionally freshwater',
-                 missval=-9999,
-                 overwrite=TRUE)
-      }
+      NLCD_Downscaled_Averaged_wetcharts <- terra::rast(file.path(Wetland_output_directory,paste0('Wetcharts_NLCD_Downscaled_subset_',B,'.nc')))
+      writeCDF_no_newline(NLCD_Downscaled_Averaged_wetcharts+partial_total,
+                          file.path(output_directory,paste0('Wetland_sector_total_Wetcharts_NLCD_subset_',B,'.nc')),
+                          force_v4=TRUE,
+                          varname='methane_emissions',
+                          unit='nmol/m2/s',
+                          longname='Methane emissions from wetlands and optionally freshwater',
+                          missval=-9999,
+                          overwrite=TRUE)
     }
   }
   if(Use_SOCCR1){
-    writeCDF(SOCCR1_flux+partial_total,
-             file.path(output_directory,paste0('Wetland_sector_total_SOCCR1.nc')),
-             force_v4=TRUE,
-             varname='methane_emissions',
-             unit='nmol/m2/s',
-             longname='Methane emissions from wetlands and optionally freshwater',
-             missval=-9999,
-             overwrite=TRUE)
+    writeCDF_no_newline(SOCCR1_flux+partial_total,
+                        file.path(output_directory,paste0('Wetland_sector_total_SOCCR1.nc')),
+                        force_v4=TRUE,
+                        varname='methane_emissions',
+                        unit='nmol/m2/s',
+                        longname='Methane emissions from wetlands and optionally freshwater',
+                        missval=-9999,
+                        overwrite=TRUE)
   }
   if(Use_SOCCR2){
-    writeCDF(SOCCR2_flux+partial_total,
-             file.path(output_directory,paste0('Wetland_sector_total_SOCCR2.nc')),
-             force_v4=TRUE,
-             varname='methane_emissions',
-             unit='nmol/m2/s',
-             longname='Methane emissions from wetlands and optionally freshwater',
-             missval=-9999,
-             overwrite=TRUE)
+    writeCDF_no_newline(SOCCR2_flux+partial_total,
+                        file.path(output_directory,paste0('Wetland_sector_total_SOCCR2.nc')),
+                        force_v4=TRUE,
+                        varname='methane_emissions',
+                        unit='nmol/m2/s',
+                        longname='Methane emissions from wetlands and optionally freshwater',
+                        missval=-9999,
+                        overwrite=TRUE)
   }
   
   ################################################################################
@@ -393,19 +384,17 @@ SOCCR_Wetlands <- function(output_directory,
     zlim_min <- -3
     zlim_max <- 0
     if(Use_SOCCR1){
-      if(!all(is.na(values(SOCCR1_flux)))){
-        zlim_max <- max(zlim_max,as.numeric(global(SOCCR1_flux,max,na.rm=T)))
+      if(!all(is.na(terra::values(SOCCR1_flux)))){
+        zlim_max <- max(zlim_max,as.numeric(terra::global(SOCCR1_flux,max,na.rm=T)))
       }
     }
     if(Use_SOCCR2){
-      if(!all(is.na(values(SOCCR2_flux)))){
-        zlim_max <- max(zlim_max,as.numeric(global(SOCCR2_flux,max,na.rm=T)))
+      if(!all(is.na(terra::values(SOCCR2_flux)))){
+        zlim_max <- max(zlim_max,as.numeric(terra::global(SOCCR2_flux,max,na.rm=T)))
       }
     }
-    if(Include_freshwater){
-      if(!all(is.na(values(Freshwater_flux)))){
-        zlim_max <- max(zlim_max,as.numeric(global(Freshwater_flux,max,na.rm=T)))
-      }
+    if(!all(is.na(terra::values(Freshwater_flux)))){
+      zlim_max <- max(zlim_max,as.numeric(terra::global(Freshwater_flux,max,na.rm=T)))
     }
     
     
@@ -417,7 +406,7 @@ SOCCR_Wetlands <- function(output_directory,
                title = paste0("SOCCR1 CH4\nSaturated colorscale low end"),
                plot_directory=plot_directory,
                domain=domain,County_Tigerlines=County_Tigerlines,
-               State_Tigerlines=State_Tigerlines)
+               State_CB=State_CB)
     }
     if(Use_SOCCR2){
       log_plot(input = SOCCR2_flux,
@@ -426,17 +415,15 @@ SOCCR_Wetlands <- function(output_directory,
                title = paste0("SOCCR2 CH4\nSaturated colorscale low end"),
                plot_directory=plot_directory,
                domain=domain,County_Tigerlines=County_Tigerlines,
-               State_Tigerlines=State_Tigerlines)
+               State_CB=State_CB)
     }
-    if(Include_freshwater){
-      log_plot(input = Freshwater_flux,
-               zlim_min = zlim_min, zlim_max = zlim_max,
-               filename = 'Freshwater',
-               title = paste0("Freshwater CH4\nSaturated colorscale low end"),
-               plot_directory=plot_directory,
-               domain=domain,County_Tigerlines=County_Tigerlines,
-               State_Tigerlines=State_Tigerlines)
-    }
+    log_plot(input = Freshwater_flux,
+             zlim_min = zlim_min, zlim_max = zlim_max,
+             filename = 'Freshwater',
+             title = paste0("Freshwater CH4\nSaturated colorscale low end"),
+             plot_directory=plot_directory,
+             domain=domain,County_Tigerlines=County_Tigerlines,
+             State_CB=State_CB)
   }
   cat("Finished wetland sector: SOCCR_Wetlands in",round(difftime(Sys.time(),starttime,units = "min"),2),"minutes\n\n")
 }
