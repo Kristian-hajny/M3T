@@ -69,20 +69,39 @@
 #'@author Kris Hajny, \email{blank@@fake.edu}
 #'@author Israel Lopez-Coto, \email{test@@test.edu}
 #'@export
+#'@seealso [CH4_inventory_build()] Calculates methane inventory using settings provided in config.
+
+
+
+
+
+
+
+#edit this so any number of sectors can be included, e.g., someone wants to use
+#a not wetcharts biogenic CH4 or in general just wants anthropogenic
+
+
+
+
+
+
+
+
 
 
 Combine_inventories <- function(output_directory,
                                 separate_thermo,
                                 plot_directory,
                                 County_Tigerlines,
-                                State_Tigerlines,
+                                State_CB,
+                                domain,
                                 domain_template,
                                 verbose){
   
   starttime <- Sys.time()
   cat("Starting the process of combining emissions across all sectors: Combine_inventories\n")
-
-  Combined_output_directory <- paste0(output_directory,"Combined_files/")
+  
+  Combined_output_directory <- file.path(output_directory,"Combined_files")
   dir.create(Combined_output_directory,showWarnings = F)
   ################################################################################
   #tiny helper function as get fails in an apply otherwise
@@ -94,7 +113,7 @@ Combine_inventories <- function(output_directory,
   set_output <- c("GEPA_ind_landfill.nc","GEPA_non_thermo.nc","GEPA_thermo.nc",
                   "NG_transmission_sector_total.nc")
   Landfill_options <- c("GHGRP_reported","GHGRP_modeled","GHGRP_collection_efficiency")
-  Wetland_options <- c("SOCCR1","SOCCR2","Wetcharts_NALCMS","Wetcharts_NLCD")
+  Wetland_options <- c("SOCCR1","SOCCR2","Wetcharts_NLCD")
   
   #expand.grid to combine multiple variations in 1 sector - just simpler 
   NG_dist_options <- paste0("NG_distribution_sector_total_",
@@ -102,7 +121,7 @@ Combine_inventories <- function(output_directory,
                                               c("byLDC","bystate","bydomain")),
                                   MARGIN = 1,FUN=function(x){paste0(x,collapse="_")}))
   Wastewater_options <- apply(expand.grid(c("CWNS","DMR"),
-                                          c("GHGI","ML"),
+                                          c("GHGI","Moore"),
                                           c("state","national")),
                               MARGIN = 1,FUN=function(x){paste0(x,collapse="_")})
   
@@ -138,11 +157,11 @@ Combine_inventories <- function(output_directory,
   #combinations
   
   #these don't vary, we will always use them
-  set_rast <- rast(file.path(output_directory,set_output))
+  set_rast <- terra::rast(file.path(output_directory,set_output))
   
   #any variations that were run
   all_filename_options <- ls(pattern="options_filenames")
-  variable_rast <- rast(file.path(output_directory,unlist(sapply(all_filename_options,local_get))))
+  variable_rast <- terra::rast(file.path(output_directory,unlist(sapply(all_filename_options,local_get))))
   ################################################################################
   #prepare lists for the thermogenic and nonthermogenic if that option was set
   
@@ -176,7 +195,7 @@ Combine_inventories <- function(output_directory,
     Wetland_options <- gsub("Wetland_sector_total_","",
                             gsub(".nc","",Wetland_options_filenames))
   }
-
+  
   ################################################################################
   #combine into total inventories
   
@@ -190,7 +209,7 @@ Combine_inventories <- function(output_directory,
     #For the each unique combination, identify the relevant variable_rast
     #layers.  The as.vector... is simply to split stationary combustion into 2
     #files since they were 1 entry before.
-    indx <- basename(sources(variable_rast)) %in% as.vector(unlist(strsplit((unlist(Possible_combination_filenames[A,])),",")))
+    indx <- basename(terra::sources(variable_rast)) %in% as.vector(unlist(strsplit((unlist(Possible_combination_filenames[A,])),",")))
     
     #sum across sectors, include the sectors that don't have options, save
     out_rast <- sum(c(variable_rast[[indx]],set_rast))
@@ -198,9 +217,10 @@ Combine_inventories <- function(output_directory,
       all_combinations_rast <- sum(all_combinations_rast,out_rast)
     }
     
-    writeCDF(out_rast,paste0(Combined_output_directory,"Combined_inventory_combination_",
-                             sprintf(paste0("%0",nchar(nrow(Possible_combination_filenames)),"d"),A),
-                             ".nc"),overwrite=T)
+    writeCDF_no_newline(out_rast,file.path(Combined_output_directory,
+                                           paste0("Combined_inventory_combination_",
+                                                  sprintf(paste0("%0",nchar(nrow(Possible_combination_filenames)),"d"),A),
+                                                  ".nc")),overwrite=T)
     cat("\rFinished creating unique inventory",A,"of",nrow(Possible_combinations),"   ")
     out_rast <- NULL;gc()
   }
@@ -212,8 +232,8 @@ Combine_inventories <- function(output_directory,
   Possible_combinations <- cbind(1:nrow(Possible_combinations),Possible_combinations)
   colnames(Possible_combinations) <- c("Inventory_Number",gsub("NG_dist","Natural_Gas_Distribution",
                                                                gsub("stat_comb","Stationary_Combustion",all_options)))
-  write.csv(Possible_combinations,file = file.path(Combined_output_directory,"Combined_inventory_key.csv"),
-            quote = F,row.names = F)
+  utils::write.csv(Possible_combinations,file = file.path(Combined_output_directory,"Combined_inventory_key.csv"),
+                   quote = F,row.names = F)
   
   
   ################################################################################
@@ -221,8 +241,8 @@ Combine_inventories <- function(output_directory,
   
   if(separate_thermo){
     #save these in their own folders
-    thermo_output_directory <- paste0(Combined_output_directory,"thermogenic/")
-    nonthermo_output_directory <- paste0(Combined_output_directory,"non_thermogenic/")
+    thermo_output_directory <- file.path(Combined_output_directory,"thermogenic")
+    nonthermo_output_directory <- file.path(Combined_output_directory,"non_thermogenic")
     dir.create(thermo_output_directory,showWarnings = F)
     dir.create(nonthermo_output_directory,showWarnings = F)
     
@@ -233,18 +253,20 @@ Combine_inventories <- function(output_directory,
       #pull only the thermo ones, otherwise process in the same way.  Note
       #set_rast is subset by index.
       thermo_files <- filename_subset[filename_subset %in% thermo_options]
-      indx <- basename(sources(variable_rast)) %in% thermo_files
+      indx <- basename(terra::sources(variable_rast)) %in% thermo_files
       thermo_rast <- sum(c(variable_rast[[indx]],set_rast[[3:4]]))
-      writeCDF(thermo_rast,paste0(thermo_output_directory,"Thermogenic_combined_inventory_combination_",
-                                  sprintf(paste0("%0",nchar(nrow(Possible_combination_filenames)),"d"),A),
-                                  ".nc"),overwrite=T)
+      writeCDF_no_newline(thermo_rast,file.path(thermo_output_directory,
+                                                paste0("Thermogenic_combined_inventory_combination_",
+                                                       sprintf(paste0("%0",nchar(nrow(Possible_combination_filenames)),"d"),A),
+                                                       ".nc")),overwrite=T)
       
       nonthermo_files <- filename_subset[filename_subset %in% nonthermo_options]
-      indx <- basename(sources(variable_rast)) %in% nonthermo_files
+      indx <- basename(terra::sources(variable_rast)) %in% nonthermo_files
       nonthermo_rast <- sum(c(variable_rast[[indx]],set_rast[[1:2]]))
-      writeCDF(nonthermo_rast,paste0(nonthermo_output_directory,"Non_thermogenic_combined_inventory_combination_",
-                                     sprintf(paste0("%0",nchar(nrow(Possible_combination_filenames)),"d"),A),
-                                     ".nc"),overwrite=T)
+      writeCDF_no_newline(nonthermo_rast,file.path(nonthermo_output_directory,
+                                                   paste0("Non_thermogenic_combined_inventory_combination_",
+                                                          sprintf(paste0("%0",nchar(nrow(Possible_combination_filenames)),"d"),A),
+                                                          ".nc")),overwrite=T)
       
       #sanity check - all sectors should be either thermogenic or
       #non-thermogenic
@@ -265,7 +287,7 @@ Combine_inventories <- function(output_directory,
              plot_directory=plot_directory,
              domain=domain,County_Tigerlines=County_Tigerlines,
              zlim_min=-4,
-             State_Tigerlines=State_Tigerlines)
+             State_CB=State_CB)
     
   }
   cat("\nFinished the process of combining emissions across all sectors: Combine_inventories in",round(difftime(Sys.time(),starttime,units = "min"),2),"minutes")
