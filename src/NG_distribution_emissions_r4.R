@@ -172,19 +172,7 @@
 #'  \href{https://doi.org/10.1029/2020JD032974}{Vulcan} and,
 #'  \href{https://doi.org/10.1002/2017JD027359}{ACES}
 #'
-#'@param domain SpatVector polygon outlining the desired output area
-#'@param domain_template SpatRaster providing the desired output grid, including
-#'  the desired resolution and coordinate reference system
-#'@param state_name_list Character vector listing all states within the desired
-#'  domain
-#'@param input_directory Character providing the full filepath to save/load raw
-#'  input data
-#'@param output_directory Character providing the full filepath to save
-#'  processed data
-#'@param inventory_year Character indicating the desired year of data to use.
-#'@param ghgrp_facility_info Data.frame with the GHGRP location data for all
-#'  years and states.  See
-#'  https://www.epa.gov/enviro/envirofacts-data-service-api
+#'@inheritParams Municipal_solid_waste 
 #'@param GHGI_MnR Character or data.frame.  Pulled from config file. Either GHGI
 #'  to indicate the GHGI file should be used to pull emissions and activity data
 #'  or a data frame providing the needed values.
@@ -202,7 +190,7 @@
 #'  fuel-sector-inventory-variation combination as well as 2 summed plots for
 #'  each inventory-variation combination - one for wood and one for all other
 #'  sectors.
-#'@param EIA_file Character providing the full filepath to the EIA Form 176 -
+#'@param Source_EIA_NG_file Character providing the full filepath to the EIA Form 176 -
 #'  Annual Report of Natural and supplemental Gas Supply and Disposition xlsx
 #'  file available at
 #'  \url{https://www.eia.gov/naturalgas/ngqs/#?report=RP4&year1=2020&year2=2020&company=Name}.
@@ -212,7 +200,7 @@
 #'  consistent identifier with other input data (HIFLD, PHMSA, GHGRP).  There is
 #'  an example file in the package's datasets folder that has been successfully
 #'  used in this code available for reference.
-#'@param PHMSA_file Character providing the full filepath to the PHMSA Gas
+#'@param Source_PHMSA_file Character providing the full filepath to the PHMSA Gas
 #'  Distribution Annual Data xlsx file available at
 #'  \url{https://www.phmsa.dot.gov/data-and-statistics/pipeline/gas-distribution-gas-gathering-gas-transmission-hazardous-liquids}.
 #'  Zip files for groups of years are available via links at the bottom of the
@@ -265,13 +253,9 @@
 #'@param ACES_year \strong{Optional} numeric providing the year of ACES data to
 #'  use. Only needed if Use_ACES = TRUE.  At least one of Use_Vulcan or Use_ACES
 #'  must be TRUE.
-#'@param vulcan_band \strong{Optional} numeric providing the band of Vulcan data
+#'@param vulcan_year \strong{Optional} numeric providing the band of Vulcan data
 #'  to use (1-6 = 2010 - 2015).  Only needed if Use_Vulcan = TRUE.  At least one
 #'  of Use_Vulcan or Use_ACES must be TRUE.
-#'@param County_Tigerlines \strong{Optional} spatVector.  United States Census
-#'  Bureau county shapefile downloaded in Main.  Only needed if verbose = TRUE.
-#'@param plot_directory \strong{Optional} character providing the full filepath
-#'  to save figures. Only needed if verbose = TRUE.
 #'@returns Nothing is returned from the function, but the main outputs are up to
 #'  63 netcdf files of the methane emissions from natural gas distribution. They
 #'  are titled as "NG_dist_type_sector_variation_inventory.nc" where type is
@@ -305,7 +289,7 @@
 #'                 output_directory="~/../Desktop/out/",
 #'                 inventory_year=2018,
 #'                 verbose=TRUE,
-#'                 ghgrp_facility_info="~/../Desktop/in/GHGRP/facility_info.csv",
+#'                 GHGRP_facility_data="~/../Desktop/in/GHGRP/facility_info.csv",
 #'                 EIA_file = "~/../Desktop/in/176 Type of Operations and Sector Items.xlsx",
 #'                 PHMSA_file = "~/../Desktop/in/annual_gas_distribution_2010_present/annual_gas_distribution_2019.xlsx",
 #'                 GHGI_MnR="GHGI",
@@ -323,16 +307,17 @@
 #'                 ACES_directory="~/../Desktop/in/Inventories/ACES_v2.0",
 #'                 vulcan_directory="~/../Desktop/in/Inventories/Vulcan_v3.0",
 #'                 ACES_year=2017,
-#'                 vulcan_band=6,
+#'                 vulcan_year=6,
 #'                 County_Tigerlines=vect("~/../Desktop/in/County_Tigerlines/tl_2018_us_county.shp"),
 #'                 plot_directory="~/../Desktop/plots/")
-#'@author Joe Pitt, \email{madeup@@wisc.edu}
-#'@author Kris Hajny, \email{blank@@fake.edu}
-#'@author Israel Lopez-Coto, \email{test@@test.edu}
-#'@reference \href{https://doi.org/10.1021/acs.est.0c00437}{Weller et al.}
-#'@reference \href{https://doi.org/10.1021/acs.est.8b03217}{Fischer et al.}
-#'@reference \href{https://doi.org/10.1029/2020JD032974}{Vulcan}
-#'@reference \href{https://doi.org/10.1002/2017JD027359}{ACES}
+#'@inherit CH4_inventory_build author
+#'@references \href{https://doi.org/10.1021/acs.est.0c00437}{Weller et al.}
+#'@references \href{https://doi.org/10.1021/acs.est.8b03217}{Fischer et al.}
+#'@references \href{https://doi.org/10.1029/2020JD032974}{Vulcan}
+#'@references \href{https://doi.org/10.1002/2017JD027359}{ACES}
+#'@seealso 
+#' * [CH4_inventory_build()] Calculates methane inventory using settings provided in config.
+#' * [disaggregation()] Disaggregates data using NEI county level CO data.
 
 #'@export
 
@@ -354,9 +339,12 @@ NG_distribution <- function(domain,
                             output_directory,
                             inventory_year,
                             verbose,
-                            ghgrp_facility_info,
-                            EIA_file,
-                            PHMSA_file,
+                            GHGRP_facility_data,
+                            GHGRP_subpartW_emissions,
+                            NG_annex_file,
+                            Source_EIA_NG_file,
+                            Source_PHMSA_file,
+                            Source_GHGRP_LDC,
                             GHGI_MnR,
                             GHGI_maintenance,
                             GHGI_meters,
@@ -366,109 +354,200 @@ NG_distribution <- function(domain,
                             NG_distribution_by_state,
                             NG_distribution_by_domain,
                             natural_gas_pipeline_emission_factors,
-                            natural_gas_post_meter_emission_factor,
+                            natural_gas_res_post_meter_emission_factor,
+                            natural_gas_com_post_meter_emission_factor,
                             Use_ACES,
                             Use_Vulcan,
-                            ACES_directory,
-                            vulcan_directory,
-                            ACES_year,
-                            vulcan_band,
+                            aces_res,
+                            aces_com,
+                            vu_res,
+                            vu_com,
                             plot_directory,
-                            County_Tigerlines){
+                            County_Tigerlines,
+                            State_CB){
   
   
   starttime <- Sys.time()
   cat("Starting natural gas distribution sector: NG_distribution_emissions\n")
   
-  NG_dist_output_directory <- paste0(output_directory,"NG_distribution/")
+  NG_dist_output_directory <- file.path(output_directory,"NG_distribution")
   dir.create(NG_dist_output_directory,showWarnings = F)
   
-  #because of how many subsectors this sector has, save it in it's own folder
-  NG_dist_plot_directory <- paste0(plot_directory,"NG_distribution/")
-  dir.create(NG_dist_plot_directory,showWarnings = F)
+  if(verbose){
+    #because of how many subsectors this sector has, save it in it's own folder
+    NG_dist_plot_directory <- file.path(plot_directory,"NG_distribution")
+    dir.create(NG_dist_plot_directory,showWarnings = F)
+  }
   
   if(!NG_distribution_by_LDC){
     ################################################################################
     #load in and filter the EIA file
     
+    if(Source_EIA_NG_file=="default"){
+      #UPDATE TO ZENODO
+      EIA_file <- file.path(input_directory,"EIA","EIA_form_176_all_years_downloaded_2025_09_27.csv")
+    }else{
+      EIA_file <- file.path(input_directory,"EIA","User_supplied_EIA_form_176.csv")
+      invisible(file.copy(Source_EIA_NG_file,EIA_file,overwrite = T))
+    }
     # Load the EIA company-level data for inventory year
-    EIA_csv <- suppressMessages(read_xlsx(EIA_file,col_names = T))
+    EIA_csv <- utils::read.csv(EIA_file)
     
     #older versions had 2 rows of headers, need to skip the first one to run
     #properly in that case.  Made generalized so it should appropriately acount
     #for different formatting - assuming year is still the first column.
     if(colnames(EIA_csv)[1]!="Year"){
-      EIA_csv <- read_xlsx(EIA_file,col_names = T,skip=which(EIA_csv[,1]=="Year"))
+      EIA_csv <- utils::read.csv(EIA_file,skip=which(EIA_csv[,1]=="Year"))
     }
+    
+    #Correct column names that matter
+    colnames(EIA_csv) <- gsub("\\.|\\.BR\\.","_",
+                              gsub("\\.\\.Mcf\\.","\\.(Mcf)",colnames(EIA_csv)))
     
     ################################################################################
     #download, load in and filter the PHMSA file
     
-    # Unclear why - but at the moment it is unable to sucessfully download (5/30/25) - worked fine in the past.
-    # PHMSA_file <- paste0(input_directory,"PHMSA_annual_gas_distribution_2010_present/annual_gas_distribution_",inventory_year,".xlsx")
-    # 
-    # if(!file.exists(PHMSA_file)){
-    #   download_dest <- file.path(input_directory,"PHMSA.zip")
-    #   
-    #   data_URL <- "https://www.phmsa.dot.gov/sites/phmsa.dot.gov/files/data_statistics/pipeline/annual_gas_distribution_2010_present.zip"
-    #   
-    #   Trycatch_downloader(URL = data_URL,method = "save",output_location = download_dest,
-    #                       error_message = paste0("PHMSA data could not be downloaded from webpage:\n",data_URL))
-    #   unzip(download_dest,exdir=paste0(input_directory,"PHMSA_annual_gas_distribution_2010_present"))
-    #   unlink(download_dest)
-    # }
-    
-    # Load the PHMSA data for inventory year, similarly to EIA file
-    PHMSA_csv <- suppressMessages(read_xlsx(PHMSA_file,col_names = T))
-    if(colnames(PHMSA_csv)[1]!="DATAFILE_AS_OF"){
-      PHMSA_csv <- read_xlsx(PHMSA_file,col_names = T,skip=which(PHMSA_csv[,1]=="DATAFILE_AS_OF"))
+    if(Source_PHMSA_file=="default"){
+      #UPDATE TO ZENODO
+      PHMSA_file <- file.path(input_directory,"PHMSA_annual_gas_distribution_2010_present",paste0("annual_gas_distribution_",inventory_year,".xlsx"))
+    }else{
+      PHMSA_file <- file.path(input_directory,"User_supplied_PHMSA_annual_gas_distribution.xlsx")
+      invisible(file.copy(Source_PHMSA_file,PHMSA_file,overwrite = T))
     }
     
-    # Filter the PHMSA file by commodity
-    PHMSA_csv_NG <- PHMSA_csv[which(PHMSA_csv$COMMODITY == 'Natural Gas'),]
+    # Load the PHMSA data for inventory year, similarly to EIA file
+    PHMSA_csv <- suppressMessages(readxl::read_xlsx(PHMSA_file,col_names = T))
+    if(colnames(PHMSA_csv)[1]!="DATAFILE_AS_OF"){
+      PHMSA_csv <- readxl::read_xlsx(PHMSA_file,col_names = T,skip=which(PHMSA_csv[,1]=="DATAFILE_AS_OF"))
+    }
+    
+    # Filter the PHMSA file by commodity - only relevant for newer years to
+    # filter out landfill gas, propane, or syngas
+    if("COMMODITY" %in% colnames(PHMSA_csv)){
+      PHMSA_csv_NG <- PHMSA_csv[which(PHMSA_csv$COMMODITY == 'Natural Gas'),]
+    }else{
+      PHMSA_csv_NG <- PHMSA_csv
+    }
     
     #filter to only those for the relevant states
     PHMSA_csv_NG <- PHMSA_csv_NG[which(PHMSA_csv_NG$STOP %in% state_name_list),]
     
     ################################################################################
+    #Determine nearest year available
+    
+    GHGRP_year <- unique(GHGRP_subpartW_emissions$reporting_year)
+    GHGRP_year <- GHGRP_year[which.min(abs(GHGRP_year - inventory_year))]
+    if(inventory_year!=GHGRP_year){
+      cat("GHGRP does not include",inventory_year,"using",GHGRP_year,"as the nearest data available\n")
+    }
+    ################################################################################
     #Download the relevant ghgrp emissions data using the API
     #(https://www.epa.gov/enviro/envirofacts-data-service-api) and combine the
     #facility and emission data appropriately
     
-    ghgrp_oil_and_gas_file <- file.path(input_directory,"/GHGRP/Oil_and_gas_W.csv")
-    
-    if(!file.exists(ghgrp_oil_and_gas_file)){
-      #download the relevant LDC-sector data
-      #(https://www.epa.gov/enviro/greenhouse-gas-model).  
-      data_URL <- "https://data.epa.gov/dmapservice/ghg.ef_w_emissions_source_ghg/csv"
-      Trycatch_downloader(URL = data_URL,method = "save",output_location = ghgrp_oil_and_gas_file,
-                          error_message = paste0("Greenhouse Gas Reporting Program data could not be downloaded using API link: ",data_URL))
-    }
-    
-    ghgrp_w_only_emissions <- read.csv(ghgrp_oil_and_gas_file)
-    
     #because we're getting sub-facility level information for transmission
     #compressor, first need to aggregate.  Subsetting to only the year of interest
     #now instead of later.
-    ghgrp_w_only_emissions <- ghgrp_w_only_emissions[ghgrp_w_only_emissions$reporting_year==inventory_year,]
-    ghgrp_w_only_emissions <- ghgrp_w_only_emissions[ghgrp_w_only_emissions$industry_segment=="Natural gas distribution [98.230(a)(8)]",]
-    ghgrp_w_only_emissions <- aggregate(ghgrp_w_only_emissions$total_reported_ch4_emissions,
-                                        by=list(ghgrp_w_only_emissions$facility_id,
-                                                ghgrp_w_only_emissions$facility_name),
-                                        sum,na.rm=T)
+    GHGRP_subpartW_emissions <- GHGRP_subpartW_emissions[GHGRP_subpartW_emissions$reporting_year==GHGRP_year,]
+    GHGRP_subpartW_emissions <- GHGRP_subpartW_emissions[GHGRP_subpartW_emissions$industry_segment=="Natural gas distribution [98.230(a)(8)]",]
+    GHGRP_subpartW_emissions <- stats::aggregate(GHGRP_subpartW_emissions$total_reported_ch4_emissions,
+                                                 by=list(GHGRP_subpartW_emissions$facility_id,
+                                                         GHGRP_subpartW_emissions$facility_name),
+                                                 sum,na.rm=T)
     
     #Now name the aggregated columns for clarity
-    colnames(ghgrp_w_only_emissions) <- c("facility_id","facility_name","Reported_CH4")
+    colnames(GHGRP_subpartW_emissions) <- c("facility_id","facility_name","Reported_CH4")
     #and remove those that have 0 emissions for this category
-    ghgrp_w_only_emissions <- ghgrp_w_only_emissions[ghgrp_w_only_emissions$Reported_CH4>0,]
+    GHGRP_subpartW_emissions <- GHGRP_subpartW_emissions[GHGRP_subpartW_emissions$Reported_CH4>0,]
+    ################################################################################
+    #get additional variables from GHGRP that are more detailed in other tables
+    
+    ghgrp_LDC_file <- file.path(input_directory,"GHGRP","ldc_details.csv")
+    ghgrp_ngdist_file <- file.path(input_directory,"GHGRP","ngdist_leaks.csv")
+    ghgrp_pop_count_file <- file.path(input_directory,"GHGRP","pop_count.csv")
+    
+    if(Source_GHGRP_LDC=="download"){
+      #Reporting changed for subpart W after 2014, content is the same, format is
+      #different
+      if(GHGRP_year<2015){
+        data_URL <- "https://data.epa.gov/dmapservice/ghg.w_local_dist_companies_details/csv"
+        Trycatch_downloader(URL = data_URL,method = "save",output_location = ghgrp_LDC_file,
+                            error_message = paste0("Greenhouse Gas Reporting Program data could not be downloaded using API link: ",data_URL))
+      }else{
+        data_URL <- "https://data.epa.gov/dmapservice/ghg.ef_w_equip_leaks_ngdist_leaks/csv"
+        Trycatch_downloader(URL = data_URL,method = "save",output_location = ghgrp_ngdist_file,
+                            error_message = paste0("Greenhouse Gas Reporting Program data could not be downloaded using API link: ",data_URL))
+        
+        data_URL <- "https://data.epa.gov/dmapservice/ghg.ef_w_equip_leaks_pop_count/csv"
+        Trycatch_downloader(URL = data_URL,method = "save",output_location = ghgrp_pop_count_file,
+                            error_message = paste0("Greenhouse Gas Reporting Program data could not be downloaded using API link: ",data_URL))
+      }
+    }else if(Source_GHGRP_LDC=="default"){
+      #UPDATE TO ZENODO
+    }else{
+      if(GHGRP_year<2015){
+        invisible(file.copy(Source_GHGRP_LDC,ghgrp_LDC_file,overwrite = T))
+      }else{
+        invisible(file.copy(Source_GHGRP_LDC[1],ghgrp_ngdist_file,overwrite = T))
+        invisible(file.copy(Source_GHGRP_LDC[2],ghgrp_pop_count_file,overwrite = T))
+      }
+    }
+    
+    #grab the needed data and merge with the past section
+    if(GHGRP_year<2015){
+      GHGRP_LDC_info <- utils::read.csv(ghgrp_LDC_file)
+      GHGRP_LDC_info <- GHGRP_LDC_info[!is.na(GHGRP_LDC_info$reporting_year),]
+      #Calculate the total miles of pipeline across materials
+      GHGRP_LDC_info$total_miles <- rowSums(GHGRP_LDC_info[,c("miles_of_cast_iron_dist_mains","miles_of_plstic_dist_mains","miles_of_prot_steel_dist_mains","miles_of_unpr_steel_dist_mains")],na.rm=T)
+      
+      GHGRP_LDC_info <- GHGRP_LDC_info[GHGRP_LDC_info$reporting_year==GHGRP_year,
+                                       c("facility_id","total_miles","above_grade_transfer_stations","above_grade_metering_stations","below_grade_transfer_stations","below_grade_metering_stations")]
+      #rename for consistency
+      colnames(GHGRP_LDC_info) <- c("facility_id","Miles_of_Mains","N_of_above_grade_T_D_transfer_stations","N_of_above_grade_non_T_D_MR_stations","N_of_below_grade_T_D_transfer_stations","N_of_below_grade_non_T_D_MR_stations")
+      GHGRP_subpartW_emissions=merge(GHGRP_subpartW_emissions,GHGRP_LDC_info,
+                                     by="facility_id")
+    }else{
+      ghgrp_ngdist <- utils::read.csv(ghgrp_ngdist_file)
+      ghgrp_ngdist <- ghgrp_ngdist[ghgrp_ngdist$reporting_year==GHGRP_year,]
+      ghgrp_ngdist <- ghgrp_ngdist[order(ghgrp_ngdist$facility_id),c("facility_id","total_td_facility_stations","total_non_td_facility_stations")]
+      #rename for consistency
+      colnames(ghgrp_ngdist) <- c("facility_id","N_of_above_grade_T_D_transfer_stations","N_of_above_grade_non_T_D_MR_stations")
+      
+      
+      
+      ghgrp_pop_count <- utils::read.csv(ghgrp_pop_count_file)
+      ghgrp_pop_count <- ghgrp_pop_count[ghgrp_pop_count$reporting_year==GHGRP_year,]
+      ghgrp_pop_count <- ghgrp_pop_count[order(ghgrp_pop_count$facility_id),]
+      
+      facility_id <- ghgrp_pop_count[ghgrp_pop_count$emission_src_type=="Distribution Mains, Gas Service - Cast Iron","facility_id"]
+      total_miles <- rowSums(cbind(ghgrp_pop_count[ghgrp_pop_count$emission_src_type=="Distribution Mains, Gas Service - Cast Iron","source_type_count"],
+                                   ghgrp_pop_count[ghgrp_pop_count$emission_src_type=="Distribution Mains, Gas Service - Plastic","source_type_count"],
+                                   ghgrp_pop_count[ghgrp_pop_count$emission_src_type=="Distribution Mains, Gas Service - Protected Steel","source_type_count"],
+                                   ghgrp_pop_count[ghgrp_pop_count$emission_src_type=="Distribution Mains, Gas Service - Unprotected Steel","source_type_count"]))
+      N_of_below_grade_T_D_transfer_stations <- rowSums(cbind(ghgrp_pop_count[ghgrp_pop_count$emission_src_type=="Below Grade T-D Station, Gas Service, Inlet Pressure < 100 psig","source_type_count"],
+                                                              ghgrp_pop_count[ghgrp_pop_count$emission_src_type=="Below Grade T-D Station, Gas Service, Inlet Pressure 100 to 300 psig","source_type_count"],
+                                                              ghgrp_pop_count[ghgrp_pop_count$emission_src_type=="Below Grade T-D Station, Gas Service, Inlet Pressure > 300 psig","source_type_count"]))
+      N_of_below_grade_non_T_D_MR_stations <- rowSums(cbind(ghgrp_pop_count[ghgrp_pop_count$emission_src_type=="Below Grade M-R Station, Gas Service, Inlet Pressure < 100 psig","source_type_count"],
+                                                            ghgrp_pop_count[ghgrp_pop_count$emission_src_type=="Below Grade M-R Station, Gas Service, Inlet Pressure 100 to 300 psig","source_type_count"],
+                                                            ghgrp_pop_count[ghgrp_pop_count$emission_src_type=="Below Grade M-R Station, Gas Service, Inlet Pressure > 300 psig","source_type_count"]))
+      ghgrp_pop_count_data <- data.frame(facility_id,total_miles,N_of_below_grade_T_D_transfer_stations,N_of_below_grade_non_T_D_MR_stations)
+      
+      GHGRP_LDC_info <- merge(ghgrp_ngdist,ghgrp_pop_count_data,
+                              by="facility_id")
+      GHGRP_LDC_info <- GHGRP_LDC_info[,c("facility_id","total_miles","N_of_above_grade_T_D_transfer_stations","N_of_above_grade_non_T_D_MR_stations","N_of_below_grade_T_D_transfer_stations","N_of_below_grade_non_T_D_MR_stations")]
+      colnames(GHGRP_LDC_info) <- c("facility_id","Miles_of_Mains","N_of_above_grade_T_D_transfer_stations","N_of_above_grade_non_T_D_MR_stations","N_of_below_grade_T_D_transfer_stations","N_of_below_grade_non_T_D_MR_stations")
+      GHGRP_subpartW_emissions=merge(GHGRP_subpartW_emissions,GHGRP_LDC_info,
+                                     by="facility_id")
+    }
+
     ################################################################################
     #Merge with location-like data
     
     #subset to the desired year
-    ghgrp_facility_info <- ghgrp_facility_info[ghgrp_facility_info$year==inventory_year,]
+    GHGRP_facility_data <- GHGRP_facility_data[GHGRP_facility_data$year==GHGRP_year,]
     
     #combine the datasets by ID
-    GHGRP_csv <- merge(ghgrp_facility_info,ghgrp_w_only_emissions,
+    GHGRP_csv <- merge(GHGRP_facility_data,GHGRP_subpartW_emissions,
                        by="facility_id")
     
     #cleanup a column that is in all GHRGP datasets and are identical (or ~so).
@@ -485,127 +564,34 @@ NG_distribution <- function(domain,
     #operates in KY).
     GHGRP_csv[,"operating_state"]=GHGRP_csv$state
     GHGRP_csv[,"operating_state_name"]=GHGRP_csv$state_name
-    for(A in 1:50){
-      #CO and WA are a bit special.  CO often just means company, not
-      #Colorado.  Washington can refer to DC or the state.
-      if(A == 6){
-        #search for state name anywhere in the facility name (\\b = whole word)
-        match_indx <- grepl(pattern = paste0("\\b",state.name[A],"\\b"),x=GHGRP_csv$facility_name,ignore.case = T) & GHGRP_csv$state!=state.abb[A]
-      }else if(A==47){
-        #search for state name or abbreviation, but state name must be
-        #immediately after a dash (several in/near DC have Washington in them)
-        match_indx <- (grepl(pattern = paste0("- \\b",state.name[A],"\\b"),x=GHGRP_csv$facility_name,ignore.case = T) | 
-                         grepl(pattern = paste0("\\b",state.abb[A],"\\b"),x=GHGRP_csv$facility_name,ignore.case = T)) & GHGRP_csv$state!=state.abb[A]
-      }else{
-        #search state name or abbreviation
-        match_indx <- (grepl(pattern = paste0("\\b",state.name[A],"\\b"),x=GHGRP_csv$facility_name,ignore.case = T) | 
-                         grepl(pattern = paste0("\\b",state.abb[A],"\\b"),x=GHGRP_csv$facility_name,ignore.case = T)) & GHGRP_csv$state!=state.abb[A]
-      }
-      #alert user of any updates, only if the state either was in the domain, or
-      #is being updated to be in the domain
-      if(sum(match_indx)>0 & (state.abb[A] %in% state_name_list | any(GHGRP_csv$state[match_indx] %in% state_name_list))){
-        cat(paste(GHGRP_csv$facility_name[match_indx],collapse="  &  "),"rewritten from",paste(GHGRP_csv$state_name[match_indx],collapse="  &  "),"to",state.name[A],"\n")
-      }
-      GHGRP_csv[match_indx,"operating_state"]=state.abb[A]
-      GHGRP_csv[match_indx,"operating_state_name"]=state.name[A]
-    }
+    
+    #most of these have - name or (name) or similar.  Some specific cases don't
+    #quite fit.  Split the text to get just the name.
+    splittext <- sapply(strsplit(GHGRP_csv$facility_name,
+                                 "- |\\(|of |NorthWestern Energy.? |Summit Utilities Inc., |Duke Energy "),tail,1)
+    splittext <- sapply(strsplit(splittext,"-"),tail,1)
+    splittext <- gsub("\\)","",
+                      gsub(" Gas Distribution","",
+                           gsub(" Gas Operation","",
+                                gsub(" LDC","",splittext))))
+    
+    #match the name to state abbreviations or names - ignoring state name
+    #capitalization
+    abb_match <- match(splittext,datasets::state.abb)
+    name_match <- match(tolower(splittext),tolower(datasets::state.name))
+    
+    GHGRP_csv[!is.na(abb_match),"operating_state"]=datasets::state.abb[na.omit(abb_match)]
+    GHGRP_csv[!is.na(abb_match),"operating_state_name"]=datasets::state.name[na.omit(abb_match)]
+    
+    GHGRP_csv[!is.na(name_match),"operating_state"]=datasets::state.abb[na.omit(name_match)]
+    GHGRP_csv[!is.na(name_match),"operating_state_name"]=datasets::state.name[na.omit(name_match)]
     
     #filter to the states in the domain
     GHGRP_csv <- GHGRP_csv[GHGRP_csv$operating_state %in% state_name_list,]
     
+    #update user about updates to any that are within the domain
+    cat(paste(GHGRP_csv$facility_name[GHGRP_csv$state!=GHGRP_csv$operating_state],"    rewritten from",GHGRP_csv$state_name[GHGRP_csv$state!=GHGRP_csv$operating_state],"    to",GHGRP_csv$operating_state_name[GHGRP_csv$state!=GHGRP_csv$operating_state],"\n"))
     ################################################################################
-    #do some webscraping to add a few additional variables for GHGRP facilities
-    
-    #the url is built from the GHGRP ID, the desired year, and a common url.
-    #This file contains more information about the facility that isn't in the
-    #downloaded file.  Though this data should be available via Envirofacts,
-    #I've been unable to find the appropriate post-2015 table.
-    data_URL <- paste0("https://ghgdata.epa.gov/ghgp/service/html/",inventory_year,"?id=",GHGRP_csv$facility_id,"&et=undefined")
-    download_dest <- tempfile(fileext = ".html")
-    
-    #Add several new variables to GHGRP_csv that will be pulled from the
-    #webscraping
-    GHGRP_csv[,c("Miles_of_Mains","N_of_above_grade_T-D_transfer_stations","N_of_above_grade_non_T-D_MR_stations",
-                 "N_of_below_grade_T-D_transfer_stations","N_of_below_grade_non_T-D_MR_stations")] <- 0
-    
-    for(A in 1:nrow(GHGRP_csv)){
-      Trycatch_downloader(URL = data_URL[A],method = "save",output_location = download_dest,
-                          error_message = paste0("Greenhouse Gas Reporting Program data could not be webscraped from webpage: ",data_URL[A]))
-      
-      #read in the whole html as text
-      HTML_data <- readChar(download_dest,file.info(download_dest)$size)
-      
-      #initialize an output and locate some text near data we want (amount of
-      #pipeline of various pipe types)
-      text_loc <- gregexpr("Distribution Mains, Gas Service",text = HTML_data)
-      answer <- 0
-      for(B in 1:length(text_loc[[1]])){
-        #should have found 1 value for each type of pipeline, see
-        #https://www.debuggex.com/cheatsheet/regex/pcre
-        
-        #first subset to the located text + buffer, then regex to find a number
-        #with/without a decimal in it as formatted html text, then grab just
-        #this value and add it to the answer (we only want the total across all
-        #pipeline types)
-        text <- substr(HTML_data,text_loc[[1]][B],text_loc[[1]][B]+attributes(text_loc[[1]])$match.length[B]+200)
-        sub_answer <- regexpr(">[[:digit:]]*[[:punct:]]*[[:digit:]]*</td>",text)
-        answer <- answer+as.numeric(substr(text,sub_answer+1,sub_answer+attributes(sub_answer)$match.length-6))
-      }
-      GHGRP_csv$Miles_of_Mains[A] <- answer
-      
-      #now repeat the same type of process for various other variables
-      text_loc <- regexpr("Number of above grade T-D transfer stations at the facility",text = HTML_data)
-      text <- substr(HTML_data,text_loc,text_loc+attributes(text_loc)$match.length+50)
-      answer <- regexpr(">[[:digit:]]*[[:punct:]]*[[:digit:]]*</td>",text)
-      answer <- substr(text,answer+1,answer+attributes(answer)$match.length-6)
-      GHGRP_csv$'N_of_above_grade_T-D_transfer_stations'[A] <- as.numeric(answer)
-      
-      text_loc <- regexpr("Number of above grade metering-regulating stations that are not T-D transfer stations",text = HTML_data)
-      text <- substr(HTML_data,text_loc,text_loc+attributes(text_loc)$match.length+50)
-      answer <- regexpr(">[[:digit:]]*[[:punct:]]*[[:digit:]]*</td>",text)
-      answer <- substr(text,answer+1,answer+attributes(answer)$match.length-6)
-      GHGRP_csv$'N_of_above_grade_non_T-D_MR_stations'[A] <- as.numeric(answer)
-      
-      text_loc <- gregexpr("Below Grade T-D Station, Gas Service, Inlet Pressure ",text = HTML_data)
-      answer <- 0
-      for(B in 1:length(text_loc[[1]])){
-        text <- substr(HTML_data,text_loc[[1]][B],text_loc[[1]][B]+attributes(text_loc[[1]])$match.length[B]+200)
-        sub_answer <- regexpr(">[[:digit:]]*[[:punct:]]*[[:digit:]]*</td>",text)
-        answer <- answer+as.numeric(substr(text,sub_answer+1,sub_answer+attributes(sub_answer)$match.length-6))
-      }
-      GHGRP_csv$'N_of_below_grade_T-D_transfer_stations'[A] <- answer
-      
-      text_loc <- gregexpr("Below Grade M-R Station, Gas Service, Inlet Pressure",text = HTML_data)
-      answer <- 0
-      for(B in 1:length(text_loc[[1]])){
-        text <- substr(HTML_data,text_loc[[1]][B],text_loc[[1]][B]+attributes(text_loc[[1]])$match.length[B]+200)
-        sub_answer <- regexpr(">[[:digit:]]*[[:punct:]]*[[:digit:]]*</td>",text)
-        answer <- answer+as.numeric(substr(text,sub_answer+1,sub_answer+attributes(sub_answer)$match.length-6))
-      }
-      GHGRP_csv$'N_of_below_grade_non_T-D_MR_stations'[A] <- answer
-      
-      #user update
-      cat("\rFinished downloading GHGRP data for",A,"of",nrow(GHGRP_csv),"companies                 ")
-    }
-    
-    #remove the downloaded html file
-    unlink(download_dest)
-    
-    #Calculate some derived variables from those webscraped.
-    GHGRP_csv$above_grade_stations_per_mile_of_pipe <- (GHGRP_csv$'N_of_above_grade_T-D_transfer_stations'+
-                                                          GHGRP_csv$'N_of_above_grade_non_T-D_MR_stations')/
-      GHGRP_csv$Miles_of_Mains
-    GHGRP_csv$below_grade_stations_per_mile_of_pipe <- (GHGRP_csv$'N_of_below_grade_T-D_transfer_stations'+
-                                                          GHGRP_csv$'N_of_below_grade_non_T-D_MR_stations')/
-      GHGRP_csv$Miles_of_Mains
-    GHGRP_csv$stations_per_mile_of_pipe <- (GHGRP_csv$'N_of_above_grade_T-D_transfer_stations'+
-                                              GHGRP_csv$'N_of_above_grade_non_T-D_MR_stations'+
-                                              GHGRP_csv$'N_of_below_grade_T-D_transfer_stations'+
-                                              GHGRP_csv$'N_of_below_grade_non_T-D_MR_stations')/
-      GHGRP_csv$Miles_of_Mains
-    
-    rm(A,B,text_loc,answer,download_dest,sub_answer,HTML_data,text)
-    ##############################################################################
     #have to calculate before aggregating/merging via sum since it applies an
     #average term
     
@@ -641,6 +627,12 @@ NG_distribution <- function(domain,
                                             'NUM_SRVCS_TOTAL',
                                             "Miles_main_and_serv"))
     
+    #reconditioned iron pipe (RCI) wasn't reported in older years - add 0's
+    if(!("MMILES_RCI" %in% colnames(PHMSA_csv_NG))){
+      PHMSA_csv_NG$MMILES_RCI <- 0
+      PHMSA_csv_NG$NUM_SRVS_RCI <- 0
+    }
+    
     EIA_cols_to_keep <- paste0("EIA_",c("Residential_Total_Volume_(Mcf)",
                                         "Residential_Total_Customers",
                                         'Commercial_Total_Volume_(Mcf)',
@@ -663,16 +655,16 @@ NG_distribution <- function(domain,
     #rename the state data for these for clarity/consistency
     colnames(PHMSA_csv_NG) <- gsub("STOP","State",colnames(PHMSA_csv_NG))
     
-    PHMSA_csv_NG_agg <- aggregate(PHMSA_csv_NG[PHMSA_cols_to_keep],
-                                  list(PHMSA_State=PHMSA_csv_NG$PHMSA_State),
-                                  sum,na.rm=T)
-    EIA_csv_agg <- aggregate(EIA_csv[EIA_cols_to_keep],
-                             list(EIA_State=EIA_csv$EIA_State),
-                             sum,na.rm=T)
+    PHMSA_csv_NG_agg <- stats::aggregate(PHMSA_csv_NG[PHMSA_cols_to_keep],
+                                         list(PHMSA_State=PHMSA_csv_NG$PHMSA_State),
+                                         sum,na.rm=T)
+    EIA_csv_agg <- stats::aggregate(EIA_csv[EIA_cols_to_keep],
+                                    list(EIA_State=EIA_csv$EIA_State),
+                                    sum,na.rm=T)
     
     # Now merge csv stuff and state shapefile together
     all_merge <- merge(EIA_csv_agg, PHMSA_csv_NG_agg, by.x='EIA_State', by.y='PHMSA_State')
-    all_merge <- merge(State_Tigerlines,all_merge,by.x="STUSPS",by.y="EIA_State")
+    all_merge <- terra::merge(State_Tigerlines,all_merge,by.x="STUSPS",by.y="EIA_State")
     
     # Clean up
     all_merge_clean <- all_merge[cols_to_keep]
@@ -686,20 +678,20 @@ NG_distribution <- function(domain,
     #level (from the GHGI national inventory report).
     
     #aggregate each to a state total
-    main_miles_ghgrp <- aggregate(GHGRP_csv$Miles_of_Mains,
-                                  list(State=GHGRP_csv$operating_state),
-                                  sum,
-                                  na.rm=TRUE)
-    above_grade_MnR <- aggregate((GHGRP_csv$`N_of_above_grade_T-D_transfer_stations` +
-                                    GHGRP_csv$`N_of_above_grade_non_T-D_MR_stations`),
-                                 list(State=GHGRP_csv$operating_state),
-                                 sum,
-                                 na.rm=TRUE)
-    below_grade_MnR <- aggregate((GHGRP_csv$`N_of_below_grade_non_T-D_MR_stations` +
-                                    GHGRP_csv$`N_of_below_grade_T-D_transfer_stations`),
-                                 list(State=GHGRP_csv$operating_state),
-                                 sum,
-                                 na.rm=TRUE)
+    main_miles_ghgrp <- stats::aggregate(GHGRP_csv$Miles_of_Mains,
+                                         list(State=GHGRP_csv$operating_state),
+                                         sum,
+                                         na.rm=TRUE)
+    above_grade_MnR <- stats::aggregate((GHGRP_csv$`N_of_above_grade_T_D_transfer_stations` +
+                                           GHGRP_csv$`N_of_above_grade_non_T_D_MR_stations`),
+                                        list(State=GHGRP_csv$operating_state),
+                                        sum,
+                                        na.rm=TRUE)
+    below_grade_MnR <- stats::aggregate((GHGRP_csv$`N_of_below_grade_non_T_D_MR_stations` +
+                                           GHGRP_csv$`N_of_below_grade_T_D_transfer_stations`),
+                                        list(State=GHGRP_csv$operating_state),
+                                        sum,
+                                        na.rm=TRUE)
     
     # Calculate average stations per mile in each state
     above_grade_MnR$stations_per_mile <- above_grade_MnR$x/main_miles_ghgrp$x
@@ -717,125 +709,9 @@ NG_distribution <- function(domain,
     #load in the output of NG_distribution_by_LDC_prep.R.  Note that is a
     #script, not a function, as it requires some manual efforts.  This one is
     #calculated at the LDC scale, not state level.
-    all_merge_clean <- vect(file.path(input_directory,"/byLDC_merged/byLDC_merged.shp"))
-    names(all_merge_clean) <- unlist(read.table(file.path(input_directory,"/byLDC_merged/colnames.txt")))
+    all_merge_clean <- terra::vect(file.path(input_directory,"byLDC_merged","byLDC_merged.shp"))
+    names(all_merge_clean) <- unlist(utils::read.table(file.path(input_directory,"byLDC_merged","colnames.txt")))
   }
-  
-  ################################################################################
-  #Download the GHGI annex file if not already downloaded
-  
-  GHGI_file <- list.files(input_directory,pattern="*GHGI_natural_gas_annex_tables.xlsx",full.names = T)
-  
-  if(identical(GHGI_file,character(0))){
-    #download the webpage and load in the HTML.  The webpage is year specific, so
-    #check ~2 years ago (the most recent based on current reporting times)
-    #and go farther back as needed
-    GHGI_year <- as.numeric(substring(Sys.Date(),1,4))-2
-    repeat{
-      data_URL <- paste0("https://www.epa.gov/ghgemissions/natural-gas-and-petroleum-systems-ghg-inventory-additional-information-1990-",GHGI_year,"-ghg")
-      download_dest <- tempfile(fileext = ".html")
-      Trycatch_downloader(URL = data_URL,method = "save",output_location = download_dest,
-                          error_message = paste0("LMOP data could not be webscraped from webpage: ",data_URL))
-      HTML_data <- readChar(download_dest,file.info(download_dest)$size)
-      if(grepl("<title>Page Not Found",HTML_data)){
-        GHGI_year <- GHGI_year-1
-        Sys.sleep(1)
-        next
-      }else{
-        break
-      }
-    }
-    
-    #Search for https:// - any 100 or fewer characters - landfilllmopdata.xlsx in
-    #the HTML_data.  The link had about 50 characters between https:// and
-    #landfilllmopdata at most across the past few versions, but this should
-    #identify any version if the format is reasonably consistent.  
-    Matchtext <- regexpr("https://.{1,100}ghgi_natural_gas_systems_annex36_tables.xlsx",HTML_data)
-    data_URL2 <- substring(HTML_data,Matchtext[1],Matchtext[1]+attr( Matchtext , "match.length")-1)
-    GHGI_file <- paste0(input_directory,"/",GHGI_year,"_GHGI_natural_gas_annex_tables.xlsx")
-    Trycatch_downloader(URL = data_URL2,method = "save",output_location = GHGI_file,
-                        error_message = paste0("GHGI annex data could not be downloaded from webpage:\n",data_URL2,"\nMake sure the main EPA page for it is accurate:\n",data_URL))
-    unlink(download_dest)
-  }
-  
-  ################################################################################
-  #Pull the GHGI data we'll need later and save it to a few dataframes
-  
-  #use grep and the index page of the annex file to identify the pages we want
-  GHGI_index <- read_xlsx(GHGI_file,.name_repair = "minimal")
-  GHGI_Activity_sheet <- gsub("Table ","",
-                              GHGI_index[sapply(GHGI_index[,2],FUN=function(x){grep(pattern="Activity Data for Natural Gas Systems Sources",x)}),1])
-  GHGI_Emission_Factor_sheet <- gsub("Table ","",
-                                     GHGI_index[sapply(GHGI_index[,2],FUN=function(x){grep(pattern="Average CH4 Emission Factors \\(kg/unit activity\\) for Natural Gas Systems Sources",x)}),1])
-  
-  #Columns = year, rows = various types of sources.  First row is just to
-  #identify the first row of the tables as there is also header information that
-  #we want to exclude
-  first_row <- which(read_xlsx(GHGI_file,sheet = GHGI_Activity_sheet,.name_repair = "minimal")[,1]=="Segment/Source")
-  GHGI_Activity <- read_xlsx(GHGI_file,sheet = GHGI_Activity_sheet,skip=first_row,col_names = T)
-  
-  first_row <- which(read_xlsx(GHGI_file,sheet = GHGI_Emission_Factor_sheet,.name_repair = "minimal")[,1]=="Segment/Source")
-  GHGI_Emission_Factors <- read_xlsx(GHGI_file,sheet = GHGI_Emission_Factor_sheet,skip=first_row,col_names = T)
-  
-  if(all(GHGI_MnR=="GHGI")){
-    #all the sources we're looking for, written exactly as in the GHGI file
-    Data_list <- c("M&R >300","M&R 100-300","M&R <100","Reg >300","R-Vault >300",
-                   "Reg 100-300","R-Vault 100-300","Reg 40-100","R-Vault 40-100",
-                   "Reg <40")
-    
-    #use sapply to find the row using data list, specify the column as the year and
-    #grab the relevant EF and activity data into a dataframe.
-    GHGI_MnR <- data.frame("Type"=Data_list,
-                           "EF"=as.numeric(unlist(sapply(Data_list,FUN=function(x){GHGI_Emission_Factors[GHGI_Emission_Factors[,1]==x,as.character(inventory_year)]})))*
-                             1000/(16.043*60*60*24*365),#convert from kg/yr to mol/s
-                           "Total_stations"=as.numeric(unlist(sapply(Data_list,FUN=function(x){GHGI_Activity[GHGI_Activity[,1]==x,as.character(inventory_year)]}))),
-                           row.names = NULL)
-    
-    #Metering and regulating stations in mol/s/station
-  }
-  
-  #repeat for several other source types
-  if(all(GHGI_services=="GHGI")){
-    Data_list <- c("Services - Unprotected steel",
-                   "Services Protected steel",
-                   "Services - Plastic",
-                   "Services - Copper")
-    
-    GHGI_services <- data.frame("Type"=Data_list,
-                                "EF"=as.numeric(unlist(sapply(Data_list,FUN=function(x){GHGI_Emission_Factors[GHGI_Emission_Factors[,1]==x,as.character(inventory_year)]})))*
-                                  1000/(16.043*60*60*24*365),#convert from kg/yr to mol/s
-                                row.names = NULL)
-    
-    #Service emissions in mol/s/event
-  }
-  
-  if(all(GHGI_meters=="GHGI")){
-    Data_list <- c("Residential",
-                   "Commercial",
-                   "Industrial")
-    
-    GHGI_meters <- data.frame("Type"=Data_list,
-                              "EF"=as.numeric(unlist(sapply(Data_list,FUN=function(x){GHGI_Emission_Factors[which(GHGI_Emission_Factors[,1]==x)[1],as.character(inventory_year)]})))*
-                                1000/(16.043*60*60*24*365),#convert from kg/yr to mol/s
-                              row.names = NULL)
-    
-    #meter emissions in mol/s/meter
-  }
-  
-  if(all(GHGI_maintenance=="GHGI")){
-    Data_list <- c("Pressure Relief Valve Releases",
-                   "Pipeline Blowdown",
-                   "Mishaps (Dig-ins)")
-    
-    GHGI_maintenance <- data.frame("Type"=Data_list,
-                                   "EF"=as.numeric(unlist(sapply(Data_list,FUN=function(x){GHGI_Emission_Factors[GHGI_Emission_Factors[,1]==x,as.character(inventory_year)]})))*
-                                     1000/(16.043*60*60*24*365),#convert from kg/yr to mol/s
-                                   row.names = NULL)
-    
-    #Event emissions in mol/s/mile of pipeline
-  }
-  
-  suppressWarnings(rm(GHGI_Activity,GHGI_Emission_Factors,Data_list,GHGI_file,first_col))
   ##############################################################################
   #convert a lot of the activity data to emissions data
   
@@ -932,7 +808,8 @@ NG_distribution <- function(domain,
   # Post-meter, in this case it's entirely allocated to residential (no data on
   # commercial buildings).  McF = thousand cubic feet.  Thousand cubic feet to
   # residential (EIA) * emission factor (from config, cubic feet/yr to mol/s).
-  all_merge_clean$post_meter_ER_total_res <- all_merge_clean$`EIA_Residential_Total_Volume_(Mcf)`*1000*natural_gas_post_meter_emission_factor
+  all_merge_clean$post_meter_ER_total_res <- all_merge_clean$`EIA_Residential_Total_Volume_(Mcf)`*1000*natural_gas_res_post_meter_emission_factor
+  all_merge_clean$post_meter_ER_total_com <- all_merge_clean$`EIA_Commercial_Total_Volume_(Mcf)`*1000*natural_gas_com_post_meter_emission_factor
   ##############################################################################
   #break the emissions into residential and commercial fractions
   
@@ -1034,7 +911,8 @@ NG_distribution <- function(domain,
                   'MnR_ER_total_res',
                   'meter_ER_total_res',
                   'upset_ER_total_res',
-                  'post_meter_ER_total_res')
+                  'post_meter_ER_total_res',
+                  'post_meter_ER_total_com')
   
   com_totals <- c('mains_ER_total_com',
                   'serv_ER_total_com',
@@ -1042,46 +920,31 @@ NG_distribution <- function(domain,
                   'meter_ER_total_com',
                   'upset_ER_total_com')
   
-  # Load in ACES and Vulcan sectors - these are in different units, but it
-  # doesn't matter as we'll only use fractions.
-  if(Use_ACES){
-    aces_res <- rast(paste0(ACES_directory,"/Sectoral/",ACES_year,'_Annual_ACES_Residential.nc'))
-    #aces crs is not properly interpreted so force it
-    crs(aces_res) <- "+proj=lcc +lat_0=40 +lon_0=-97 +lat_1=33 +lat_2=45 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs"
-    
-    aces_com <- rast(paste0(ACES_directory,"/Sectoral/",ACES_year,'_Annual_ACES_Commercial.nc'))
-    crs(aces_com) <- "+proj=lcc +lat_0=40 +lon_0=-97 +lat_1=33 +lat_2=45 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs"
-  }
-  if(Use_Vulcan){
-    vu_res <- rast(paste0(vulcan_directory,"/Sectoral/","Vulcan_v3_US_annual_1km_residential_mn.nc4"), subds='carbon_emissions', lyrs=vulcan_band)
-    vu_com <- rast(paste0(vulcan_directory,"/Sectoral/",'Vulcan_v3_US_annual_1km_commercial_filt.nc'), subds='carbon_emissions', lyrs=vulcan_band)
-  }
-  
   ################################################################################
-  #write a function to save, dependent on whether or not we use XESMF
+  #write a function to save
   
   #project with terra
   save_data <- function(input){
     #grab components from the input dataset for naming
     input_name <- gsub("\\[\\[total\\]\\]","",deparse(substitute(input)))
-    disaggregation_level <- tail(strsplit(input_name,"_")[[1]],1)
+    disaggregation_level <- utils::tail(strsplit(input_name,"_")[[1]],1)
     inventory_name <- strsplit(input_name,"_")[[1]][1]
     
     #project to a grid with the exact right resolution, extent and origin. First
     #put domain in ACES/Vulcan crs, then crop/mask input to it.  Account for
     #pixels partially within the domain.
-    domain_reproj <- project(domain,crs(input))
-    input=crop(input,domain_reproj,snap="out")
-    input=mask(input,domain_reproj,touches=T,updatevalue=0)
-    cover <- extract(input,domain_reproj,weights=T,cells=T)
+    domain_reproj <- terra::project(domain,terra::crs(input))
+    input=terra::crop(input,domain_reproj,snap="out")
+    input=terra::mask(input,domain_reproj,touches=T,updatevalue=0)
+    cover <- terra::extract(input,domain_reproj,weights=T,cells=T)
     input[cover[,'cell']] <- input[cover[,'cell']]*cover[,'weight']
     
     #add a few pixels worth of buffer (at the domain resolution) filled with 0's
     #so the average doesn't consider these NA values to ignore in calculations
     #(drastically impacts avg).  Then finally reproject via average.
-    input=extend(input,fill=0,
-                 ext(input)+(res(project(domain_template,crs(input)))*5))
-    input=project(input,domain_template,method="average")
+    input=terra::extend(input,fill=0,
+                        terra::ext(input)+(terra::res(terra::project(domain_template,terra::crs(input)))*5))
+    input=terra::project(input,domain_template,method="average")
     
     #convert from mol/km2s to nmol/m2s
     input <- input*1000
@@ -1104,7 +967,7 @@ NG_distribution <- function(domain,
     }else if(grepl("upset",total)){
       subsector_name <- "upsets and maintenance"
     }else if(grepl("post_meter",total)){
-      subsector_name <- "post-meter residential leakage and usage"
+      subsector_name <- "post-meter leakage and usage"
     }
     
     if(grepl("LDC",disaggregation_level)){
@@ -1122,17 +985,17 @@ NG_distribution <- function(domain,
     }
     
     
-    writeCDF(input,
-             paste0(NG_dist_output_directory,'/',"NG_dist_",sub("_ER_total","",total),
-                    "_",disaggregation_level,"_",inventory_name,'.nc'),
-             force_v4=TRUE,
-             varname='methane_emissions',
-             unit='nmol/m2/s',
-             longname=paste0('Methane emissions from natural gas distribution ',subsector_name,
-                             ', spatially allocated from ',disaggregation_name,
-                             ' totals using ',inventory_name,' ',sector_name,' CO2 emissions'),
-             missval=-9999,
-             overwrite=TRUE)
+    writeCDF_no_newline(input,
+                        paste0(NG_dist_output_directory,'/',"NG_dist_",sub("_ER_total","",total),
+                               "_",disaggregation_level,"_",inventory_name,'.nc'),
+                        force_v4=TRUE,
+                        varname='methane_emissions',
+                        unit='nmol/m2/s',
+                        longname=paste0('Methane emissions from natural gas distribution ',subsector_name,
+                                        ', spatially allocated from ',disaggregation_name,
+                                        ' totals using ',inventory_name,' ',sector_name,' CO2 emissions'),
+                        missval=-9999,
+                        overwrite=TRUE)
   }
   ################################################################################
   #use ACES/Vulcan to redistribute residential/commercial emissions at the LDC
@@ -1141,10 +1004,10 @@ NG_distribution <- function(domain,
   if(NG_distribution_by_LDC){
     if(Use_ACES){
       #mask to only keep those LDCs that are at least partly within the domain
-      all_merge_LCC <- mask(all_merge_clean,project(domain,all_merge_clean))
+      all_merge_LCC <- terra::mask(all_merge_clean,terra::project(domain,all_merge_clean))
       
       #convert to the proper crs
-      all_merge_LCC <- project(all_merge_LCC,aces_res)
+      all_merge_LCC <- terra::project(all_merge_LCC,aces_res)
       
       #tried other methods to compare speeds
       
@@ -1174,19 +1037,19 @@ NG_distribution <- function(domain,
       #   lapply(function(x){cells(aces_res,x,weights=T,exact=T);cat("\rProcessing",x$count,"of",LDC_count,"LDCs            ")})
       # 
       # aces_res_temp <- crop(aces_res,ext(project(State_Tigerlines,aces_res))*1.2) - untested impact
-
+      
       # Add the count of all LDCs for a user update since this can take some
       # time
       LDC_count <- nrow(all_merge_LCC)
       if(LDC_count==1){
-        cover_all <- list(extract(aces_res,all_merge_LCC,weights=T,exact=T,cells=T))
+        cover_all <- list(terra::extract(aces_res,all_merge_LCC,weights=T,exact=T,cells=T))
       }else{
         #calculate the fractional cover of each ACES pixel within the LDC.
         all_merge_LCC$count <- 1:nrow(all_merge_LCC)
         cover_all <- all_merge_LCC %>% 
           split(f=all_merge_LCC$HIFLD_SVCTERID) %>%
           lapply(function(x){cat("\rProcessing",x$count,"of",LDC_count,"LDCs using ACES                                   ");
-            extract(aces_res,x,weights=T,exact=T,cells=T)})
+            terra::extract(aces_res,x,weights=T,exact=T,cells=T)})
         #make sure it is in the proper order (split by factor will alphabetize
         #by that factor)
         cover_all <- cover_all[all_merge_LCC$HIFLD_SVCTERID]
@@ -1196,17 +1059,18 @@ NG_distribution <- function(domain,
       disaggregation(aces_com,com_totals,agg_level="LDC",NEI_input = all_merge_LCC,cover_all,out_envir=environment())
     }
     if(Use_Vulcan){
-      all_merge_LCC <- mask(all_merge_clean,project(domain,all_merge_clean))
-      all_merge_LCC <- project(all_merge_LCC,vu_res)
+      all_merge_LCC <- terra::mask(all_merge_clean,terra::project(domain,all_merge_clean))
+      all_merge_LCC <- terra::project(all_merge_LCC,vu_res)
       
       LDC_count <- nrow(all_merge_LCC)
       if(LDC_count==1){
-        cover_all <- list(extract(vu_res,all_merge_LCC,weights=T,exact=T,cells=T))
+        cover_all <- list(terra::extract(vu_res,all_merge_LCC,weights=T,exact=T,cells=T))
       }else{
         all_merge_LCC$count <- 1:nrow(all_merge_LCC)
         cover_all <- all_merge_LCC %>% 
           split(f=all_merge_LCC$HIFLD_SVCTERID) %>%
-          lapply(function(x){cat("\rProcessing",x$count,"of",LDC_count,"LDCs using vulcan                                  ");extract(vu_res,x,weights=T,exact=T,cells=T)})
+          lapply(function(x){cat("\rProcessing",x$count,"of",LDC_count,"LDCs using vulcan                                  ")
+            terra::extract(vu_res,x,weights=T,exact=T,cells=T)})
         cover_all <- cover_all[all_merge_LCC$HIFLD_SVCTERID]
       }
       
@@ -1229,11 +1093,11 @@ NG_distribution <- function(domain,
   
   if(NG_distribution_by_state){
     if(NG_distribution_by_LDC){
-      all_merge_state <- aggregate(as.data.frame(all_merge_clean[,!(names(all_merge_clean) %in% c('HIFLD_SVCTERID', 'EIA_Company', 'EIA_Company_Name', 'PHMSA_State'))]),
+      all_merge_state <- terra::aggregate(as.data.frame(all_merge_clean[,!(names(all_merge_clean) %in% c('HIFLD_SVCTERID', 'EIA_Company', 'EIA_Company_Name', 'PHMSA_State'))]),
                                    list(PHMSA_State=all_merge_clean$PHMSA_State),
                                    sum,na.rm=T)
       # Merge the geometries
-      all_merge_state_poly <- merge(State_Tigerlines, all_merge_state, by.y='PHMSA_State', by.x='STUSPS')
+      all_merge_state_poly <- terra::merge(State_Tigerlines, all_merge_state, by.y='PHMSA_State', by.x='STUSPS')
       names(all_merge_state_poly) <- gsub("STUSPS","PHMSA_State",names(all_merge_state_poly))
     }else{
       all_merge_state_poly <- all_merge_clean
@@ -1243,14 +1107,14 @@ NG_distribution <- function(domain,
     
     if(Use_ACES){
       #convert state scale version to the proper crs
-      all_merge_LCC_state <- project(all_merge_state_poly,aces_res)
+      all_merge_LCC_state <- terra::project(all_merge_state_poly,aces_res)
       
       if(length(state_name_list)==1){
-        cover_all <- list(extract(aces_res,all_merge_LCC_state,weights=T,cells=T))
+        cover_all <- list(terra::extract(aces_res,all_merge_LCC_state,weights=T,cells=T))
       }else{
         cover_all <- all_merge_LCC_state %>% 
           split(f=all_merge_LCC_state$STATEFP) %>%
-          lapply(function(x){extract(aces_res,x,weights=T,cells=T)})
+          lapply(function(x){terra::extract(aces_res,x,weights=T,cells=T)})
         #make sure it is in the proper order (split by factor will alphabetize
         #by that factor)
         cover_all <- cover_all[all_merge_LCC_state$STATEFP]
@@ -1260,14 +1124,14 @@ NG_distribution <- function(domain,
       disaggregation(aces_com,com_totals,agg_level="state",NEI_input = all_merge_LCC_state,cover_all,out_envir=environment())
     }
     if(Use_Vulcan){
-      all_merge_LCC_state <- project(all_merge_state_poly,vu_res)
+      all_merge_LCC_state <- terra::project(all_merge_state_poly,vu_res)
       
       if(length(state_name_list)==1){
-        cover_all <- list(extract(vu_res,all_merge_LCC_state,weights=T,cells=T))
+        cover_all <- list(terra::extract(vu_res,all_merge_LCC_state,weights=T,cells=T))
       }else{
         cover_all <- all_merge_LCC_state %>% 
           split(f=all_merge_LCC_state$STATEFP) %>%
-          lapply(function(x){extract(vu_res,x,weights=T,cells=T)})
+          lapply(function(x){terra::extract(vu_res,x,weights=T,cells=T)})
         cover_all <- cover_all[all_merge_LCC_state$STATEFP]
       }
       
@@ -1284,20 +1148,20 @@ NG_distribution <- function(domain,
     all_merge_domain <- suppressWarnings(apply(as.data.frame(all_merge_clean),2,as.numeric))
     all_merge_domain <- colSums(all_merge_domain,na.rm=T)
     
-    all_merge_domain_poly <- aggregate(State_Tigerlines)
-    values(all_merge_domain_poly) <- t(all_merge_domain)
+    all_merge_domain_poly <- terra::aggregate(State_Tigerlines)
+    terra::values(all_merge_domain_poly) <- t(all_merge_domain)
     
     if(Use_ACES){
       #convert domain scale version to the proper crs
-      all_merge_LCC_domain <- project(all_merge_domain_poly,aces_res)
-      cover_all <- list(extract(aces_res,all_merge_LCC_domain,weights=T,cells=T))
+      all_merge_LCC_domain <- terra::project(all_merge_domain_poly,aces_res)
+      cover_all <- list(terra::extract(aces_res,all_merge_LCC_domain,weights=T,cells=T))
       
       disaggregation(aces_res,res_totals,agg_level="domain",NEI_input=all_merge_LCC_domain,cover_all,out_envir=environment())
       disaggregation(aces_com,com_totals,agg_level="domain",NEI_input=all_merge_LCC_domain,cover_all,out_envir=environment())
     }
     if(Use_Vulcan){
-      all_merge_LCC_domain <- project(all_merge_domain_poly,vu_res)
-      cover_all <- list(extract(vu_res,all_merge_LCC_domain,weights=T,cells=T))
+      all_merge_LCC_domain <- terra::project(all_merge_domain_poly,vu_res)
+      cover_all <- list(terra::extract(vu_res,all_merge_LCC_domain,weights=T,cells=T))
       
       disaggregation(vu_res,res_totals,agg_level="domain",NEI_input=all_merge_LCC_domain,cover_all,out_envir=environment())
       disaggregation(vu_com,com_totals,agg_level="domain",NEI_input=all_merge_LCC_domain,cover_all,out_envir=environment())
@@ -1334,6 +1198,7 @@ NG_distribution <- function(domain,
         save_data(vu_res_ch4_bydomain[[total]])
       }
     }
+    cat("\rFinished processing",which(total==res_totals),"of",length(res_totals),"residential sectors at",round(difftime(Sys.time(),starttime,units = "min"),2),"minutes since start                               ")
   }
   
   for(total in com_totals){
@@ -1361,159 +1226,100 @@ NG_distribution <- function(domain,
         save_data(vu_com_ch4_bydomain[[total]])
       }
     }
+    cat("\rFinished processing",which(total==com_totals),"of",length(com_totals),"commercial sectors at",round(difftime(Sys.time(),starttime,units = "min"),2),"minutes since start                                        ")
   }
   suppressWarnings(rm(all_merge_LCC,LDC_count,cover_all,all_merge_state_poly,
                       all_merge_LCC_state,all_merge_domain_poly,all_merge_LCC_domain))
-  ################################################################################
-  # # Some sanity checks
-  # 
-  # #this can't be used if byLDC=TRUE and the domain is not complete states now.
-  # #LDC's outside the domain get excluded, and thus totals don't match up if any
-  # #states are partially within domain.
-  # 
-  # res_data_objects <- as.list(ls(pattern=glob2rx("*_res_ch4*")))
-  # #get the length, convert from a list of the names to the actual rasters
-  # res_data_length <- length(res_data_objects)
-  # res_data_list <- sapply(res_data_objects,get,envir=environment())
-  # #get the domain total for each raster, put into an organized df
-  # res_data <- as.data.frame(matrix(sapply(res_data_list,global,sum),
-  #                                  ncol=res_data_length))
-  # #properly name it's dimensions
-  # names(res_data) <- gsub("res_ch4","by",unlist(res_data_objects))
-  # rownames(res_data) <- names(res_data_list[,1])
-  # 
-  # com_data_objects <- as.list(ls(pattern=glob2rx("*_com_ch4*")))
-  # com_data_length <- length(com_data_objects)
-  # com_data_list <- sapply(com_data_objects,get,envir=environment())
-  # com_data <- as.data.frame(matrix(sapply(com_data_list,global,sum),
-  #                                  ncol=com_data_length))
-  # names(com_data) <- gsub("com_ch4","by",unlist(com_data_objects))
-  # rownames(com_data) <- names(com_data_list[,1])
-  # 
-  # ch4_totals_df <- rbind(res_data,com_data)
-  # 
-  # #original data that was distributed in the rasters.  The totals should still
-  # #match.
-  # if(NG_distribution_by_LDC){
-  #   input_totals_LDC <- as.data.frame(all_merge_clean[,grep(glob2rx("*_ER*"),names(all_merge_clean))])
-  #   input_totals_LDC <- colSums(input_totals_LDC)
-  #   ch4_totals_df <- data.frame(ch4_totals_df,
-  #                               "byLDC_input"=input_totals_LDC[rownames(ch4_totals_df)])
-  # }
-  # if(NG_distribution_by_state){
-  #   input_totals_state <- all_merge_state[,grep(glob2rx("*_ER*"),colnames(all_merge_state))]
-  #   input_totals_state <- colSums(input_totals_state)
-  #   ch4_totals_df <- data.frame(ch4_totals_df,
-  #                               "bystate_input"=input_totals_state[rownames(ch4_totals_df)])
-  # }
-  # if(NG_distribution_by_domain){
-  #   input_totals_domain <- all_merge_domain[grep(glob2rx("*_ER*"),names(all_merge_domain))]
-  #   ch4_totals_df <- data.frame(ch4_totals_df,
-  #                               "bydomain_input"=input_totals_domain[rownames(ch4_totals_df)])
-  # }
-  # 
-  # 
-  # ch4_totals_df <- apply(ch4_totals_df,2,FUN=function(x){as.numeric(x)})
-  # ch4_totals_df[is.na(ch4_totals_df)] <- 0
-  # 
-  # percent_change <- abs(ch4_totals_df - ch4_totals_df[,1])/ch4_totals_df[,1]
-  # if(!all(percent_change<0.0001,na.rm=T)){
-  #   #Check if all values are within 0.01 percent of the first column (i.e.,
-  #   #all are ~identical other than minor rounding)
-  #   View(ch4_totals_df)
-  #   stop("Something has gone wrong - the total across the domain when disaggregated by LDC vs by state vs by domain or by using ACES vs Vulcan disagree by more than rounding error (0.01%)")
-  # }
-  #
   ################################################################################
   #Create a sector total, 1 per variant
   
   if(Use_ACES){
     if(NG_distribution_by_LDC){
       #use regex to load in all for ACES, byLDC, all sectors
-      Summed_NG_dist_ACES_byLDC <- rast(list.files(NG_dist_output_directory,
-                                                   pattern="NG_dist_.+_byLDC_aces",
-                                                   full.names = T))
+      Summed_NG_dist_ACES_byLDC <- terra::rast(list.files(NG_dist_output_directory,
+                                                         pattern="NG_dist_.+_byLDC_aces",
+                                                         full.names = T))
       Summed_NG_dist_ACES_byLDC <- sum(Summed_NG_dist_ACES_byLDC,na.rm=T)
-      writeCDF(Summed_NG_dist_ACES_byLDC,
-               file.path(output_directory,"NG_distribution_sector_total_ACES_byLDC.nc"),
-               force_v4=TRUE,
-               varname='methane_emissions',
-               unit='nmol/m2/s',
-               longname=paste0('Methane emissions from natural gas distribution spatially allocated from LDC totals using ACES sectoral CO2 emissions'),
-               missval=-9999,
-               overwrite=TRUE)
+      writeCDF_no_newline(Summed_NG_dist_ACES_byLDC,
+                          file.path(output_directory,"NG_distribution_sector_total_ACES_byLDC.nc"),
+                          force_v4=TRUE,
+                          varname='methane_emissions',
+                          unit='nmol/m2/s',
+                          longname=paste0('Methane emissions from natural gas distribution spatially allocated from LDC totals using ACES sectoral CO2 emissions'),
+                          missval=-9999,
+                          overwrite=TRUE)
     }
     if(NG_distribution_by_state){
-      Summed_NG_dist_ACES_bystate <- rast(list.files(NG_dist_output_directory,
-                                                     pattern="NG_dist_.+_bystate_aces",
-                                                     full.names = T))
+      Summed_NG_dist_ACES_bystate <- terra::rast(list.files(NG_dist_output_directory,
+                                                           pattern="NG_dist_.+_bystate_aces",
+                                                           full.names = T))
       Summed_NG_dist_ACES_bystate <- sum(Summed_NG_dist_ACES_bystate,na.rm=T)
-      writeCDF(Summed_NG_dist_ACES_bystate,
-               file.path(output_directory,"NG_distribution_sector_total_ACES_bystate.nc"),
-               force_v4=TRUE,
-               varname='methane_emissions',
-               unit='nmol/m2/s',
-               longname=paste0('Methane emissions from natural gas distribution spatially allocated from state totals using ACES sectoral CO2 emissions'),
-               missval=-9999,
-               overwrite=TRUE)
+      writeCDF_no_newline(Summed_NG_dist_ACES_bystate,
+                          file.path(output_directory,"NG_distribution_sector_total_ACES_bystate.nc"),
+                          force_v4=TRUE,
+                          varname='methane_emissions',
+                          unit='nmol/m2/s',
+                          longname=paste0('Methane emissions from natural gas distribution spatially allocated from state totals using ACES sectoral CO2 emissions'),
+                          missval=-9999,
+                          overwrite=TRUE)
     }
     if(NG_distribution_by_domain){
-      Summed_NG_dist_ACES_bydomain <- rast(list.files(NG_dist_output_directory,
-                                                      pattern="NG_dist_.+_bydomain_aces",
-                                                      full.names = T))
+      Summed_NG_dist_ACES_bydomain <- terra::rast(list.files(NG_dist_output_directory,
+                                                            pattern="NG_dist_.+_bydomain_aces",
+                                                            full.names = T))
       Summed_NG_dist_ACES_bydomain <- sum(Summed_NG_dist_ACES_bydomain,na.rm=T)
-      writeCDF(Summed_NG_dist_ACES_bydomain,
-               file.path(output_directory,"NG_distribution_sector_total_ACES_bydomain.nc"),
-               force_v4=TRUE,
-               varname='methane_emissions',
-               unit='nmol/m2/s',
-               longname=paste0('Methane emissions from natural gas distribution spatially allocated from domain totals using ACES sectoral CO2 emissions'),
-               missval=-9999,
-               overwrite=TRUE)
+      writeCDF_no_newline(Summed_NG_dist_ACES_bydomain,
+                          file.path(output_directory,"NG_distribution_sector_total_ACES_bydomain.nc"),
+                          force_v4=TRUE,
+                          varname='methane_emissions',
+                          unit='nmol/m2/s',
+                          longname=paste0('Methane emissions from natural gas distribution spatially allocated from domain totals using ACES sectoral CO2 emissions'),
+                          missval=-9999,
+                          overwrite=TRUE)
     }
   }
   if(Use_Vulcan){
     if(NG_distribution_by_LDC){
-      Summed_NG_dist_vulcan_byLDC <- rast(list.files(NG_dist_output_directory,
-                                                     pattern="NG_dist_.+_byLDC_vulcan",
-                                                     full.names = T))
+      Summed_NG_dist_vulcan_byLDC <- terra::rast(list.files(NG_dist_output_directory,
+                                                           pattern="NG_dist_.+_byLDC_vulcan",
+                                                           full.names = T))
       Summed_NG_dist_vulcan_byLDC <- sum(Summed_NG_dist_vulcan_byLDC,na.rm=T)
-      writeCDF(Summed_NG_dist_vulcan_byLDC,
-               file.path(output_directory,"NG_distribution_sector_total_Vulcan_byLDC.nc"),
-               force_v4=TRUE,
-               varname='methane_emissions',
-               unit='nmol/m2/s',
-               longname=paste0('Methane emissions from natural gas distribution spatially allocated from LDC totals using vulcan sectoral CO2 emissions'),
-               missval=-9999,
-               overwrite=TRUE)
+      writeCDF_no_newline(Summed_NG_dist_vulcan_byLDC,
+                          file.path(output_directory,"NG_distribution_sector_total_Vulcan_byLDC.nc"),
+                          force_v4=TRUE,
+                          varname='methane_emissions',
+                          unit='nmol/m2/s',
+                          longname=paste0('Methane emissions from natural gas distribution spatially allocated from LDC totals using vulcan sectoral CO2 emissions'),
+                          missval=-9999,
+                          overwrite=TRUE)
     }
     if(NG_distribution_by_state){
-      Summed_NG_dist_vulcan_bystate <- rast(list.files(NG_dist_output_directory,
-                                                       pattern="NG_dist_.+_bystate_vulcan",
-                                                       full.names = T))
+      Summed_NG_dist_vulcan_bystate <- terra::rast(list.files(NG_dist_output_directory,
+                                                             pattern="NG_dist_.+_bystate_vulcan",
+                                                             full.names = T))
       Summed_NG_dist_vulcan_bystate <- sum(Summed_NG_dist_vulcan_bystate,na.rm=T)
-      writeCDF(Summed_NG_dist_vulcan_bystate,
-               file.path(output_directory,"NG_distribution_sector_total_Vulcan_bystate.nc"),
-               force_v4=TRUE,
-               varname='methane_emissions',
-               unit='nmol/m2/s',
-               longname=paste0('Methane emissions from natural gas distribution spatially allocated from state totals using vulcan sectoral CO2 emissions'),
-               missval=-9999,
-               overwrite=TRUE)
+      writeCDF_no_newline(Summed_NG_dist_vulcan_bystate,
+                          file.path(output_directory,"NG_distribution_sector_total_Vulcan_bystate.nc"),
+                          force_v4=TRUE,
+                          varname='methane_emissions',
+                          unit='nmol/m2/s',
+                          longname=paste0('Methane emissions from natural gas distribution spatially allocated from state totals using vulcan sectoral CO2 emissions'),
+                          missval=-9999,
+                          overwrite=TRUE)
     }
     if(NG_distribution_by_domain){
-      Summed_NG_dist_vulcan_bydomain <- rast(list.files(NG_dist_output_directory,
-                                                        pattern="NG_dist_.+_bydomain_vulcan",
-                                                        full.names = T))
+      Summed_NG_dist_vulcan_bydomain <- terra::rast(list.files(NG_dist_output_directory,
+                                                              pattern="NG_dist_.+_bydomain_vulcan",
+                                                              full.names = T))
       Summed_NG_dist_vulcan_bydomain <- sum(Summed_NG_dist_vulcan_bydomain,na.rm=T)
-      writeCDF(Summed_NG_dist_vulcan_bydomain,
-               file.path(output_directory,"NG_distribution_sector_total_Vulcan_bydomain.nc"),
-               force_v4=TRUE,
-               varname='methane_emissions',
-               unit='nmol/m2/s',
-               longname=paste0('Methane emissions from natural gas distribution spatially allocated from domain totals using vulcan sectoral CO2 emissions'),
-               missval=-9999,
-               overwrite=TRUE)
+      writeCDF_no_newline(Summed_NG_dist_vulcan_bydomain,
+                          file.path(output_directory,"NG_distribution_sector_total_Vulcan_bydomain.nc"),
+                          force_v4=TRUE,
+                          varname='methane_emissions',
+                          unit='nmol/m2/s',
+                          longname=paste0('Methane emissions from natural gas distribution spatially allocated from domain totals using vulcan sectoral CO2 emissions'),
+                          missval=-9999,
+                          overwrite=TRUE)
     }
   }
   
@@ -1526,8 +1332,8 @@ NG_distribution <- function(domain,
     #shorthand for sub-sector
     
     wrapper_plot_plus <- function(input_data,total){
-      combined_data <- rast(input_data)
-      combined_range=global(combined_data,range,na.rm=T)
+      combined_data <- terra::rast(input_data)
+      combined_range=terra::global(combined_data,range,na.rm=T)
       zmin <- min(combined_range[,1],na.rm=T)
       zmax <- max(combined_range[,2],na.rm=T)
       
@@ -1567,7 +1373,7 @@ NG_distribution <- function(domain,
       
       # NG_dist_MnR_ACES_res.png
       # stat_comb_com_petr_bystate_aces
-      for(A in 1:nlyr(combined_data)){
+      for(A in 1:terra::nlyr(combined_data)){
         not_log_plot(combined_data[[A]],
                      filename=paste0("NG_dist_",sector_short,"_",subsector_short,"_by",
                                      disaggregation_level,"_",tolower(inventory_name))[A],
@@ -1576,7 +1382,7 @@ NG_distribution <- function(domain,
                             ' totals using\n',inventory_name,' ',sector_long,' CO2 emissions')[A],
                      zlim_min = zmin,zlim_max = zmax,plot_directory=NG_dist_plot_directory,
                      domain=domain,County_Tigerlines=County_Tigerlines,
-                     State_Tigerlines=State_Tigerlines)
+                     State_CB = State_CB)
       }
     }
     
@@ -1606,35 +1412,35 @@ NG_distribution <- function(domain,
     
     if(Use_ACES){
       if(NG_distribution_by_LDC){
-        if(!all(is.na(values(Summed_NG_dist_ACES_byLDC)))){
-          zmax <- max(zmax,as.numeric(global(Summed_NG_dist_ACES_byLDC,max,na.rm=T)))
+        if(!all(is.na(terra::values(Summed_NG_dist_ACES_byLDC)))){
+          zmax <- max(zmax,as.numeric(terra::global(Summed_NG_dist_ACES_byLDC,max,na.rm=T)))
         }
       }
       if(NG_distribution_by_state){
-        if(!all(is.na(values(Summed_NG_dist_ACES_bystate)))){
-          zmax <- max(zmax,as.numeric(global(Summed_NG_dist_ACES_bystate,max,na.rm=T)))
+        if(!all(is.na(terra::values(Summed_NG_dist_ACES_bystate)))){
+          zmax <- max(zmax,as.numeric(terra::global(Summed_NG_dist_ACES_bystate,max,na.rm=T)))
         }
       }
       if(NG_distribution_by_domain){
-        if(!all(is.na(values(Summed_NG_dist_ACES_bydomain)))){
-          zmax <- max(zmax,as.numeric(global(Summed_NG_dist_ACES_bydomain,max,na.rm=T)))
+        if(!all(is.na(terra::values(Summed_NG_dist_ACES_bydomain)))){
+          zmax <- max(zmax,as.numeric(terra::global(Summed_NG_dist_ACES_bydomain,max,na.rm=T)))
         }
       }
     }
     if(Use_Vulcan){
       if(NG_distribution_by_LDC){
-        if(!all(is.na(values(Summed_NG_dist_vulcan_byLDC)))){
-          zmax <- max(zmax,as.numeric(global(Summed_NG_dist_vulcan_byLDC,max,na.rm=T)))
+        if(!all(is.na(terra::values(Summed_NG_dist_vulcan_byLDC)))){
+          zmax <- max(zmax,as.numeric(terra::global(Summed_NG_dist_vulcan_byLDC,max,na.rm=T)))
         }
       }
       if(NG_distribution_by_state){
-        if(!all(is.na(values(Summed_NG_dist_vulcan_bystate)))){
-          zmax <- max(zmax,as.numeric(global(Summed_NG_dist_vulcan_bystate,max,na.rm=T)))
+        if(!all(is.na(terra::values(Summed_NG_dist_vulcan_bystate)))){
+          zmax <- max(zmax,as.numeric(terra::global(Summed_NG_dist_vulcan_bystate,max,na.rm=T)))
         }
       }
       if(NG_distribution_by_domain){
-        if(!all(is.na(values(Summed_NG_dist_vulcan_bydomain)))){
-          zmax <- max(zmax,as.numeric(global(Summed_NG_dist_vulcan_bydomain,max,na.rm=T)))
+        if(!all(is.na(terra::values(Summed_NG_dist_vulcan_bydomain)))){
+          zmax <- max(zmax,as.numeric(terra::global(Summed_NG_dist_vulcan_bydomain,max,na.rm=T)))
         }
       }
     }
@@ -1647,21 +1453,21 @@ NG_distribution <- function(domain,
                      "Natural Gas Distribution emissions\nPHMSA, EIA, and GHGRP activity data combined with GHGI and published\nemission factors at the company level and distributed using aces residential\nand commercial sectoral CO2 emissions",
                      zlim_min=zmin,zlim_max=zmax,plot_directory=plot_directory,
                      domain=domain,County_Tigerlines=County_Tigerlines,
-                     State_Tigerlines=State_Tigerlines)
+                     State_CB=State_CB)
       }
       if(NG_distribution_by_state){
         not_log_plot(Summed_NG_dist_ACES_bystate,
                      "Natural Gas Distribution emissions\nPHMSA, EIA, and GHGRP activity data combined with GHGI and published\nemission factors state-summed and distributed using aces residential\nand commercial sectoral CO2 emissions",
                      zlim_min=zmin,zlim_max=zmax,plot_directory=plot_directory,
                      domain=domain,County_Tigerlines=County_Tigerlines,
-                     State_Tigerlines=State_Tigerlines)
+                     State_CB=State_CB)
       }
       if(NG_distribution_by_domain){
         not_log_plot(Summed_NG_dist_ACES_bydomain,
                      "Natural Gas Distribution emissions\nPHMSA, EIA, and GHGRP activity data combined with GHGI and published\nemission factors domain-summed and distributed using aces residential\nand commercial sectoral CO2 emissions",
                      zlim_min=zmin,zlim_max=zmax,plot_directory=plot_directory,
                      domain=domain,County_Tigerlines=County_Tigerlines,
-                     State_Tigerlines=State_Tigerlines)
+                     State_CB=State_CB)
       }
     }
     if(Use_Vulcan){
@@ -1670,21 +1476,21 @@ NG_distribution <- function(domain,
                      "Natural Gas Distribution emissions\nPHMSA, EIA, and GHGRP activity data combined with GHGI and published\nemission factors at the company level and distributed using Vulcan residential\nand commercial sectoral CO2 emissions",
                      zlim_min=zmin,zlim_max=zmax,plot_directory=plot_directory,
                      domain=domain,County_Tigerlines=County_Tigerlines,
-                     State_Tigerlines=State_Tigerlines)
+                     State_CB=State_CB)
       }
       if(NG_distribution_by_state){
         not_log_plot(Summed_NG_dist_vulcan_bystate,
                      "Natural Gas Distribution emissions\nPHMSA, EIA, and GHGRP activity data combined with GHGI and published\nemission factors state-summed and distributed using Vulcan residential\nand commercial sectoral CO2 emissions",
                      zlim_min=zmin,zlim_max=zmax,plot_directory=plot_directory,
                      domain=domain,County_Tigerlines=County_Tigerlines,
-                     State_Tigerlines=State_Tigerlines)
+                     State_CB=State_CB)
       }
       if(NG_distribution_by_domain){
         not_log_plot(Summed_NG_dist_vulcan_bydomain,
                      "Natural Gas Distribution emissions\nPHMSA, EIA, and GHGRP activity data combined with GHGI and published\nemission factors domain-summed and distributed using Vulcan residential\nand commercial sectoral CO2 emissions",
                      zlim_min=zmin,zlim_max=zmax,plot_directory=plot_directory,
                      domain=domain,County_Tigerlines=County_Tigerlines,
-                     State_Tigerlines=State_Tigerlines)
+                     State_CB=State_CB)
       }
     }
     
