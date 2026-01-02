@@ -136,6 +136,7 @@ Disaggregate_Wetcharts <- function(input_directory,
                                    State_CB,
                                    Use_NLCD,
                                    Source_wetland_NLCD,
+                                   Source_wetcharts,
                                    Wetcharts_model_subset){
   
   starttime <- Sys.time()
