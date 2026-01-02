@@ -304,29 +304,21 @@ Stationary_combustion <- function(input_directory,
     SEDS_URL <- paste0("https://api.eia.gov/v2/seds/data/?frequency=annual&data[0]=value&facets[seriesId][]=CLCCB",
                        "&facets[seriesId][]=CLEIB&facets[seriesId][]=CLICB&facets[seriesId][]=NGCCB&facets[seriesId][]=NGEIB&facets[seriesId][]=NGICB&facets[seriesId][]=PACCB&facets[seriesId][]=PAEIB&facets[seriesId][]=PAICB&facets[seriesId][]=PARCB&facets[seriesId][]=WDRCB&facets[seriesId][]=WWCCB&facets[seriesId][]=WWEIB&facets[seriesId][]=WWICB",
                        paste0("&facets[stateId][]=",SEDS_state_name_list,collapse = ""),
-                       "&start=",SEDS_yr,"&end=",SEDS_yr,
+                       "&start=",SEDS_yr-1,"&end=",SEDS_yr+1,
                        "&sort[0][column]=seriesId&sort[0][direction]=asc&offset=0&api_key=",EIA_API_key)
     
     #download directly into R and keep only the data table
     EIA_raw_data <- Trycatch_downloader(SEDS_URL,output_location=NULL,method="JSON",
                                         error_message=paste0("\nEIA State Energy Data System data could not be downloaded using API link: ",SEDS_URL,"\n\nmake sure you have an active EIA API key in the config!"))
     EIA_raw_data <- EIA_raw_data$response$data
-    if(any(EIA_raw_data$period!=SEDS_yr)){
-      #frustratingly, the API seems to sometimes pull start - end assuming that if
-      #the same year, it should grab that 1 year.  Other times, however, doing
-      #that gives you no data, and you have to set to previous year - year desired
-      #to get the 1 year of data you want.  This if allows the code to handle
-      #either case.  Download previous year - year, but if that includes 2 years
-      #of data, redo the download for just the 1 yr of interest instead.
-      SEDS_URL <- paste0("https://api.eia.gov/v2/seds/data/?frequency=annual&data[0]=value&facets[seriesId][]=CLCCB",
-                         "&facets[seriesId][]=CLEIB&facets[seriesId][]=CLICB&facets[seriesId][]=NGCCB&facets[seriesId][]=NGEIB&facets[seriesId][]=NGICB&facets[seriesId][]=PACCB&facets[seriesId][]=PAEIB&facets[seriesId][]=PAICB&facets[seriesId][]=PARCB&facets[seriesId][]=WDRCB&facets[seriesId][]=WWCCB&facets[seriesId][]=WWEIB&facets[seriesId][]=WWICB",
-                         paste0("&facets[stateId][]=",SEDS_state_name_list,collapse = ""),
-                         "&start=",SEDS_yr-1,"&end=",SEDS_yr,
-                         "&sort[0][column]=seriesId&sort[0][direction]=asc&offset=0&api_key=",EIA_API_key)
-      EIA_raw_data <- Trycatch_downloader(SEDS_URL,output_location=NULL,method="JSON",
-                                          error_message=paste0("\nEIA State Energy Data System data could not be downloaded using API link: ",SEDS_URL,"\n\nmake sure you have an active EIA API key in the config!"))
-      EIA_raw_data <- EIA_raw_data$response$data
-    }
+    
+    #frustratingly, the API seems inconsistent. Sometimes 2022 - 2022 grabs
+    #only 2022.  Other times doing that gives you no data, and you have to set
+    #to 2021 - 2022 or 2022 - 2023 to get the data you want.  This is just to
+    #handle these cases.  Download desired year +/-1, then filter to just the
+    #year of interest.
+    EIA_raw_data <- EIA_raw_data[EIA_raw_data$period==SEDS_yr,]
+    
     utils::write.csv(file = SEDS_filename,x = EIA_raw_data,row.names = F)
   }else if(Source_EIA_SEDS_data=="default"){
     #UPDATE TO ZENODO
@@ -421,25 +413,34 @@ Stationary_combustion <- function(input_directory,
   NEI_filename <- file.path(input_directory,"NEI","CO_data.csv")
   
   if(Source_NEI_data=="download"){
-    # data_URL <- "https://data.epa.gov/efservice/nei.county_sector_summary/pollutant_code=CO/JSON"
-    data_URL <- "https://data.epa.gov/dmapservice/nei.county_sector_summary/pollutant_code/equals/CO/json"
-    NEI_data_orig <- Trycatch_downloader(data_URL,output_location=NULL,method="JSON",
-                                         error_message=paste0("\nNational Emissions Inventory could not be downloaded using API link: ",data_URL))
-    # data_URL <- "https://data.epa.gov/efservice/nei.sectors/json"
-    data_URL <- "https://data.epa.gov/dmapservice/nei.sectors/json"
-    NEI_sector_codes <- Trycatch_downloader(data_URL,output_location=NULL,method="JSON",
-                                            error_message=paste0("\nNational Emissions Inventory sector code data not be downloaded using API link: ",data_URL))
+    #identify the closest NEI year to the inventory_year that has data
+    NEI_options <- seq(2011,2060,by=3)
+    NEI_year <- NEI_options[which.min(abs(NEI_options-inventory_year))]
     
-    #keep only relevant states
-    NEI_data_orig <- NEI_data_orig[NEI_data_orig$st_abbrv %in% state_name_list,]
+    #if unavailable, find the most recent that is
+    for(NEI_year in rev(NEI_options[NEI_options<=NEI_year])){
+      data_URL <- paste0("https://data.epa.gov/dmapservice/nei.county_sector_summary/inventory_year/equals/",
+                         NEI_year,"/1:1/json/")
+      test_url <- jsonlite::fromJSON(data_URL)
+      if(length(test_url)>0){
+        break
+      }
+    }
     
-    #actually use whichever is closest to the inventory_year, update the user if
-    #this isn't actually the inventory_year
-    NEI_year <- unique(NEI_data_orig$inventory_year)[which.min(abs(unique(NEI_data_orig$inventory_year)-inventory_year))]
+    #update the user if this isn't actually the inventory_year
     if(inventory_year!=NEI_year){
       cat(paste0("NEI is every 3 years and does not have an inventory for ",inventory_year,".  Using ",NEI_year," as the nearest available data.\n"))
     }
-    NEI_data_orig <- NEI_data_orig[NEI_data_orig$inventory_year==NEI_year,]
+    
+    #download NEI - filtered to CO, yr, and states
+    data_URL <- paste0("https://data.epa.gov/dmapservice/nei.county_sector_summary/pollutant_code/equals/CO/inventory_year/equals/",NEI_year,"/st_abbrv/in/",paste(state_name_list,collapse=","),"/json/")
+    NEI_data_orig <- Trycatch_downloader(data_URL,output_location=NULL,method="JSON",
+                                         error_message=paste0("\nNational Emissions Inventory could not be downloaded using API link: ",data_URL))
+    
+    #download sector codes
+    data_URL <- "https://data.epa.gov/dmapservice/nei.sectors/json"
+    NEI_sector_codes <- Trycatch_downloader(data_URL,output_location=NULL,method="JSON",
+                                            error_message=paste0("\nNational Emissions Inventory sector code data not be downloaded using API link: ",data_URL))
     
     #Rewrite the sector codes from numeric to text descriptions.  Method from
     #(https://stackoverflow.com/a/50898694)
@@ -466,6 +467,7 @@ Stationary_combustion <- function(input_directory,
   #characters may also be replaced by periods)
   NEI_data_orig <- utils::read.csv(NEI_filename,header=T)
   colnames(NEI_data_orig) <- gsub("\\."," ",colnames(NEI_data_orig))
+  NEI_data_orig$`COUNTY FIPS` <- sprintf("%03d",NEI_data_orig$`COUNTY FIPS`)
   
   #convert all character columns to factor
   for(A in 1:ncol(NEI_data_orig)){
@@ -645,7 +647,7 @@ Stationary_combustion <- function(input_directory,
                    'elec_petr_ER',
                    'elec_gas_ER',
                    'elec_wood_ER')
-
+  
   ################################################################################
   #process emissions at the state scale
   
@@ -1084,7 +1086,7 @@ Stationary_combustion <- function(input_directory,
           zmin=log10(zmin)
         }
         
-        for(A in 1:nlyr(combined_data)){
+        for(A in 1:terra::nlyr(combined_data)){
           log_plot(combined_data[[A]],
                    filename=paste0("stat_comb_",sector_short,"_",fuel_sub_name,"_by",
                                    disaggregation_level,"_",tolower(inventory_name))[A],
@@ -1097,7 +1099,7 @@ Stationary_combustion <- function(input_directory,
                    State_CB=State_CB)
         }
       }else{
-        for(A in 1:nlyr(combined_data)){
+        for(A in 1:terra::nlyr(combined_data)){
           not_log_plot(combined_data[[A]],
                        filename=paste0("stat_comb_",sector_short,"_",fuel_sub_name,"_by",
                                        disaggregation_level,"_",tolower(inventory_name))[A],
