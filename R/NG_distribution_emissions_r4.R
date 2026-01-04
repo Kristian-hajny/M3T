@@ -338,6 +338,7 @@ NG_distribution <- function(domain,
                             input_directory,
                             output_directory,
                             inventory_year,
+                            GHGI_data_yr,
                             verbose,
                             GHGRP_facility_data,
                             GHGRP_subpartW_emissions,
@@ -433,13 +434,11 @@ NG_distribution <- function(domain,
     PHMSA_csv_NG <- PHMSA_csv_NG[which(PHMSA_csv_NG$STOP %in% state_name_list),]
     
     ################################################################################
-    #Determine nearest year available
+    #Use yr determined in CH4 inventory build - closest to inventory year with
+    #both GHGI and GHGRP
     
-    GHGRP_year <- unique(GHGRP_subpartW_emissions$reporting_year)
-    GHGRP_year <- GHGRP_year[which.min(abs(GHGRP_year - inventory_year))]
-    if(inventory_year!=GHGRP_year){
-      cat("GHGRP does not include",inventory_year,"using",GHGRP_year,"as the nearest data available\n")
-    }
+    GHGRP_year <- GHGI_data_yr
+    
     ################################################################################
     #Download the relevant ghgrp emissions data using the API
     #(https://www.epa.gov/enviro/envirofacts-data-service-api) and combine the
@@ -589,8 +588,11 @@ NG_distribution <- function(domain,
     #filter to the states in the domain
     GHGRP_csv <- GHGRP_csv[GHGRP_csv$operating_state %in% state_name_list,]
     
-    #update user about updates to any that are within the domain
-    cat(paste(GHGRP_csv$facility_name[GHGRP_csv$state!=GHGRP_csv$operating_state],"    rewritten from",GHGRP_csv$state_name[GHGRP_csv$state!=GHGRP_csv$operating_state],"    to",GHGRP_csv$operating_state_name[GHGRP_csv$state!=GHGRP_csv$operating_state],"\n"))
+    #update user about changes to any LDCs that are/were listed as states within
+    #the domain
+    if(any(GHGRP_csv$state!=GHGRP_csv$operating_state)){
+      cat(paste("\n",GHGRP_csv$facility_name[GHGRP_csv$state!=GHGRP_csv$operating_state],"    rewritten from",GHGRP_csv$state_name[GHGRP_csv$state!=GHGRP_csv$operating_state],"    to",GHGRP_csv$operating_state_name[GHGRP_csv$state!=GHGRP_csv$operating_state]))
+    }
     ################################################################################
     #have to calculate before aggregating/merging via sum since it applies an
     #average term
