@@ -131,8 +131,6 @@ SOCCR_Wetlands <- function(input_directory,
                            County_Tigerlines,
                            State_CB,
                            Source_Watershed_file,
-                           Use_NLCD,
-                           Use_NALCMS,
                            Use_Wetcharts,
                            Wetcharts_model_subset){
   

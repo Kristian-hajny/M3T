@@ -135,7 +135,6 @@ Disaggregate_Wetcharts <- function(input_directory,
                                    County_Tigerlines,
                                    State_Tigerlines,
                                    State_CB,
-                                   Use_NLCD,
                                    Source_wetland_NLCD,
                                    Source_wetcharts,
                                    Wetcharts_model_subset){
