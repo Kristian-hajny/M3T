@@ -365,11 +365,7 @@ M3T_config$Base_timeout <- 60*20
     M3T_config$Use_SOCCR1 <- TRUE
     M3T_config$Use_SOCCR2 <- TRUE
     M3T_config$Use_Wetcharts <- TRUE
-    
-    #landcover data that will be used to downscale wetcharts from 0.5 deg to 0.1
-    #deg.  Only relevant if use_wetcharts is true
-    M3T_config$Use_NLCD <- TRUE
-    
+
     M3T_config$Wetcharts_model_subset <- list(c(1913,1914,1923,1924,1933,1934,2913,2914,2923,
                                                 2924,2933,2934,3913,3914,3923,3924,3933,3934))
   }

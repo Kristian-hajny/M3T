@@ -333,11 +333,6 @@ CH4_inventory_build <- function(run_directory,
     error_text <- paste0(error_text,"\n\nMust set M3T_config$Process_wetlands_and_inland_waters to FALSE or set M3T_config$Use_SOCCR1 and/or M3T_config$Use_SOCCR2 and/or M3T_config$Use_Wetcharts to TRUE as these are the only methods available in the package to calculate wetland/inland water emissions")
   }
   
-  if(M3T_config$Process_wetlands_and_inland_waters & M3T_config$Use_Wetcharts & (!M3T_config$Use_NLCD)){
-    error_found <- TRUE
-    error_text <- paste0(error_text,"\n\nMust set M3T_config$Process_wetlands_and_inland_waters or M3T_config$Use_Wetcharts to FALSE or set M3T_config$Use_NLCD to TRUE to as NLCD and NALCMS are the only land cover data available in the package")
-  }
-  
   if(M3T_config$Process_wastewater & sum(!unique(M3T_config$Wastewater_State_info$Method) %in% c("scaled","reported"))){
     error_found <- TRUE
     error_text <- paste0(error_text,"\n\nMust set M3T_config$Process_wastewater to FALSE or set M3T_config$Wastewater_State_info method values to either scaled or reported for all entries")
@@ -1151,7 +1146,6 @@ CH4_inventory_build <- function(run_directory,
                              State_Tigerlines=State_Tigerlines,
                              State_CB=State_CB,
                              County_Tigerlines=County_Tigerlines,
-                             Use_NLCD=M3T_config$Use_NLCD,
                              Source_wetland_NLCD=M3T_config$Source_wetland_NLCD,
                              Source_wetcharts=M3T_config$Source_wetcharts,
                              Wetcharts_model_subset=M3T_config$Wetcharts_model_subset)
@@ -1177,7 +1171,6 @@ CH4_inventory_build <- function(run_directory,
                    County_Tigerlines=County_Tigerlines,
                    State_CB=State_CB,
                    Source_Watershed_file=M3T_config$Source_Watershed_file,
-                   Use_NLCD=M3T_config$Use_NLCD,
                    Use_Wetcharts=M3T_config$Use_Wetcharts,
                    Wetcharts_model_subset=M3T_config$Wetcharts_model_subset)
   }
