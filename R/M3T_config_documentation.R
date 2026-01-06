@@ -18,9 +18,9 @@
 #'
 #'  \bold{Across Sectors}
 #' \itemize{
-#'   \item{\bold{Terra_datatype} - character describing how to save raster data. See '?terra::terraOptions'. This is temporarily applied while running 'CH4_inventory_build'. Default "FLT8S".}
-#'   \item{\bold{Terra_progress} - integer describing when to use progress bars when processing raster data. See '?terra::terraOptions'. This is temporarily applied while running 'CH4_inventory_build'. Default 0 (none).}
-#'   \item{\bold{Base_timeout} - integer describing the maximum time to attempt a download in seconds. See '?options'. This is temporarily applied while running 'CH4_inventory_build' and may be critical if any Source_X is set to "download". Default 20 minutes.}
+#'   \item{\bold{Terra_datatype} - character describing how to save raster data. See \code{\link[terra]{terraOptions}}. This is temporarily applied while running 'CH4_inventory_build'. Default "FLT8S".}
+#'   \item{\bold{Terra_progress} - integer describing when to use progress bars when processing raster data. See \code{\link[terra]{terraOptions}}. This is temporarily applied while running 'CH4_inventory_build'. Default 0 (none).}
+#'   \item{\bold{Base_timeout} - integer describing the maximum time to attempt a download in seconds. See \code{\link[base]{options}}. This is temporarily applied while running 'CH4_inventory_build' and may be critical if any Source_X is set to "download". Default 20 minutes.}
 #'
 #' Method Variations
 #' \itemize{
@@ -156,7 +156,7 @@
 #'
 #'
 #'
-#' \bold{Stationary combustion}
+#'  \bold{Stationary combustion}
 #' \itemize{
 #'   \item{\bold{Process_stationary_combustion} - logical stating if this sector should be run. Default TRUE.}
 #'   \item{\bold{EIA_API_key} - API key to access the State Energy Data System (SEDS) data API at the \href{https://www.eia.gov/opendata/}{Energy Information Administration (EIA)}. One can register for a key using their email on the right hand side of the page.}
@@ -189,42 +189,51 @@
 #'
 #'
 #'
-#' \bold{Wastewater}
+#'  \bold{Wastewater}
 #' \itemize{
-#'   \item{\bold{Terra_datatype} - }
-#'   \item{\bold{Terra_progress} - }
-#'   \item{\bold{Base_timeout} - }
+#'   \item{\bold{Process_wastewater} - logical stating if this sector should be run. Default TRUE.}
 #'
 #' Method Variations
 #' \itemize{
-#'   \item{\bold{Use_ACES} - .}
-#'   \item{\bold{Use_Vulcan} - .}
-#'   \item{\bold{Combine_sectors} - }
-#'   \item{\bold{Separate_thermo} - }
+#' For municipal wastewater treatment plants the flow is used as a proxy. It is
+#' available from the Environmental Protection Agency's (EPA)
+#' \href{https://www.epa.gov/cwns}{Clean Watershed Needs Survey (CWNS)} or
+#' \href{https://echo.epa.gov/trends/loading-tool/water-pollution-search}{Discharge
+#' Monitoring Reports (DMR)}.
+#'   \item{\bold{Wastewater_use_CWNS} - logical. Rely on the CWNS wastewater flow data. The CWNS is typically reported every 4 years though the 2 most recent reports that are handled by this code are 2012 and 2022. Default TRUE.}
+#'   \item{\bold{Wastewater_use_DMR} - logical. Rely on the DMR wastewater flow data. Default TRUE.}
+#'   \item{\bold{Wastewater_Municipal_Method_Moore_EF} - logical. Use the measured emission factor from \href{https://doi.org/10.1038/s44221-025-00490-z}{Moore et al., 2025} to convert flow rate to emission rate. They measured 96 facilities (~10% of total US flow) and showed scaling their emission factors nationally results in more than double the emissions estimated by the GHGI. Default TRUE.}
+#'   \item{\bold{Wastewater_Municipal_Method_GHGI} - logical. Use the Environmental Protection Agency's (EPA) \href{https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks-1990-2022}{Greenhouse Gas Inventory (GHGI)} estimate of national municipal wastewater emissions. These are scaled to individual facilities based on flow. Default TRUE.}
+#'   \item{\bold{Wastewater_national_septic} - logical. Rely on the national septic fraction, GHGI, and the national estimate of land cover used in this work to distribute septic emissions (impervious surface <50%) that was published in \href{https://doi.org/10.1016/j.isprsjprs.2020.02.019}{Homer et al., 2020}. Default TRUE.}
+#'   \item{\bold{Wastewater_state_septic} - logical. Rely on the state level septic fraction, population, and a per capita septic emission factor. Default TRUE.}
 #'   }
 #'
 #' Accessing Datasets
 #' \itemize{
-#'   \item{\bold{Source_Tigerlines_data} - }
-#'   \item{\bold{Source_GHGRP_facility_data} - }
-#'   \item{\bold{Source_GHGRP_combustion} - }
-#'   \item{\bold{Source_GHGI} - }
-#'   \item{\bold{Source_GHGRP_NG} - }
-#'   \item{\bold{Source_Cartographic_Boundaries_data} - }
-#'   \item{\bold{Source_ACES} - }
-#'   \item{\bold{Source_Vulcan} - }
+#'   \item{\bold{Source_wastewater_NLCD} - character stating "M3T", "download", or a filepath pointing to the needed file. The \href{https://doi.org/10.5066/P94UXNTS}{National Land Cover Database (NLCD)} is high resolution (30 m) land cover data used to distribute septic emissions. Default "M3T", which is already processed NLCD data, to speed analyses.}
+#'   \item{\bold{Source_CWNS} - character stating "M3T" or a filepath pointing to the needed file. \bold{Cannot} be set to "download" as there is no simple way to automatically download these files. The 2022 CWNS can be downloaded as a folder of csvs and the filepath should point to this folder. The 2012 CWNS can be downloaded as an access database.  To convert this to a useable excel file:
+#'   \enumerate{
+#'      \item{Open mdb file in Microsoft Access}
+#'      \item{Go to "create tab" -> "query wizard"}
+#'      \item{Select "simple query wizard"}
+#'      \item{Choose the first table you want ("SUMMARY_FACILITY")}
+#'      \item{Click the double right arrow to take all columns}
+#'      \item{Repeat for another table {"SUMMARY_FACILITY_FLOW"}}
+#'      \item{Click "finish"}
+#'      \item{In the left hand pane, make sure you have selected to view all Access objects. Your query should be here at the bottom. Right click on it and select to export to Excel as a .xlsx file.}
+#'    }. This filepath should point to this xlsx file. Default "M3T".}
+#'   \item{\bold{Source_DMR} - character stating "M3T" or a filepath pointing to the needed file. \bold{Cannot} be set to "download" as there is no simple way to automatically download these files. File should be the \href{https://echo.epa.gov/trends/loading-tool/water-pollution-search}{Discharge Monitoring Report (DMR)} csv that can be downloaded by setting the industry type to "Publicly Owned Treatment Works" in the search tool, selecting a year, and selecting "wastewater flow" in the pollutant categories. Default "M3T".}
+#'   \item{\bold{Source_State_population_data} - character stating "M3T", "download", or a filepath pointing to the needed file. Estimated state total populations from the \href{https://www.census.gov/data/tables/time-series/demo/popest/2020s-state-total.html}{U.S. Census Bureau}. Default "M3T".}
+#'   \item{\bold{Source_GHGRP_wastewater} - character stating "M3T", "download", or a filepath pointing to a directory with the needed file. Data on industrial wastewater treatment emissions (subpart II) from the \href{https://enviro.epa.gov/envirofacts/metadata/table/ghg/ii_subpart_level_information}{EPA Greenhouse Gas Reporting Program's Envirofacts API}. Used as is for these facilities. Default "M3T".}
 #'   }
 #'
 #' Emission Factors and similar
 #' \itemize{
-#'   \item{\bold{Source_Tigerlines_data} - }
-#'   \item{\bold{Source_GHGRP_facility_data} - }
-#'   \item{\bold{Source_GHGRP_combustion} - }
-#'   \item{\bold{Source_GHGI} - }
-#'   \item{\bold{Source_GHGRP_NG} - }
-#'   \item{\bold{Source_Cartographic_Boundaries_data} - }
-#'   \item{\bold{Source_ACES} - }
-#'   \item{\bold{Source_Vulcan} - }
+#'   \item{\bold{GHGI_wastewater_data} - data.frame with columns "EF", "Septic.Emissions", "Nonseptic.Emissions", and "year". The estimated national total emissions in kt/yr from the Environmental Protection Agency's (EPA) \href{https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks-1990-2022}{Greenhouse Gas Inventory (GHGI)}. Septic is provided and nonseptic is the sum of all other entries in the table titled "Domestic Wastewater CH4 Emissions from Septic and Centralized Systems", though years before 2019 were formatted differently. Default is GHGI data from 2010 - 2022.}
+#'   \item{\bold{Total_national_open_or_low_int_area} - Integer representing the national total of "developed open space" and "developed low intensity" land cover in km2 from the National Land Cover Database (NLCD). Default to the value in Table 7 of that was published in \href{https://doi.org/10.1016/j.isprsjprs.2020.02.019}{Homer et al., 2020}.}
+#'   \item{\bold{Wastewater_State_info} - data.frame with columns "State", "Septic_Fraction", and "Method" with method being either "scaled" or "reported". These methods are relevant to the state septic variation. The scaled approach scales the septic fraction based on the change in the national septic fraction as described below in the National_wastewater_info. The reported approach uses the value provided. Default is a data frame with data for all states using reported when available from the \href{https://www.census.gov/programs-surveys/ahs/data/interactive/ahstablecreator.html?s_areas=00000&s_year=2021&s_tablename=TABLE1&s_bygroup1=1&s_bygroup2=1&s_filtergroup1=1&s_filtergroup2=1}{U.S. Census American Housing Survey} in the Plumbing, Water, and Sewage Disposal survey, pulling the appropriate year from Wastewater_reported_State_info described below.}
+#'   \item{\bold{Wastewater_reported_State_info} - data.frame with columns "State", "Year", and "Septic_Fraction". Provides the reported data for states and years available to update the wastewater_state_info where needed. Default is all reported Census data available from 2010 to 2023.}
+#'   \item{\bold{National_wastewater_info} - data.frame with columns "Year", and "Septic_Fraction". Provides the reported national data used if the method variation Wastewater_national_septic is true. Default is all reported data from 1990 to 2023.}
 #'   }
 #' }
 #'
@@ -236,42 +245,38 @@
 #'
 #'
 #'
-#' \bold{Wetlands and inland waters}
+#'  \bold{Wetlands and inland waters}
 #' \itemize{
-#'   \item{\bold{Terra_datatype} - }
-#'   \item{\bold{Terra_progress} - }
-#'   \item{\bold{Base_timeout} - }
+#'   \item{\bold{Process_wetlands_and_inland_waters} - logical stating if this sector should be run. Default TRUE.}
 #'
 #' Method Variations
 #' \itemize{
-#'   \item{\bold{Use_ACES} - .}
-#'   \item{\bold{Use_Vulcan} - .}
-#'   \item{\bold{Combine_sectors} - }
-#'   \item{\bold{Separate_thermo} - }
+#' Methodology for Wetland and freshwater methane emissions.  State Of the
+#' Carbon Cycle Report (SOCCR) emission factors combined with the
+#' \href{https://www.fws.gov/program/national-wetlands-inventory}{U.S. Fish and
+#' Wildlife Service's National Wetland Inventory (NWI)}, or the
+#' \href{https://doi.org/10.3334/ORNLDAAC/2346}{WetCHARTs model} as published in
+#' \href{https://doi.org/10.5194/gmd-10-2141-2017}{Bloom et al., 2017}
+#' downscaled from 0.5 deg to 0.1 deg using the
+#' \href{https://doi.org/10.5066/P94UXNTS}{National Land Cover Database (NLCD)}.
+#' NWI data is used for freshwater regardless.
+#'   \item{\bold{Use_SOCCR1} - logical. Default TRUE.}
+#'   \item{\bold{Use_SOCCR2} - logical. Default TRUE.}
+#'   \item{\bold{Use_Wetcharts} - logical. Default TRUE.}
+#'   \item{\bold{Wetcharts_model_subset} - list of numeric vectors providing the models within WetCHARTs to average across. A single entry or multiple can be used. \href{https://doi.org/10.1029/2021AV000408}{Ma et al., 2021} ranked model performance as compared to a GOSAT satellite-based inversion and some subsequent works subset to the 9 highest performing models \code{c(1913,1914,1923,1924,1933,1934,2913,2914,2924)}, though \href{https://doi.org/10.5194/acp-24-5069-2024}{Nesser et al., 2024} further subset these to only the 7 \code{c(1913,1914,1924,1933,1934,2914,2924)} as 2 showed overestimation in North America compared to GOSAT in \href{https://doi.org/10.5194/acp-22-395-2022}{Lu et al., 2022}. Wetcharts models are defined with digit 1 = global scale factor (1=124.5 Tg/yr, 2=166 Tg/yr, 3=207.5 Tg/yr), digit 2 = heterotrophic respiration model (1-8=MsTMIP models, 9=CARDAMOM), 3 = temperature dependence (CH4:C q10 value of 1 - 3), and 4 = extent parameterization (1=SWAMPS+GLWD, 2=SWAMPS+GLOBCOVER, 3=PREC+GLWD, 4=PREC+GLOBCOVER) as described in the user guide on the main download page. Default is all models \code{c(1913,1914,1923,1924,1933,1934,2913,2914,2923,2924,2933,2934,3913,3914,3923,3924,3933,3934)}.}
 #'   }
 #'
 #' Accessing Datasets
 #' \itemize{
-#'   \item{\bold{Source_Tigerlines_data} - }
-#'   \item{\bold{Source_GHGRP_facility_data} - }
-#'   \item{\bold{Source_GHGRP_combustion} - }
-#'   \item{\bold{Source_GHGI} - }
-#'   \item{\bold{Source_GHGRP_NG} - }
-#'   \item{\bold{Source_Cartographic_Boundaries_data} - }
-#'   \item{\bold{Source_ACES} - }
-#'   \item{\bold{Source_Vulcan} - }
+#'   \item{\bold{Source_wetland_NLCD} - character stating "M3T", "download", or a filepath pointing to the needed file. The \href{https://doi.org/10.5066/P94UXNTS}{National Land Cover Database (NLCD)} is high resolution (30 m) land cover data used to distribute septic emissions. Default "M3T", which is actually the WetCHARTs data downscaled using the NLCD, to speed analyses.}
+#'   \item{\bold{Source_Watershed_file} - character stating "M3T", "download", or a filepath pointing to the needed file. A shapefile from \href{http://www.cec.org/north-american-environmental-atlas/watersheds/}{the Commission for Environmental Cooperation's (CEC) North American Environmental Atlas} that outlines the watersheds in North America. Only relevant if using SOCCR2 as it has different emission factors for different watersheds. Default "M3T".}
+#'   \item{\bold{Source_wetcharts} - character stating "M3T" or a filepath pointing to the needed file. \bold{Cannot} be set to "download" as the data has recently moved and cannot be automatically accessed easily yet. Only needed if Source_wetland_NLCD is not "M3T" and Use_Wetcharts is TRUE. Default empty as Source_wetland_NLCD is "M3T" by default.}
+#'   \item{\bold{Source_NWI} - character stating "M3T", "download", or a filepath pointing to the needed directory. Should be a directory including state shapefiles outlining different wetland and inland water types by the \href{https://www.fws.gov/program/national-wetlands-inventory}{U.S. Fish and Wildlife Service's National Wetland Inventory (NWI)} in geopackage format (except MN which is a geodatabase). Default is "M3T" which uses 1 km2 processed files for speed.}
 #'   }
 #'
 #' Emission Factors and similar
 #' \itemize{
-#'   \item{\bold{Source_Tigerlines_data} - }
-#'   \item{\bold{Source_GHGRP_facility_data} - }
-#'   \item{\bold{Source_GHGRP_combustion} - }
-#'   \item{\bold{Source_GHGI} - }
-#'   \item{\bold{Source_GHGRP_NG} - }
-#'   \item{\bold{Source_Cartographic_Boundaries_data} - }
-#'   \item{\bold{Source_ACES} - }
-#'   \item{\bold{Source_Vulcan} - }
+#'   \item{\bold{Wetland_EFs} - data.frame with columns "E2_Atlantic", "M2_Atlantic", "E2_Gulf", "M2_Gulf", "E2_Pacific", "M2_Pacific", "E2_Hudson", "M2_Hudson", "PFO", "PNF", "L1", "L2", "R1", "R2", "R3", and "R4" with rownames "SOCCR" and "SOCCR2" if running both. If running only SOCCR, different values for each watershed are not needed (i.e., a single "E2" and "M2" column will suffice). Emission factors in g CH4 / m2 / year. E2, M2, PFO, and PNF are only needed if use_SOCCR or use_SOCCR2 are TRUE. Default is the arithmetic average of Table F5 for \href{https://www.carboncyclescience.us/state-carbon-cycle-report-soccr}{SOCCR} and Tables 13B.8 to 13B.11 as well as 15A.2, limiting values to only those with salinity >=0.5 for \href{https://carbon2018.globalchange.gov/}{SOCCR2}. The average across watersheds is used for those without data in SOCCR2. For freshwater (L and R categories) the default is the median river flux and the median flux from the largest lake class (>1 km) from \href{https://doi.org/10.1038/s41561-021-00715-2}{Rosentreter et al., 2021} as \href{https://doi.org/10.4319/lo.2012.57.2.0597}{McDonald et al., 2012} showed large lakes > 1km2 represent 71% of total lake area in the continental US. These are in extended data table 1.}
 #'   }
 #' }
 #'
@@ -283,42 +288,13 @@
 #'
 #'
 #'
-#' \bold{Remaining sectors from the gridded EPA inventory}
+#'  \bold{Remaining sectors from the gridded EPA inventory}
 #' \itemize{
-#'   \item{\bold{Terra_datatype} - }
-#'   \item{\bold{Terra_progress} - }
-#'   \item{\bold{Base_timeout} - }
-#'
-#' Method Variations
-#' \itemize{
-#'   \item{\bold{Use_ACES} - .}
-#'   \item{\bold{Use_Vulcan} - .}
-#'   \item{\bold{Combine_sectors} - }
-#'   \item{\bold{Separate_thermo} - }
-#'   }
+#'   \item{\bold{Incorporate_remaining_sectors_from_gridded_EPA} - logical stating if this sector should be run. Default TRUE.}
 #'
 #' Accessing Datasets
 #' \itemize{
-#'   \item{\bold{Source_Tigerlines_data} - }
-#'   \item{\bold{Source_GHGRP_facility_data} - }
-#'   \item{\bold{Source_GHGRP_combustion} - }
-#'   \item{\bold{Source_GHGI} - }
-#'   \item{\bold{Source_GHGRP_NG} - }
-#'   \item{\bold{Source_Cartographic_Boundaries_data} - }
-#'   \item{\bold{Source_ACES} - }
-#'   \item{\bold{Source_Vulcan} - }
-#'   }
-#'
-#' Emission Factors and similar
-#' \itemize{
-#'   \item{\bold{Source_Tigerlines_data} - }
-#'   \item{\bold{Source_GHGRP_facility_data} - }
-#'   \item{\bold{Source_GHGRP_combustion} - }
-#'   \item{\bold{Source_GHGI} - }
-#'   \item{\bold{Source_GHGRP_NG} - }
-#'   \item{\bold{Source_Cartographic_Boundaries_data} - }
-#'   \item{\bold{Source_ACES} - }
-#'   \item{\bold{Source_Vulcan} - }
+#'   \item{\bold{Source_GEPA} - character stating "M3T", "download", or a filepath pointing to the needed file. The \href{https://zenodo.org/records/8367082}{gridded Environmental Protection Agency (GEPA) anthropogenic methane inventory} .nc file. Default "M3T".}
 #'   }
 #' }
 
