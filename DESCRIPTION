@@ -8,6 +8,7 @@ URL: GITHUB/vignette, publication
 BugReports: https://github.com/Kristian-hajny/M3T/issues
 Encoding: UTF-8
 Imports:
+    curl,
     dplyr,
     jsonlite,
     magrittr,
