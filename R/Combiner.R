@@ -190,7 +190,7 @@ Combine_inventories <- function(output_directory,
   #since the wood and fossil fuel are 2 files for 1 variant, this will be a
   #matrix if there are more than 2.  Need to combine into a single entry for
   #later
-  if(methods::is(stat_comb_options_filenames[1],"matrix")){
+  if(isa(stat_comb_options_filenames[1],"matrix")){
     stat_comb_options_filenames <- apply(stat_comb_options_filenames,2,FUN=function(x){paste0(x,collapse = ",")})
   }
   
@@ -198,7 +198,7 @@ Combine_inventories <- function(output_directory,
   #subset was set.  These are each unique variations, so just unlist.  Dealing
   #with the subset number here in this way simplifies things compared to
   #alternatives (e.g., save as input to this function)
-  if(methods::is(Wetland_options_filenames,"list")){
+  if(isa(Wetland_options_filenames,"list")){
     Wetland_options_filenames <- unlist(Wetland_options_filenames)
     Wetland_options <- gsub("Wetland_sector_total_","",
                             gsub(".nc","",Wetland_options_filenames))

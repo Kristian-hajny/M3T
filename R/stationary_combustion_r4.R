@@ -460,7 +460,7 @@ Stationary_combustion <- function(input_directory,
   
   #convert all character columns to factor
   for(A in 1:ncol(NEI_data_orig)){
-    if(methods::is(NEI_data_orig[,A],"character")){
+    if(isa(NEI_data_orig[,A],"character")){
       NEI_data_orig[,A] <- factor(NEI_data_orig[,A])
     }
   }
