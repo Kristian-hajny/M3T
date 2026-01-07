@@ -77,7 +77,7 @@
 #'
 #' Emission Factors and similar
 #' \itemize{
-#'   \item{\bold{GHGI_landfill_total} - character or numeric listing either "GHGI" to pull the value from the GHGI or an integer value in gigagrams CH4/yr (or kilotons CH4/yr). Represents the net municipal landfill (MSW) emissions that can be pulled from GHGI table "CH4 emissions from Landfills (kt)". Default "GHGI".}
+#'   \item{\bold{GHGI_landfill_total} - character or numeric listing either "GHGI" to pull the value from the GHGI or an integer value in gigagrams CH4/yr (or kilotons CH4/yr). Represents the net municipal landfill (MSW) emissions that can be pulled from the \href{https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks}{Environmental Protection Agency (EPA) Greenhouse Gas Inventory (GHGI)} table "CH4 emissions from Landfills (kt)", row "MSW net CH4 Emissions". Default "GHGI".}
 #'   }
 #' }
 #'
