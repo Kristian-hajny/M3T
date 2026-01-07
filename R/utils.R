@@ -55,7 +55,7 @@ writeCDF_no_newline <- function(input_raster,...) {
 # Based on https://stackoverflow.com/a/60880960
 Trycatch_downloader <- function(URL, output_location = NULL, method, error_message = "") {
   counter <- 0
-
+  
   # user update - as some downloads can take a while
   cat("Attempting to download", URL, "at", format(Sys.time(), "%H:%M:%S"), "   ...")
 
@@ -67,7 +67,12 @@ Trycatch_downloader <- function(URL, output_location = NULL, method, error_messa
     info <- tryCatch(
       # save to file
       if (method == "save") {
-        utils::download.file(URL, destfile = output_location, quiet = T, method = "curl")
+        if(length(Sys.which("curl"))>1){
+          utils::download.file(URL, destfile = output_location, quiet = T, method = "curl")
+        }else{
+          #note some URLs may fail
+          utils::download.file(URL, destfile = output_location, quiet = T)
+        }
         # load in as JSON
       } else if (method == "JSON") {
         jsonlite::fromJSON(URL)
