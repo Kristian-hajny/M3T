@@ -10,6 +10,7 @@ Encoding: UTF-8
 Imports:
     curl,
     dplyr,
+	ncdf4,
     jsonlite,
     magrittr,
     readxl,
@@ -19,6 +20,5 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 License: CC BY 4.0
 Depends: 
-    ncdf4,
     R (>= 3.5)
 LazyData: true
