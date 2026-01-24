@@ -170,6 +170,33 @@ CH4_inventory_build <- function(run_directory,
                               progress=default_terra$progress), add = TRUE)
   
   ################################################################################
+  #function to download vulcan v4.0 files
+  
+  Download_vulcan <- function(){
+    #Zenodo API
+    #https://zenodo.org/records/15446748
+    
+    #the only sectors needed
+    File_list <- c("v4.res.co2.usa.1km.lcc.mn.allyrs.zip","v4.com.co2.usa.1km.lcc.mn.allyrs.zip",
+                   "v4.ind.co2.usa.1km.lcc.mn.allyrs.zip","v4.elc.co2.usa.1km.lcc.mn.allyrs.zip")
+    
+    Vulcan_URL <- paste0("https://zenodo.org/api/records/15446748/files/",File_list,"/content")
+    zip_file <- tempfile(fileext = ".zip")
+    
+    #unzip each to the appropriate folder and delete zip file
+    for(A in 1:length(File_list)){
+      Trycatch_downloader(URL=Vulcan_URL[A],output_location=zip_file,method="save")
+      utils::unzip(zip_file,exdir=vulcan_directory,overwrite = T)
+      unlink(zip_file)
+    }
+    
+    #also include the readme
+    Vulcan_URL <- paste0("https://zenodo.org/api/records/15446748/files/readme.Vulcan.1km.V4.0.May.20.2025.pdf/content")
+    Trycatch_downloader(URL=Vulcan_URL,
+                        output_location=file.path(vulcan_directory,"readme_Vulcan_1km_V4.0_May_20_2025.pdf"),
+                        method="save")
+  }
+  ################################################################################
   #Get the years for ACES and Vulcan based on the input year.
   
   if(M3T_config$Use_ACES & (M3T_config$Process_stationary_combustion | M3T_config$Process_natural_gas_distribution)){
@@ -217,21 +244,23 @@ CH4_inventory_build <- function(run_directory,
     }
     
     vulcan_directory <- file.path(input_directory,"Vulcan_v4.0")
-    if(M3T_config$Source_Vulcan=="default"){
-      #UPDATE TO ZENODO
-      vu_res <- terra::rast(file.path(vulcan_directory,paste0("Vulcan_residential_1km_mn_",vulcan_year,".tif")))
-      vu_com <- terra::rast(file.path(vulcan_directory,paste0("Vulcan_commercial_1km_mn_",vulcan_year,".tif")))
-      vu_ind <- terra::rast(file.path(vulcan_directory,paste0("Vulcan_industrial_1km_mn_",vulcan_year,".tif")))
-      vu_elec <- terra::rast(file.path(vulcan_directory,paste0("Vulcan_electric_1km_mn_",vulcan_year,".tif")))
+    dir.create(vulcan_directory,showWarnings = F)
+    if(M3T_config$Source_Vulcan=="download"){
+      cat("Downloading sectoral Vulcan v4.0 CO2 emissions maps now.\n\n")
+      Download_vulcan()
+      
+      vu_res <- terra::rast(file.path(vulcan_directory,paste0("v4.res.co2.usa.1km.lcc.mn.",vulcan_year,".tif")))
+      vu_com <- terra::rast(file.path(vulcan_directory,paste0("v4.com.co2.usa.1km.lcc.mn.",vulcan_year,".tif")))
+      vu_ind <- terra::rast(file.path(vulcan_directory,paste0("v4.ind.co2.usa.1km.lcc.mn.",vulcan_year,".tif")))
+      vu_elec <- terra::rast(file.path(vulcan_directory,paste0("v4.elc.co2.usa.1km.lcc.mn.",vulcan_year,".tif")))
     }else{
-      dir.create(vulcan_directory,showWarnings = F)
       invisible(file.copy(list.files(M3T_config$Source_Vulcan,full.names = T),
                           vulcan_directory,overwrite=T,recursive=T))
       
-      vu_res <- terra::rast(file.path(vulcan_directory,paste0("Vulcan_residential_1km_mn_",vulcan_year,".tif")))
-      vu_com <- terra::rast(file.path(vulcan_directory,paste0("Vulcan_commercial_1km_mn_",vulcan_year,".tif")))
-      vu_ind <- terra::rast(file.path(vulcan_directory,paste0("Vulcan_industrial_1km_mn_",vulcan_year,".tif")))
-      vu_elec <- terra::rast(file.path(vulcan_directory,paste0("Vulcan_electric_1km_mn_",vulcan_year,".tif")))
+      vu_res <- terra::rast(file.path(vulcan_directory,paste0("v4.res.co2.usa.1km.lcc.mn.",vulcan_year,".tif")))
+      vu_com <- terra::rast(file.path(vulcan_directory,paste0("v4.com.co2.usa.1km.lcc.mn.",vulcan_year,".tif")))
+      vu_ind <- terra::rast(file.path(vulcan_directory,paste0("v4.ind.co2.usa.1km.lcc.mn.",vulcan_year,".tif")))
+      vu_elec <- terra::rast(file.path(vulcan_directory,paste0("v4.elc.co2.usa.1km.lcc.mn.",vulcan_year,".tif")))
     }
   }
   ################################################################################
@@ -981,7 +1010,6 @@ CH4_inventory_build <- function(run_directory,
                     verbose=verbose,
                     GHGRP_facility_data=GHGRP_facility_data,
                     GHGRP_subpartW_emissions=GHGRP_subpartW_emissions,
-                    NG_annex_file=NG_annex_file,
                     Source_EIA_NG_file = M3T_config$Source_EIA_NG_file,
                     Source_PHMSA_file = M3T_config$Source_PHMSA_file,
                     Source_GHGRP_LDC = M3T_config$Source_GHGRP_LDC,
