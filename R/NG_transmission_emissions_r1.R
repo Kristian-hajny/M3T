@@ -58,9 +58,7 @@
 #'  available at
 #'  \url{https://atlas.eia.gov/datasets/eia::natural-gas-interstate-and-intrastate-pipelines/about}.
 #'  
-#'@param domain SpatVector polygon outlining the desired output area
-#'@param domain_template SpatRaster providing the desired output grid, including
-#'  the desired resolution and coordinate reference system
+#'@inheritParams Municipal_solid_waste 
 #'@param state_name_list Character vector listing all states within the desired
 #'  domain
 #'@param GHGI_transmission_compressors Character or data.frame.  Pulled from
@@ -75,11 +73,6 @@
 #'@param GHGRP_facility_data Data.frame with the GHGRP location data for all
 #'  years and states.  See
 #'  https://www.epa.gov/enviro/envirofacts-data-service-api
-#'@param input_directory Character providing the full filepath to save/load
-#'  raw input data
-#'@param output_directory Character providing the full filepath to save
-#'  processed data
-#'@param inventory_year Character indicating the desired year of data to use.
 #'@param verbose Logical indicating whether to save additional output.  This
 #'  includes plots of the gridded methane emissions for each
 #'  fuel-sector-inventory-variation combination as well as 2 summed plots for
@@ -89,10 +82,6 @@
 #'  shapefile downloaded in Main.
 #'@param plot_directory Character providing the full filepath to save figures.
 #'  Only relevant if verbose = TRUE.
-#'@param State_Tigerlines SpatVector.  United States Census Bureau county
-#'  shapefile.  Available at
-#'  \url{https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html}.
-#'  Only relevant if verbose=TRUE.
 #'@returns Nothing is returned from the function, but the main outputs are 2
 #'  netcdf files of the methane emissions from natural gas transmission.  They
 #'  are titled "NG_trans_compressors.nc" and "NG_trans_pipes.nc" where
@@ -104,37 +93,42 @@
 #'  location, and assigned emissions for compressors within the domain that were
 #'  pulled from the GHGRP  The _all files include all variables that were in the
 #'  corresponding input file for the same compressors.
-#'@examples
-#'library(terra)
-#' grid_bbox=cbind(c(-76.65,-73.65),c(38.97,40.97))
-#' grid_res=0.01
-#' grid_crs="epsg:4326"
-#' grid <- rast(nrows=diff(range(grid_bbox[,2]))/grid_res,
-#'              ncols=diff(range(grid_bbox[,1]))/grid_res, xmin=min(grid_bbox[,1]),
-#'              xmax=max(grid_bbox[,1]), ymin=min(grid_bbox[,2]), ymax=max(grid_bbox[,2]),
-#'              crs=grid_crs)
-#' grid_vect <- as.polygons(ext(grid),crs=grid_crs)
-#' Transmission(GHGI_transmission_compressors="GHGI",
-#'                       GHGI_Pipeline="GHGI",
-#'                       Source_HIFLD_compressor_file="~/../Desktop/in/Natural_Gas_Compressor_Stations.csv",
-#'                       GHGRP_facility_data="~/../Desktop/in/GHGRP/facility_info.csv",
-#'                       domain=grid_vect,
-#'                       domain_template=grid,
-#'                       state_name_list=c("DE","MD","NJ","NY","PA"),
-#'                       output_directory="~/../Desktop/out/",
-#'                       input_directory="~/../Desktop/in/",
-#'                       inventory_year=2018,
-#'                       verbose=TRUE,
-#'                       State_Tigerlines=vect("~/../Desktop/in/State_Tigerlines/tl_2018_us_state.shp"),
-#'                       County_Tigerlines=vect("~/../Desktop/in/County_Tigerlines/tl_2018_us_county.shp"),
-#'                       plot_directory="~/../Desktop/plots/")
-#'@author Joe Pitt, \email{madeup@@wisc.edu}
-#'@author Kris Hajny, \email{blank@@fake.edu}
-#'@author Israel Lopez-Coto, \email{test@@test.edu}
-#'@export
-#'@seealso 
-#' * [CH4_inventory_build()] Calculates methane inventory using settings provided in config.
-#' * [disaggregation()] Disaggregates data using NEI county level CO data.
+#'@inherit CH4_inventory_build author
+#'@inherit Municipal_solid_waste seealso
+#'@keywords internal
+
+
+
+
+
+
+#@examples
+# library(terra)
+# grid_bbox=cbind(c(-76.65,-73.65),c(38.97,40.97))
+# grid_res=0.01
+# grid_crs="epsg:4326"
+# grid <- rast(nrows=diff(range(grid_bbox[,2]))/grid_res,
+#              ncols=diff(range(grid_bbox[,1]))/grid_res, xmin=min(grid_bbox[,1]),
+#              xmax=max(grid_bbox[,1]), ymin=min(grid_bbox[,2]), ymax=max(grid_bbox[,2]),
+#              crs=grid_crs)
+# grid_vect <- as.polygons(ext(grid),crs=grid_crs)
+# Transmission(GHGI_transmission_compressors="GHGI",
+#                       GHGI_Pipeline="GHGI",
+#                       Source_HIFLD_compressor_file="~/../Desktop/in/Natural_Gas_Compressor_Stations.csv",
+#                       GHGRP_facility_data="~/../Desktop/in/GHGRP/facility_info.csv",
+#                       domain=grid_vect,
+#                       domain_template=grid,
+#                       state_name_list=c("DE","MD","NJ","NY","PA"),
+#                       output_directory="~/../Desktop/out/",
+#                       input_directory="~/../Desktop/in/",
+#                       inventory_year=2018,
+#                       verbose=TRUE,
+#                       State_Tigerlines=vect("~/../Desktop/in/State_Tigerlines/tl_2018_us_state.shp"),
+#                       County_Tigerlines=vect("~/../Desktop/in/County_Tigerlines/tl_2018_us_county.shp"),
+#                       plot_directory="~/../Desktop/plots/")
+
+
+
 
 ## NG_transmission_emissions_r1.R
 ## In use: 2021-11-02 20:00

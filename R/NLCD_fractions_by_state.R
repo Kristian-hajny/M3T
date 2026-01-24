@@ -7,32 +7,22 @@
 #'  land cover types for each state separately.  This information is used in
 #'  `Wastewater` to map septic emissions.
 #'
-#'@details This function first crops the 30 m National Land Cover Database to
-#'  the states within the domain.  Then the data is subset to create a
-#'  SpatRaster that is 1 for Developed, Open Space or Developed, Low Intensity
-#'  land cover and 0 for all other land cover types.  This is then split into
-#'  separate SpatRasters for each state and the total area of these two land
-#'  cover types for each state is calculated.  The data is then reprojected to
-#'  the domain's projection. Finally these SpatRasters are saved for use in the
-#'  `Wastewater` function. The total area of the two land cover types for each
-#'  state, including data outside the domain, is saved as a csv.
+#'@details This function first crops the 30 m
+#'  \href{https://www.sciencebase.gov/catalog/item/655ceb8ad34ee4b6e05cc51a}{National
+#'  Land Cover Database} to the states within the domain.  Then the data is
+#'  subset to create a SpatRaster that is 1 for Developed, Open Space or
+#'  Developed, Low Intensity land cover and 0 for all other land cover types.
+#'  This is then split into separate SpatRasters for each state and the total
+#'  area of these two land cover types for each state is calculated.  The data
+#'  is then reprojected to the domain's projection. Finally these SpatRasters
+#'  are saved for use in the \code{\link{Wastewater}} function. The total area
+#'  of the two land cover types for each state, including data outside the
+#'  domain if relevant, is saved as a csv.
 #'
-#'@param NLCD_file Character providing the full filepath to the National Land
-#'  Cover Database.  This data is available at \url{https://www.mrlc.gov/data}.
-#'  This is a geotif of 30 m land cover data for the Continental United States
-#'  where different values represent the different land cover classifications.
-#'  There is an example file in the package's datasets folder that has been
-#'  successfully used in this code available for reference.
-#'@param domain SpatVector polygon outlining the desired output area
-#'@param domain_template SpatRaster providing the desired output grid, including
-#'  the desired resolution and coordinate reference system
-#'@param state_name_list Character vector listing all states within the desired
-#'  domain
-#'@param output_directory Character providing the full filepath to save
-#'  processed data
-#'@param State_Tigerlines SpatVector.  United States Census Bureau county
-#'  shapefile.  Available at
-#'  \url{https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html}.
+#'@inheritParams Municipal_solid_waste
+#'
+#'@param Source_wastewater_NLCD Character.  Pulled from
+#'  \code{\link{M3T_config}}.
 #'@returns Nothing is returned from the function, but the main outputs are 1
 #'  netcdf file per state in the domain and a csv.  The netcdf files are titled
 #'  as "X_NLCD_suburban.nc" where X is the state abbreviation (e.g., MD, DE).
@@ -40,29 +30,37 @@
 #'  developed open space + developed low intensity for the state on the same
 #'  grid as the input domain. The csv is titled "NLCD_state_total_areas.csv" and
 #'  provides the total area of each land cover type in each state.
-#'@examples
-#'library(terra)
-#' grid_bbox=cbind(c(-76.65,-73.65),c(38.97,40.97))
-#' grid_res=0.01
-#' grid_crs="epsg:4326"
-#' grid <- rast(nrows=diff(range(grid_bbox[,2]))/grid_res,
-#'              ncols=diff(range(grid_bbox[,1]))/grid_res, xmin=min(grid_bbox[,1]),
-#'              xmax=max(grid_bbox[,1]), ymin=min(grid_bbox[,2]), ymax=max(grid_bbox[,2]),
-#'              crs=grid_crs)
-#' grid_vect <- as.polygons(ext(grid),crs=grid_crs)
-#' NLCD_open_and_low_int <- function(NLCD_file="~/../Desktop/in/NLCD_2019_land_cover_l48_20210604/NLCD_2019_land_cover_l48_20210604.img",
-#'                                   State_Tigerlines=vect("~/../Desktop/in/State_Tigerlines/tl_2018_us_state.shp"),
-#'                                   state_name_list=c("DE","MD","NJ","NY","PA"),
-#'                                   domain=grid_vect,
-#'                                   domain_template=grid,
-#'                                   output_directory="~/../Desktop/out/")
-#'@author Joe Pitt, \email{madeup@@wisc.edu}
-#'@author Kris Hajny, \email{blank@@fake.edu}
-#'@author Israel Lopez-Coto, \email{test@@test.edu}
-#'@export
-#'@seealso 
-#' * [CH4_inventory_build()] Calculates methane inventory using settings provided in config.
-#' * [Wastewater()] Calculates methane emissions for the wastewater sector.
+#'@inherit CH4_inventory_build author
+#'@seealso [CH4_inventory_build()] Calculates methane inventory using settings
+#'provided in config.
+#'
+#'[M3T_config] Generates the config function with user-editable settings used
+#'throughout processing.
+#'
+#'[Wastewater()] Calculates methane emissions for the wastewater sector.
+#'@keywords internal
+
+
+
+
+
+#@examples
+# library(terra)
+# grid_bbox=cbind(c(-76.65,-73.65),c(38.97,40.97))
+# grid_res=0.01
+# grid_crs="epsg:4326"
+# grid <- rast(nrows=diff(range(grid_bbox[,2]))/grid_res,
+#              ncols=diff(range(grid_bbox[,1]))/grid_res, xmin=min(grid_bbox[,1]),
+#              xmax=max(grid_bbox[,1]), ymin=min(grid_bbox[,2]), ymax=max(grid_bbox[,2]),
+#              crs=grid_crs)
+# grid_vect <- as.polygons(ext(grid),crs=grid_crs)
+# NLCD_open_and_low_int <- function(NLCD_file="~/../Desktop/in/NLCD_2019_land_cover_l48_20210604/NLCD_2019_land_cover_l48_20210604.img",
+#                                   State_Tigerlines=vect("~/../Desktop/in/State_Tigerlines/tl_2018_us_state.shp"),
+#                                   state_name_list=c("DE","MD","NJ","NY","PA"),
+#                                   domain=grid_vect,
+#                                   domain_template=grid,
+#                                   output_directory="~/../Desktop/out/")
+
 
 
 # Calculate NLCD fractions for the states in the d03 domain

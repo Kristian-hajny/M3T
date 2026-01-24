@@ -6,17 +6,20 @@
 #'   outputting a new line after running.  Improves flow of periodic user
 #'   updates within the package.
 #'
-#' @export
+#' @inherit CH4_inventory_build author
 #'
-#' @examples
-#'
-#' f <- system.file("ex/elev.tif", package = "terra")
-#' r <- rast(f)
-#' fname <- paste0(tempfile(), ".nc")
-#' rr <- writeCDF(r, fname,
-#'   overwrite = TRUE, varname = "alt",
-#'   longname = "elevation in m above sea level", unit = "m"
-#' )
+#' @keywords internal
+
+#@examples
+# f <- system.file("ex/elev.tif", package = "terra")
+# r <- rast(f)
+# fname <- paste0(tempfile(), ".nc")
+# rr <- writeCDF(r, fname,
+#   overwrite = TRUE, varname = "alt",
+#   longname = "elevation in m above sea level", unit = "m"
+# )
+
+
 writeCDF_no_newline <- function(input_raster,...) {
   invisible(utils::capture.output(terra::writeCDF(input_raster,...)))
 }
@@ -30,28 +33,31 @@ writeCDF_no_newline <- function(input_raster,...) {
 #' @param URL Character. The URL for the data
 #' @param output_location Character.  The path and filename for the data to be
 #'   saved to, if it is being saved.
-#' @param method Character.  One of save, JSON, or vect.  Save will save it as
-#'   a file using output_location, JSON will direct load it into R using the
+#' @param method Character.  One of save, JSON, or vect.  Save will save it as a
+#'   file using output_location, JSON will direct load it into R using the
 #'   jsonlite package, and vect will directly load it into R using terra's vect
 #'   function (points or polygons, e.g., .shp or .gpkg)
 #' @param error_message Character.  Message to output should download fail.
-
 #'
 #' @details This wrapper will use the proper function to download the data and
 #'   uses a repeat and trycatch loop in case there is poor internet
 #'   connectivity.  It will attempt the download up to 5 times before failing.
 #'   Includes user updates throughout as well.
 #'
-#' @export
-#'
-#' @examples
-#'
-#' data_URL <- "https://www2.census.gov/geo/tiger/TIGER2022/STATE/2022/tl_2022_us_state20.zip"
-#' out_file <- tempfile(fileext = ".zip")
-#' Trycatch_downloader(
-#'   URL = data_URL, output_location = out_file, method = "save",
-#'   error_message = paste("Census tigerlines could not be downloaded using link:", data_URL)
-#' )
+#' @inherit CH4_inventory_build author
+#' @keywords internal
+
+
+
+#@examples
+# data_URL <- "https://www2.census.gov/geo/tiger/TIGER2022/STATE/2022/tl_2022_us_state20.zip"
+# out_file <- tempfile(fileext = ".zip")
+# Trycatch_downloader(
+#   URL = data_URL, output_location = out_file, method = "save",
+#   error_message = paste("Census tigerlines could not be downloaded using link:", data_URL)
+# )
+
+
 # Based on https://stackoverflow.com/a/60880960
 Trycatch_downloader <- function(URL, output_location = NULL, method, error_message = "") {
   counter <- 0
@@ -67,7 +73,7 @@ Trycatch_downloader <- function(URL, output_location = NULL, method, error_messa
     info <- tryCatch(
       # save to file
       if (method == "save") {
-        if(length(Sys.which("curl"))>1){
+        if(nchar(Sys.which("curl"))>1){
           utils::download.file(URL, destfile = output_location, quiet = T, method = "curl")
         }else{
           #note some URLs may fail
@@ -114,23 +120,26 @@ Trycatch_downloader <- function(URL, output_location = NULL, method, error_messa
 
 #' Helper function for making GHGRP data consistent across sectors
 #'
-
-#' @param input Dataframe. A GHGRP dataframe built from a "subpart information"
+#' @param input Data.frame. A GHGRP dataframe built from a "subpart information"
 #'   table such as
 #'   \url{https://enviro.epa.gov/envirofacts/metadata/table/ghg/hh_subpart_level_information}
 #' @details This function will change "ghg_gas_name" to "ghg_name" and
 #'   "reporting_year" to "year" as these column names are not consistent across
 #'   tables.  It will also force the "ghg_name" and "facility_name" data to be
 #'   lower case and remove any data for a ghg besides methane.
-#' @examples
-#' GHGRP_combustion <- data.frame("facility_id"=c(1,2,3,3),
-#'                                "facility_name"=c("ONE","TWO","THREE","FOUR"),
-#'                                "ghg_gas_name"=c(rep("METHANE",3),"CARBON DIOXIDE"),
-#'                                "ghg_quantity"=c(rep(100,3),500),
-#'                                "reporting_year"=rep(2015,4))
-#' make_consistent(GHGRP_combustion)
+#' @returns input with changes described as in Details
 #' @inherit CH4_inventory_build author
-#' @export
+#' @keywords internal
+
+
+# @examples
+# GHGRP_combustion <- data.frame("facility_id"=c(1,2,3,3),
+#                                "facility_name"=c("ONE","TWO","THREE","FOUR"),
+#                                "ghg_gas_name"=c(rep("METHANE",3),"CARBON DIOXIDE"),
+#                                "ghg_quantity"=c(rep(100,3),500),
+#                                "reporting_year"=rep(2015,4))
+# make_consistent(GHGRP_combustion)
+
 
 make_consistent <- function(input){
   colnames(input) <- gsub("ghg_gas_name","ghg_name",colnames(input))
