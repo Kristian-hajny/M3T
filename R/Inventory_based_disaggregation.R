@@ -48,25 +48,31 @@
 #'@author Israel Lopez-Coto, \email{test@@test.edu}
 #'@references \href{https://doi.org/10.1029/2020JD032974}{Vulcan}
 #'@references \href{https://doi.org/10.1002/2017JD027359}{ACES}
-#'@examples
-#' aces_res <- rast(paste0(ACES_directory,"/Sectoral/",ACES_year,'_Annual_ACES_Residential.nc'))
-#' res_totals <- c('mains_ER_total_res',
-#'                 'serv_ER_total_res',
-#'                 'MnR_ER_total_res',
-#'                 'meter_ER_total_res',
-#'                 'upset_ER_total_res',
-#'                 'post_meter_ER_total_res')
-#' cover_all <- list(extract(aces_res,all_merge_LCC_domain,weights=T,exact=T,cells=T))
-#' disaggregation(aces_res,
-#'                res_totals,
-#'                agg_level="state",
-#'                NEI_input=all_merge_LCC_state,
-#'                cover_all,
-#'                out_envir=environment())
-#'@export
-#'@seealso 
-#' * [NG_distribution()] Calculates methane emissions for the natural gas distribution sector.
-#' * [Transmission()] Calculates methane emissions for the natural gas transmission sector.
+#'@inherit CH4_inventory_build author
+#'@seealso [NG_distribution()] Calculates methane emissions for the natural gas
+#'  distribution sector.
+#'
+#'  [Stationary_combustion()] Calculates methane emissions for the stationary
+#'  combustion sector.
+#'@keywords internal
+
+
+#@examples
+# aces_res <- rast(paste0(ACES_directory,"/Sectoral/",ACES_year,'_Annual_ACES_Residential.nc'))
+# res_totals <- c('mains_ER_total_res',
+#                 'serv_ER_total_res',
+#                 'MnR_ER_total_res',
+#                 'meter_ER_total_res',
+#                 'upset_ER_total_res',
+#                 'post_meter_ER_total_res')
+# cover_all <- list(extract(aces_res,all_merge_LCC_domain,weights=T,exact=T,cells=T))
+# disaggregation(aces_res,
+#                res_totals,
+#                agg_level="state",
+#                NEI_input=all_merge_LCC_state,
+#                cover_all,
+#                out_envir=environment())
+
 
 #Write a function to disaggregate total emissions using ACES/Vulcan or both
 #within sub domain bounds (states, Local Distribution Companies, Counties)

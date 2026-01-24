@@ -24,7 +24,7 @@
 #'  concentrations to calculate weighting values for each county (i.e., county
 #'  CO / domain total CO).
 #'
-#'  Lastly, county total emissions are distributed using the ACES and/or Vulcan 
+#'  Lastly, county total emissions are distributed using the ACES and/or Vulcan
 #'  CO2 inventories.
 #'
 #'  This entire process is done separately for each fuel and sector using the
@@ -61,167 +61,126 @@
 #'
 #'  Each fuel-sector-inventory-variation combination is saved separately.
 #'
-#'  See references
-#'  \href{https://doi.org/10.1029/2020JD032974}{Vulcan} and
+#'  See references \href{https://doi.org/10.1029/2020JD032974}{Vulcan} and
 #'  \href{https://doi.org/10.1002/2017JD027359}{ACES}
-#'@param domain SpatVector polygon outlining the desired output area
-#'@param domain_template SpatRaster providing the desired output grid, including
-#'  the desired resolution and coordinate reference system
-#'@param state_name_list Character vector listing all states within the desired
-#'  domain
-#'@param input_directory Character providing the full filepath to save/load
-#'  raw input data
-#'@param output_directory Character providing the full filepath to save
-#'  processed data
-#'@param inventory_year Character indicating the desired year of data to use.
+#'@inheritParams Municipal_solid_waste
+#'@inheritParams NG_distribution
+#'
+#'@param aces_ind SpatRaster of industrial CO2 emissions from the ACES inventory
+#'  as loaded in \code{\link{CH4_inventory_build}} based on \code{Use_ACES} and
+#'  \code{Source_ACES}.
+#'@param aces_elec SpatRaster of electric power production CO2 emissions from
+#'  the ACES inventory as loaded in \code{\link{CH4_inventory_build}} based on
+#'  \code{Use_ACES} and \code{Source_ACES}.
+#'@param vu_ind SpatRaster of industrial CO2 emissions from the Vulcan v4.0
+#'  inventory as loaded in \code{\link{CH4_inventory_build}} based on
+#'  \code{Use_Vulcan} and \code{Source_Vulcan}.
+#'@param vu_elec SpatRaster of electric power production CO2 emissions from the
+#'  Vulcan v4.0 inventory as loaded in \code{\link{CH4_inventory_build}} based
+#'  on \code{Use_Vulcan} and \code{Source_Vulcan}.
+#'@param Source_EIA_SEDS_data Character.  Pulled from \code{\link{M3T_config}}.
+#'@param Source_NEI_data Character.  Pulled from \code{\link{M3T_config}}.
 #'@param verbose Logical indicating whether to save additional output.  This
 #'  includes plots of the gridded methane emissions for each
 #'  fuel-sector-inventory-variation combination as well as 2 summed plots for
 #'  each inventory-variation combination - one for wood and one for all other
 #'  sectors.
-#'@param County_Tigerlines SpatVector.  United States Census Bureau county
-#'  shapefile downloaded in Main.
-#'@param Use_ACES Logical. Pulled from config file. indicating whether or not to
-#'  use ACES to disaggregate from county-level to pixel level emissions.  Either
-#'  ACES or Vulcan must be used, though both can be.
-#'@param Use_Vulcan Logical. Pulled from config file. indicating whether or not
-#'  to use Vulcan to disaggregate from county-level to pixel level emissions.
-#'  Either ACES or Vulcan must be used, though both can be.
-#'@param ACES_directory Character providing the full path to a folder containing
-#'  the ACES sectoral CO2 inventories.  Must include the residential,
-#'  commercial, electric (elec), and industrial sectors.  ACES v2.0 is available
-#'  at \url{https://doi.org/10.3334/ORNLDAAC/1943}, though the hourly file
-#'  should be averaged across hours to create an annually averaged inventory.
-#'  There is a function to do this as well, though it is quite time consuming
-#'  given the amount of data that needs to be downloaded.  The year closest to
-#'  "inventory_year" is used, but those further from that year are considered if
-#'  the closest is unavailable.
-#'@param vulcan_directory Character providing the full path to a folder
-#'  containing the Vulcan sectoral CO2 inventories.  Must include the
-#'  residential, commercial, electric (elec_prod), and industrial sectors.
-#'  Vulcan v3.0 is available at \url{https://doi.org/10.3334/ORNLDAAC/1741}, and
-#'  the annual mean files should be used.  The year closest to "inventory_year"
-#'  is used.  As all years are contained in the same file, it does not search
-#'  for other years.
-#'@param ACES_year Numeric providing the year of ACES data to use, calculated in
-#'  Main.
-#'@param vulcan_band Numeric providing the band of Vulcan data to use (1-6 =
-#'  2010 - 2015), calculated in Main.
-#'@param stationary_combustion_by_state Logical. Pulled from config file.
-#'  indicating whether state-toal emissions should be distributed to the county
-#'  scale as is.  Either bystate or bydomain must be used, though both can be.
-#'@param stationary_combustion_by_domain Logical. Pulled from config file.
-#'  indicating whether state-toal emissions should be aggregated to the domain
-#'  and then distributed to the county scale.  Either bystate or bydomain must
-#'  be used, though both can be.
-#'@param stationary_combustion_GHGI_data Data frame.  Pulled from config file. 1
-#'  by 15 data frame with consumption for each sector-fuel combination from the
-#'  GHGI. Although the data is national, there is a state entry set to US_EPA.
-#'  Consumption is in thousands of British Thermal Units (BTU).  The GHGI is
-#'  available at
-#'  \url{https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks}
-#'  and the values can be found in the Annexes in a table titled "Fuel
-#'  Consumption by Stationary Combustion for Calculating CH4 and N2O Emissions
-#'  (TBtu)".  Includes every combination of residential (res), commercial (com),
-#'  electric (elec), and residential (res) sectors with coal, petroleum (petr),
-#'  natural gas (gas), and wood fuels with names using the abbreviations in
-#'  parentheses (e.g., com_coal, elec_petr).  Excludes res_coal and res_gas as
-#'  residential coal does not exist in the U.S. anymore and residential gas is
-#'  accounted for elsewhere.
-#'@param stationary_combustion_emission_factors Data frame.  Pulled from config
-#'  file.  1 by 14 data frame with emission factors for each sector-fuel
-#'  combination from the IPCC.  Built equivalently to the GHGI_data, but without
-#'  an entry for the state.  Emission factors are in g/GJ, equivalent to kg/TJ.
-#'  Default emission factors are available in IPCC 2006 volume 2: Energy, tables
-#'  2.2 through 2.5
-#'  \url{https://www.ipcc-nggip.iges.or.jp/public/2006gl/vol2.html}. The natural
-#'  gas electric sector emission factor is instead pulled from Hajny et al.,
-#'  2019 \url{https://doi.org/10.1021/acs.est.9b01875}.  This is 5.7 kg/TJ,
-#'  within uncertainties of the GHGI value of 4.1 kg/TJ, both of which are
-#'  larger than the IPCC default of 1 kg/TJ.
-#'@param EIA_API_key Character.  Pulled from config file.  API key to access
-#'  SEDS data API.  The API is described at \url{https://www.eia.gov/opendata/}
-#'  and one can register for a key with a link on the right hand side of this
-#'  page.
-#'@param plot_directory Character providing the full filepath to save figures.
-#'  Only relevant if verbose = TRUE.
-#'@param State_CB SpatVector.  United States Census Bureau county
-#'  shapefile.  Available at
-#'  \url{https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html}.
-#'  Only relevant if verbose=TRUE.
+#'@param stationary_combustion_by_state Logical.  Pulled from
+#'  \code{\link{M3T_config}}.
+#'@param stationary_combustion_by_domain Logical.  Pulled from
+#'  \code{\link{M3T_config}}.
+#'@param stationary_combustion_GHGI_data Data frame.  Pulled from
+#'  \code{\link{M3T_config}}.
+#'@param stationary_combustion_emission_factors Data frame.  Pulled from
+#'  \code{\link{M3T_config}}.
+#'@param EIA_API_key Character.  Pulled from \code{\link{M3T_config}}.
 #'@returns Nothing is returned from the function, but the main outputs are up to
 #'  56 netcdf files of the methane emissions from stationary combustion.  They
 #'  are titled as "stat_comb_sector_fuel_variation_inventory.nc" where sector is
 #'  abbreviated as com (commercial), res (residential), elec (electric), and ind
 #'  (industrial); fuel is abbreviated as wood, petr (petroleum), gas (natural
-#'  gas), and coal; variation is bystate or bydomain; and inventory is ACES
-#'  or Vulcan.
-#'@examples
-#'library(terra)
-#' user_key = "__user_EIA_API_key__"
-#' grid_bbox=cbind(c(-76.65,-73.65),c(38.97,40.97))
-#' grid_res=0.01
-#' grid_crs="epsg:4326"
-#' grid <- rast(nrows=diff(range(grid_bbox[,2]))/grid_res,
-#'              ncols=diff(range(grid_bbox[,1]))/grid_res, xmin=min(grid_bbox[,1]),
-#'              xmax=max(grid_bbox[,1]), ymin=min(grid_bbox[,2]), ymax=max(grid_bbox[,2]),
-#'              crs=grid_crs)
-#' grid_vect <- as.polygons(ext(grid),crs=grid_crs)
-#' Stationary_combustion(domain=grid_vect,
-#'                       domain_template=grid,
-#'                       state_name_list=c("DE","MD","NJ","NY","PA"),
-#'                       input_directory="~/../Desktop/in/",
-#'                       output_directory="~/../Desktop/out/",
-#'                       inventory_year=2018,
-#'                       verbose=TRUE,
-#'                       Use_ACES=TRUE,
-#'                       Use_Vulcan=TRUE,
-#'                       ACES_directory="~/../Desktop/in/Inventories/ACES_v2.0",
-#'                       vulcan_directory="~/../Desktop/in/Inventories/Vulcan_v3.0",
-#'                       ACES_year=2017,
-#'                       vulcan_band=6,
-#'                       stationary_combustion_by_state=TRUE,
-#'                       stationary_combustion_by_domain=TRUE,
-#'                       stationary_combustion_GHGI_data=data.frame(
-#'                         "State"="US_EPA",
-#'                         "com_coal"=17,
-#'                         "ind_coal"=517,
-#'                         "elec_coal"=10554,
-#'                         "res_petr"=975,
-#'                         "com_petr"=801,
-#'                         "ind_petr"=2062,
-#'                         "elec_petr"=42,
-#'                         "com_gas"=3647,
-#'                         "ind_gas"=9484,
-#'                         "elec_gas"=11553,
-#'                         "res_wood"=544,
-#'                         "com_wood"=84,
-#'                         "ind_wood"=1407,
-#'                         "elec_wood"=68),
-#'                       stationary_combustion_emission_factors=data.frame(
-#'                         "com_coal"=10,
-#'                         "ind_coal"=10,
-#'                         "elec_coal"=1,
-#'                         "res_petr"=10,
-#'                         "com_petr"=10,
-#'                         "ind_petr"=3,
-#'                         "elec_petr"=3,
-#'                         "com_gas"=5,
-#'                         "ind_gas"=1,
-#'                         "elec_gas"=5.4/(1.0550559*0.9), #g/mmbtu to g/GJ and low to high heating value (0.9)
-#'                         "res_wood"=300,
-#'                         "com_wood"=300,
-#'                         "ind_wood"=30,
-#'                         "elec_wood"=30),
-#'                       EIA_API_key=user_key,
-#'                       State_CB=vect("~/../Desktop/in/State_CB/tl_2018_us_state.shp"),
-#'                       County_Tigerlines=vect("~/../Desktop/in/County_Tigerlines/tl_2018_us_county.shp"),
-#'                       plot_directory="~/../Desktop/plots/")
-#'@author Joe Pitt, \email{madeup@@wisc.edu}
-#'@author Kris Hajny, \email{blank@@fake.edu}
-#'@author Israel Lopez-Coto, \email{test@@test.edu}
-#'@export
-#'@seealso [CH4_inventory_build()] Calculates methane inventory using settings provided in config.
+#'  gas), and coal; variation is bystate or bydomain; and inventory is ACES or
+#'  Vulcan.
+#'@inherit CH4_inventory_build author
+#'@seealso [CH4_inventory_build()] Calculates methane inventory using settings
+#'provided in config.
+#'
+#'[M3T_config] Generates the config function with user-editable settings used
+#'throughout processing.
+#'
+#'[disaggregation()] Disaggregates data from the county level to pixels using a
+#'sectoral CO2 inventory.
+#'@keywords internal
+
+
+
+
+
+#@examples
+# library(terra)
+# user_key = "__user_EIA_API_key__"
+# grid_bbox=cbind(c(-76.65,-73.65),c(38.97,40.97))
+# grid_res=0.01
+# grid_crs="epsg:4326"
+# grid <- rast(nrows=diff(range(grid_bbox[,2]))/grid_res,
+#              ncols=diff(range(grid_bbox[,1]))/grid_res, xmin=min(grid_bbox[,1]),
+#              xmax=max(grid_bbox[,1]), ymin=min(grid_bbox[,2]), ymax=max(grid_bbox[,2]),
+#              crs=grid_crs)
+# grid_vect <- as.polygons(ext(grid),crs=grid_crs)
+# Stationary_combustion(domain=grid_vect,
+#                       domain_template=grid,
+#                       state_name_list=c("DE","MD","NJ","NY","PA"),
+#                       input_directory="~/../Desktop/in/",
+#                       output_directory="~/../Desktop/out/",
+#                       inventory_year=2018,
+#                       verbose=TRUE,
+#                       Use_ACES=TRUE,
+#                       Use_Vulcan=TRUE,
+#                       ACES_directory="~/../Desktop/in/Inventories/ACES_v2.0",
+#                       vulcan_directory="~/../Desktop/in/Inventories/Vulcan_v3.0",
+#                       ACES_year=2017,
+#                       vulcan_band=6,
+#                       stationary_combustion_by_state=TRUE,
+#                       stationary_combustion_by_domain=TRUE,
+#                       stationary_combustion_GHGI_data=data.frame(
+#                         "State"="US_EPA",
+#                         "com_coal"=17,
+#                         "ind_coal"=517,
+#                         "elec_coal"=10554,
+#                         "res_petr"=975,
+#                         "com_petr"=801,
+#                         "ind_petr"=2062,
+#                         "elec_petr"=42,
+#                         "com_gas"=3647,
+#                         "ind_gas"=9484,
+#                         "elec_gas"=11553,
+#                         "res_wood"=544,
+#                         "com_wood"=84,
+#                         "ind_wood"=1407,
+#                         "elec_wood"=68),
+#                       stationary_combustion_emission_factors=data.frame(
+#                         "com_coal"=10,
+#                         "ind_coal"=10,
+#                         "elec_coal"=1,
+#                         "res_petr"=10,
+#                         "com_petr"=10,
+#                         "ind_petr"=3,
+#                         "elec_petr"=3,
+#                         "com_gas"=5,
+#                         "ind_gas"=1,
+#                         "elec_gas"=5.4/(1.0550559*0.9), #g/mmbtu to g/GJ and low to high heating value (0.9)
+#                         "res_wood"=300,
+#                         "com_wood"=300,
+#                         "ind_wood"=30,
+#                         "elec_wood"=30),
+#                       EIA_API_key=user_key,
+#                       State_CB=vect("~/../Desktop/in/State_CB/tl_2018_us_state.shp"),
+#                       County_Tigerlines=vect("~/../Desktop/in/County_Tigerlines/tl_2018_us_county.shp"),
+#                       plot_directory="~/../Desktop/plots/")
+
+
+
+
 
 
 ## stationary_combustion_r3.R
@@ -329,7 +288,8 @@ Stationary_combustion <- function(input_directory,
                           "res_petr","res_wood","com_wood","elec_wood","ind_wood")
   EIA_data$State <- gsub("US","US_SEDS",EIA_data$State)
   
-  #make numeric rather than text, combine with EPA, and sort by state
+  #make numeric rather than text, combine with EPA, and sort by state, convert
+  #from billion BTU to trillion BTU to be consistent with GHGI
   EIA_data[,-1] <- apply(EIA_data[,-1], 2, FUN=function(x){as.numeric(x)/1000})
   stat_comb_data <- rbind(EIA_data,stationary_combustion_GHGI_data)
   stat_comb_data <- stat_comb_data[order(stat_comb_data$State),]

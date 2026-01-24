@@ -33,92 +33,70 @@
 #'  \url{https://www.mrlc.gov/data?f%5B0%5D=category%3ALand%20Cover&f%5B1%5D=region%3Aconus},
 #'  and the NALCMS is available at
 #'  \url{http://www.cec.org/north-american-land-change-monitoring-system/}.
-#'@param domain SpatVector polygon outlining the desired output area
-#'@param domain_template SpatRaster providing the desired output grid, including
-#'  the desired resolution and coordinate reference system
-#'@param output_directory Character providing the full filepath to save
-#'  processed data
-#'@param input_directory Character providing the full filepath to save/load
-#'  input data
-#'@param inventory_year Numeric indicating the desired year of data to use.
+#'@inheritParams Municipal_solid_waste
+#'
 #'@param verbose Logical indicating whether to save additional output.  This
 #'  includes monthly plots of the gridded methane emissions on log scales, saved
-#'  separately for each model subset and each land cover dataset used.
-#'@param Use_NLCD Logical. Pulled from config file. Indicating whether to use
-#'  the National Land Cover Database (NLCD) to downscale Wetcharts.
-#'@param Use_NALCMS Logical. Pulled from config file. Indicating whether to use
-#'  the North America Land Change Monitoring System (NALCMS) to downscale
-#'  Wetcharts.
-#'@param NLCD_file Character.  The NLCD land cover data as an img. Available at
-#'  \url{https://www.mrlc.gov/data?f%5B0%5D=category%3ALand%20Cover&f%5B1%5D=region%3Aconus
-#'  }.
-#'@param NALCMS_file Character.  The NALCMS land cover data as a tif.  Available
-#'  at \url{http://www.cec.org/north-american-land-change-monitoring-system/}.
-#'@param Wetcharts_model_subset Numeric list. Pulled from config file. Indicates
-#'  which models of Wetcharts to average across.  Multiple list entries are
-#'  allowed, providing multiple variations of wetcharts to be run
-#'  simultaneously.  This is far faster than running them separately as
-#'  landcover processing is more time consuming and avoided if running multiple
-#'  wetcharts subsets simultaneously.
-#'@param Wetcharts_file Character providing the full filepath to the Wetcharts
-#'  model file
-#'@param inventory_year Character indicating the desired year of data to use.
-#'@param plot_directory Character providing the full filepath to save figures.
-#'  Only relevant if verbose = TRUE.
-#'@param County_Tigerlines SpatVector.  United States Census Bureau county
-#'  shapefile.  Available at
-#'  \url{https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html}.
-#'  Only relevant if verbose=TRUE.
-#'@param State_CB SpatVector.  United States Census Bureau county
-#'  shapefile.  Available at
-#'  \url{https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html}.
-#'  Only relevant if verbose=TRUE.
+#'  separately for each model subset used.
+#'@param Source_wetland_NLCD Character.  Pulled from \code{\link{M3T_config}}.
+#'@param Source_wetcharts Character.  Pulled from \code{\link{M3T_config}}.
+#'@param Source_wetland_NLCD Character.  Pulled from \code{\link{M3T_config}}.
+#'@param Source_wetland_NLCD Character.  Pulled from \code{\link{M3T_config}}.
+#'@param Source_wetland_NLCD Character.  Pulled from \code{\link{M3T_config}}.
+#'@param Wetcharts_model_subset List of numeric vectors.  Pulled from
+#'  \code{\link{M3T_config}}.
 #'@returns Nothing is returned from the function, but the main outputs are
 #'  netcdf files of the methane emissions from wetlands with 1 file per land
 #'  cover used and per model subset.  They are titled
-#'  "Wetcharts_landcover_Downscaled_subset_A.nc" where landcover is NLCD or
-#'  NALCMS and A is just a numeric to identify which model subset, in case
-#'  multiple were set.
+#'  "Wetcharts_NLCD_Downscaled_subset_#.nc" where # is just a numeric to
+#'  identify which model subset, in case multiple were set.
 #'
 #'  If verbose is set to TRUE, then multiple figures are also saved.  Log scale
-#'  plots with consistent axes are saved for each model subset and land cover
-#'  used.  They are named "Wetcharts_landcover_subset_A_annual.png" where
-#'  landcover is NLCD or NALCMS, A is a numeric to identify the model subset.
-#'@examples
-#'library(terra)
-#' grid_bbox=cbind(c(-76.65,-73.65),c(38.97,40.97))
-#' grid_res=0.01
-#' grid_crs="epsg:4326"
-#' grid <- rast(nrows=diff(range(grid_bbox[,2]))/grid_res,
-#'              ncols=diff(range(grid_bbox[,1]))/grid_res, xmin=min(grid_bbox[,1]),
-#'              xmax=max(grid_bbox[,1]), ymin=min(grid_bbox[,2]), ymax=max(grid_bbox[,2]),
-#'              crs=grid_crs)
-#' grid_vect <- as.polygons(ext(grid),crs=grid_crs)
+#'  plots with consistent axes are saved for each model subset used.  They are
+#'  named "Wetcharts_NLCD_subset_#_annual.png" where # is a numeric to identify
+#'  the model subset.
+#'@inherit CH4_inventory_build author
+#'@seealso [CH4_inventory_build()] Calculates methane inventory using settings
+#'  provided in config.
 #'
-#' Disaggregate_Wetcharts(input_directory="~/../Desktop/in/",
-#'                        output_directory="~/../Desktop/out/",
-#'                        domain=grid_vect,
-#'                        domain_template=grid,
-#'                        verbose=TRUE,
-#'                        inventory_year=2018,
-#'                        plot_directory="~/../Desktop/plots/",
-#'                        State_CB=vect("~/../Desktop/in/State_CB/tl_2018_us_state.shp"),
-#'                        County_Tigerlines=vect("~/../Desktop/in/County_Tigerlines/tl_2018_us_county.shp"),
-#'                        Use_NLCD=TRUE,
-#'                        Use_NALCMS=TRUE,
-#'                        NLCD_file=file.path("~/../Desktop/in/nlcd_2019_land_cover_l48_20210604/nlcd_2019_land_cover_l48_20210604.img"),
-#'                        NALCMS_file=file.path("~/../Desktop/in/NALCMS_2020_land_cover/NA_NALCMS_landcover_2020_30m/data/NA_NALCMS_landcover_2020_30m.tif"),
-#'                        Wetcharts_model_subset=list(c(1913,1914,1923,1924,1933,1934,2913,2914,2923,
-#'                                                      2924,2933,2934,3913,3914,3923,3924,3933,3934)))
+#'  [M3T_config] Generates the config function with user-editable settings used
+#'  throughout processing.
 #'
-#'
-#'@author Joe Pitt, \email{madeup@@wisc.edu}
-#'@author Kris Hajny, \email{blank@@fake.edu}
-#'@author Israel Lopez-Coto, \email{test@@test.edu}
-#'@export
-#'@seealso 
-#' * [CH4_inventory_build()] Calculates methane inventory using settings provided in config.
-#' * [SOCCR_Wetlands()] Calculates methane emissions for the wetland sector using the state of the carbon cycle report instead.
+#'  [SOCCR_Wetlands()] Calculates methane emissions for the wetland sector using
+#'  the state of the carbon cycle report instead.
+#'@keywords internal
+
+
+
+#@examples
+# library(terra)
+# grid_bbox=cbind(c(-76.65,-73.65),c(38.97,40.97))
+# grid_res=0.01
+# grid_crs="epsg:4326"
+# grid <- rast(nrows=diff(range(grid_bbox[,2]))/grid_res,
+#              ncols=diff(range(grid_bbox[,1]))/grid_res, xmin=min(grid_bbox[,1]),
+#              xmax=max(grid_bbox[,1]), ymin=min(grid_bbox[,2]), ymax=max(grid_bbox[,2]),
+#              crs=grid_crs)
+# grid_vect <- as.polygons(ext(grid),crs=grid_crs)
+# 
+# Disaggregate_Wetcharts(input_directory="~/../Desktop/in/",
+#                        output_directory="~/../Desktop/out/",
+#                        domain=grid_vect,
+#                        domain_template=grid,
+#                        verbose=TRUE,
+#                        inventory_year=2018,
+#                        plot_directory="~/../Desktop/plots/",
+#                        State_CB=vect("~/../Desktop/in/State_CB/tl_2018_us_state.shp"),
+#                        County_Tigerlines=vect("~/../Desktop/in/County_Tigerlines/tl_2018_us_county.shp"),
+#                        Use_NLCD=TRUE,
+#                        Use_NALCMS=TRUE,
+#                        NLCD_file=file.path("~/../Desktop/in/nlcd_2019_land_cover_l48_20210604/nlcd_2019_land_cover_l48_20210604.img"),
+#                        NALCMS_file=file.path("~/../Desktop/in/NALCMS_2020_land_cover/NA_NALCMS_landcover_2020_30m/data/NA_NALCMS_landcover_2020_30m.tif"),
+#                        Wetcharts_model_subset=list(c(1913,1914,1923,1924,1933,1934,2913,2914,2923,
+#                                                      2924,2933,2934,3913,3914,3923,3924,3933,3934)))
+
+
+
 
 
 

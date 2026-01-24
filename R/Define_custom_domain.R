@@ -19,10 +19,9 @@
 #'
 #'@inherit CH4_inventory_build author
 #'
-#'@keywords internal
-#'
 #'@seealso [CH4_inventory_build()] Calculates methane inventory using settings
 #'  provided in config.
+#'@keywords internal
 
 define_custom_domain <- function(input_directory,State_CB){
 
