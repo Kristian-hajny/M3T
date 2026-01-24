@@ -60,9 +60,10 @@
 #'@param GHGRP_facility_data Data.frame with the GHGRP location data for all
 #'  years and states as prepared in \code{\link{CH4_inventory_build}} using the
 #'  \code{Source_GHGRP_facility_data} provided in \code{\link{M3T_config}}.
-#'@param GHGRP_combustion_emissions Data.frame with the GHGRP emissions data for
-#'  all years and states as prepared in \code{\link{CH4_inventory_build}} using
-#'  the \code{Source_GHGRP_combustion_emissions} provided in
+#'@param GHGRP_combustion_emissions Data.frame with the GHGRP combustion
+#'  emissions data for all years and states as prepared in
+#'  \code{\link{CH4_inventory_build}} using
+#'  \code{Source_GHGRP_combustion_emissions} provided in
 #'  \code{\link{M3T_config}}.
 #'@param Source_GHGRP_landfills Character.  Pulled from
 #'  \code{\link{M3T_config}}.
@@ -72,7 +73,7 @@
 #'@param landfill_ghgrp_collection_efficiency Logical. \code{\link{M3T_config}}.
 #'@param plot_directory Character. \strong{Optional}. Provides the full filepath
 #'  to save figures. Only relevant if \code{verbose} = TRUE.
-#'@param County_Tigerlines SpatVector. \strong{Optional}. SpatVector.
+#'@param County_Tigerlines SpatVector. \strong{Optional}.
 #'  \href{https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html}{US
 #'  Census Tigerlines} files for visualization. Only relevant if \code{verbose} = TRUE.
 #'@param State_CB SpatVector. \strong{Optional}.
@@ -386,7 +387,7 @@ Municipal_solid_waste <- function(input_directory,
     
   }else if(Source_LMOP=="default"){
     #UPDATE TO ZENODO
-    LMOP <- LMOP_data
+    # LMOP <- LMOP_data
   }else{
     LMOP_file <- file.path(input_directory,"User_supplied_LMOP_file.xlsx")
     file.copy(Source_LMOP,LMOP_file,overwrite = T)
