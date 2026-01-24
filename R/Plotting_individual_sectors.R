@@ -4,20 +4,20 @@
 #'  the log10 of the data and sets infinite values to NA.
 #'
 #'@details This function is intended to be used when verbose = TRUE for
-#'  CH4_inventory_build.  It is called by log_plot to help build plots for each
-#'  individual sector/subsector.  Some of these, particular those for point
-#'  sources, are more useful on a log scale.
+#'  \code{\link{CH4_inventory_build}}.  It is called by log_plot to help build
+#'  plots for each individual sector/subsector.  Some of these, particularly
+#'  those for point sources, are more useful on a log scale.
 #'@param input SpatRaster.  Intended to be a SpatRaster of gridded methane
 #'  emissions.
 #'@returns The log-scaled input data is returned, after removing infinite
 #'  values.
-#'@author Joe Pitt, \email{madeup@@wisc.edu}
-#'@author Kris Hajny, \email{blank@@fake.edu}
-#'@author Israel Lopez-Coto, \email{test@@test.edu}
+#'@inherit CH4_inventory_build author
 #'@seealso [log_plot()] plots the data in simple log-scale visuals.
-#'@examples
-#'prep_plot_data(central_flux)
-#'@export
+#'@keywords internal
+
+#@examples
+# prep_plot_data(central_flux)
+
 
 #build functions to plot up most sectors as they finish running.  
 
@@ -38,6 +38,7 @@ prep_plot_data <- function(input){
 #'  CH4_inventory_build.  It allows for reasonable default scales/titles or set
 #'  ones, e.g., if wanting to hold the colorscale constant across multiple
 #'  similar sectors/subsectors.
+#'@inheritParams Municipal_solid_waste
 #'@param input SpatRaster.  Intended to be a SpatRaster of gridded methane
 #'  emissions.
 #'@param title \strong{Optional} character providing the main title for the
@@ -49,27 +50,40 @@ prep_plot_data <- function(input){
 #'  maximum value.
 #'@param filename \strong{Optional} character providing the output filename for
 #'  the plot.  Will default to a png with the name of the input if not provided,
-#'  unless the plot is for an entire sector, rather than subsector.  This will
-#'  use the same default filename, but place it in a separate subfolder.
+#'  unless the plot is for an entire sector, rather than subsector.  This is
+#'  determined by checking input's name includes "Summed". This will use the
+#'  same default filename, but place it in a separate subfolder.
+#'@param County_Tigerlines SpatVector.
+#'  \href{https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html}{US
+#'  Census Tigerlines} files for visualization.
+#'@param State_CB SpatVector.
+#'  \href{https://www.census.gov/geographies/mapping-files/tme-series/geo/cartographic-boundary.html}{US
+#'  Census Cartographic Boundary} files for visualization.
 #'@returns This function returns nothing, but does produce a plot with the
 #'  gridded methane data colored on a log scale with NA values set to black. All
 #'  axes are clearly labeled and state, county, and, if relevant, focus city
 #'  boundaries are overlaid in greys and white.
-#'@author Joe Pitt, \email{madeup@@wisc.edu}
-#'@author Kris Hajny, \email{blank@@fake.edu}
-#'@author Israel Lopez-Coto, \email{test@@test.edu}
-#'@seealso 
-#' * [prep_plot_data()] calculate the log base 10 and remove infinities (i.e., 0's).
-#' * [not_log_plot()] plots the data in simple linear-scale visuals.
-#'@examples
-#'log_plot(central_flux,filename="Wastewater_dom_central",
-#'title="Domestic Wastewater -\n EPA total distributed using \nClean Watersheds Needs Survey")
+#'@inherit CH4_inventory_build author
+#'@inherit Municipal_solid_waste seealso
+#'@seealso
+#'
+#'[prep_plot_data()] calculate the log base 10 and remove infinities (i.e.,
+#'0's).
+#'
+#'[not_log_plot()] plots the data in simple linear-scale visuals.
 #'@export
+
+
+#@examples
+# log_plot(central_flux,filename="Wastewater_dom_central",
+# title="Domestic Wastewater -\n EPA total distributed using \nClean Watersheds Needs Survey")
+
+
 
 #plot for log scale
 log_plot <- function(input,title,zlim_min=NULL,zlim_max=NULL,
                      filename,plot_directory,domain,County_Tigerlines,
-                     State_CB,Urban_Tigerlines){
+                     State_CB){
   
   plot_type="continuous"
   
@@ -105,12 +119,6 @@ log_plot <- function(input,title,zlim_min=NULL,zlim_max=NULL,
     graphics::mtext("Longitude",side = 1,line = 3.75,cex = 2)
     terra::plot(County_Tigerlines,add=T,border="dimgrey",col=NA)
     terra::plot(State_CB,add=T,border="white",lwd=2,col=NA)
-    # plot(Urban_Tigerlines,add=T,border="darkgrey",col=NA)
-    # legend(x=graphics::par('usr')[1] - diff(graphics::par('usr')[1:2])*0.05,
-    #        y=stats::quantile(graphics::par('usr')[3:4],0.85),
-    #        legend=c("State","County","Urban"),
-    #        col=c("white","dimgrey","darkgrey"),lty=1,lwd=3,bg="black",xpd=T,
-    #        text.col="white",cex=1.5)
     graphics::legend(x=graphics::par('usr')[1] - diff(graphics::par('usr')[1:2])*0.05,
                      y=stats::quantile(graphics::par('usr')[3:4],0.85),
                      legend=c("State","County"),
@@ -191,12 +199,6 @@ log_plot <- function(input,title,zlim_min=NULL,zlim_max=NULL,
     graphics::mtext("Longitude",side = 1,line = 3.75,cex = 2)
     terra::plot(County_Tigerlines,add=T,border="dimgrey",col=NA)
     terra::plot(State_CB,add=T,border="white",lwd=2,col=NA)
-    # plot(Urban_Tigerlines,add=T,border="darkgrey",col=NA)
-    # legend(x=graphics::par('usr')[1] - diff(graphics::par('usr')[1:2])*0.05,
-    #        y=stats::quantile(graphics::par('usr')[3:4],0.85),
-    #        legend=c("State","County","Urban"),
-    #        col=c("white","dimgrey","darkgrey"),lty=1,lwd=3,bg="black",xpd=T,
-    #        text.col="white",cex=1.5)
     graphics::legend(x=graphics::par('usr')[1] - diff(graphics::par('usr')[1:2])*0.05,
                      y=stats::quantile(graphics::par('usr')[3:4],0.85),
                      legend=c("State","County"),
@@ -207,7 +209,7 @@ log_plot <- function(input,title,zlim_min=NULL,zlim_max=NULL,
   
 }
 
-#'@title Create a visual
+#'@title Create a linear scale visual
 #'
 #'@description This is a simple helper function for ease of use.  It builds
 #'  useful map visuals of the input data.
@@ -216,38 +218,31 @@ log_plot <- function(input,title,zlim_min=NULL,zlim_max=NULL,
 #'  CH4_inventory_build.  It allows for reasonable default scales/titles or set
 #'  ones, e.g., if wanting to hold the colorscale constant across multiple
 #'  similar sectors/subsectors.
-#'@param input SpatRaster.  Intended to be a SpatRaster of gridded methane
-#'  emissions.
-#'@param title \strong{Optional} character providing the main title for the
-#'  plot.  The plot will have no main title if not provided.
-#'@param zlim_min \strong{Optional} numeric providing the minimum value for the
-#'  colorscale of the plot, representing the gridded methane in nmol/m2/s.  Will
-#'  default to the minimum of the data if not provided.
-#'@param zlim_max \strong{Optional} numeric equivalent to zlim_min, but for the
-#'  maximum value.
-#'@param filename \strong{Optional} character providing the output filename for
-#'  the plot.  Will default to a png with the name of the input if not provided,
-#'  unless the plot is for an entire sector, rather than subsector.  This will
-#'  use the same default filename, but place it in a separate subfolder.
+#'@inheritParams log_plot
 #'@returns This function returns nothing, but does produce a plot with the
 #'  gridded methane data colored with NA values set to black. All axes are
-#'  clearly labeled and state, county, and, if relevant, focus city boundaries
-#'  are overlaid in greys and white.
-#'@author Joe Pitt, \email{madeup@@wisc.edu}
-#'@author Kris Hajny, \email{blank@@fake.edu}
-#'@author Israel Lopez-Coto, \email{test@@test.edu}
-#'@seealso [log_plot()] plots the data in simple log-scale visuals.
-#'@examples
-#' not_log_plot(septic_flux,filename="Wastewater_dom_septic_national",
-#'              "Domestic Wastewater - Septic\n national EPA septic distributed using \ndeveloped open space/low intensity land cover",
-#'              global(min(septic_flux,septic_flux2),min),
-#'              global(max(septic_flux,septic_flux2),max))
+#'  clearly labeled and state and county, boundaries are overlaid.
+#'@inherit CH4_inventory_build author
+#'@inherit Municipal_solid_waste seealso
+#'@seealso 
+#'
+#'[log_plot()] plots the data in simple log-scale visuals.
 #'@export
+
+
+
+#@examples
+# not_log_plot(septic_flux,filename="Wastewater_dom_septic_national",
+#              "Domestic Wastewater - Septic\n national EPA septic distributed using \ndeveloped open space/low intensity land cover",
+#              global(min(septic_flux,septic_flux2),min),
+#              global(max(septic_flux,septic_flux2),max))
+
+
 
 #plot for linear scale - mostly identical
 not_log_plot <- function(input,title,zlim_min=NULL,zlim_max=NULL,
                          filename,plot_directory,domain,County_Tigerlines,
-                         State_CB,Urban_Tigerlines){
+                         State_CB){
   
   plot_type="continuous"
   
@@ -278,12 +273,6 @@ not_log_plot <- function(input,title,zlim_min=NULL,zlim_max=NULL,
     graphics::mtext("Longitude",side = 1,line = 3.75,cex = 2)
     terra::plot(County_Tigerlines,add=T,border="dimgrey",col=NA)
     terra::plot(State_CB,add=T,border="white",lwd=2,col=NA)
-    # plot(Urban_Tigerlines,add=T,border="darkgrey",col=NA)
-    # legend(x=graphics::par('usr')[1] - diff(graphics::par('usr')[1:2])*0.05,
-    #        y=stats::quantile(graphics::par('usr')[3:4],0.85),
-    #        legend=c("State","County","Urban"),
-    #        col=c("white","dimgrey","darkgrey"),lty=1,lwd=3,bg="black",xpd=T,
-    #        text.col="white",cex=1.5)
     graphics::legend(x=graphics::par('usr')[1] - diff(graphics::par('usr')[1:2])*0.05,
                      y=stats::quantile(graphics::par('usr')[3:4],0.85),
                      legend=c("State","County"),
@@ -363,12 +352,6 @@ not_log_plot <- function(input,title,zlim_min=NULL,zlim_max=NULL,
     graphics::mtext("Longitude",side = 1,line = 3.75,cex = 2)
     terra::plot(County_Tigerlines,add=T,border="dimgrey",col=NA)
     terra::plot(State_CB,add=T,border="white",lwd=2,col=NA)
-    # plot(Urban_Tigerlines,add=T,border="darkgrey",col=NA)
-    # legend(x=graphics::par('usr')[1] - diff(graphics::par('usr')[1:2])*0.05,
-    #        y=stats::quantile(graphics::par('usr')[3:4],0.85),
-    #        legend=c("State","County","Urban"),
-    #        col=c("white","dimgrey","darkgrey"),lty=1,lwd=3,bg="black",xpd=T,
-    #        text.col="white",cex=1.5)
     graphics::legend(x=graphics::par('usr')[1] - diff(graphics::par('usr')[1:2])*0.05,
                      y=stats::quantile(graphics::par('usr')[3:4],0.85),
                      legend=c("State","County"),
