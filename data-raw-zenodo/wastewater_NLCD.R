@@ -1,4 +1,5 @@
-## code to prepare `wastewater_NLCD` and 'wastewater_state_septic_area'
+## code to prepare `Combined_wastewater_NLCD`,
+## Total_national_open_or_low_int_area, and 'wastewater_state_septic_area'
 ## datasets.  This processes the 30 m national land cover database to calculate
 ## the total area of "Developed, Open Space" and "Developed, Low Intensity" land
 ## cover in each state and create a 1 km x 1 km CONUS grid of these land covers
@@ -82,8 +83,7 @@ for(A in 1:length(NLCD_files)){
   
   
   cat("Calculating national total Septic relevant landcover\n")
-  # national_area <- terra::global(NLCD*terra::cellSize(NLCD,unit="km",transform=F),sum,na.rm=T)
-  national_area <- terra::global(NLCD,sum,na.rm=T)*0.03*0.03
+  national_area <- unlist(terra::global(NLCD,sum,na.rm=T)*0.03*0.03)
   
   annual_national_area[A] <- national_area
   ################################################################################
@@ -108,31 +108,10 @@ for(A in 1:length(NLCD_files)){
     #terra::global(NLCD_subset*terra::cellsize(NLCD_subset,unit="km"),sum,na.rm=T)
     #since the raster is a constant size 30 m grid.
     cat("Calculating state total Septic relevant landcover\n")
-    NLCD_subset_area <- terra::global(NLCD_subset,sum,na.rm=T)*0.03*0.03
+    NLCD_subset_area <- unlist(terra::global(NLCD_subset,sum,na.rm=T)*0.03*0.03)
     area_df <- rbind(area_df,NLCD_subset_area)
     rownames(area_df)[B] <- state_name_list[B]
-    # 
-    # #Add a few pixels worth of buffer (at the domain resolution) filled with
-    # #0's.  Average would otherwise ignore these NA values in calculations.
-    # cat("Adding buffer\n")
-    # NLCD_subset <- terra::extend(NLCD_subset,fill=0,
-    #                              terra::ext(NLCD_subset)+
-    #                                (terra::res(terra::project(domain_template,terra::crs(NLCD)))*20))
-    # 
-    # #save/load the raster (help with memory limitations, rather than holding
-    # #everything in memory)
-    # terra::writeRaster(NLCD_subset,subset_tmpfile)
-    # NLCD_subset <- terra::rast(subset_tmpfile)
-    # 
-    # #project to the exact domain (resolution, origin, extent, etc.) using an
-    # #average.  Represents the fractional coverage of wetlands in each pixel (0 -
-    # #1).
-    # NLCD_reprojected <- terra::project(NLCD_subset,domain_template,method="average")
-    # 
-    # #save
-    # terra::writeRaster(NLCD_reprojected,file.path(Wastewater_partial_output_directory,
-    #                                               paste0(state_name_list[B],"_NLCD.tif")),
-    #                    overwrite=T)
+    
     unlink(subset_tmpfile)
     gc()
     cat("Finished processing",state_name_list[B],"landcover,",B,"of",length(state_name_list),", at",format(Sys.time(),"%H:%M:%S"),"\n\n")
@@ -151,6 +130,52 @@ for(A in 1:length(NLCD_files)){
 }
 
 names(annual_state_area) <- as.numeric(Tigerlines_years)
+
+################################################################################
+#download NLCD for AK for the 2 recent years available (2011 and 2016)
+
+main_page_URL <- "https://www.sciencebase.gov/catalog/item/5f650b8682ce38aaa23be1bd?format=json"
+NLCD_filenames <- jsonlite::fromJSON(main_page_URL)
+NLCD_filenames <- NLCD_filenames$files$name
+
+NLCD_filenames <- NLCD_filenames[c(grep("NLCD_2011_Land_Cover_AK",NLCD_filenames),
+                                   grep("NLCD_2016_Land_Cover_AK",NLCD_filenames))]
+
+download_location <- tempfile(fileext = ".zip")
+
+AK_area <- vector(length=2)
+#loop to download and unzip each 1 in sequence
+for(A in 1:length(NLCD_filenames)){
+  NLCD_folder <- file.path(NLCD_directory,paste0("AK_",c(2011,2016)[A],"_NLCD_Land_Cover"))
+  
+  NLCD_URL <- paste0("https://www.mrlc.gov/downloads/sciweb1/shared/mrlc/data-bundles/",NLCD_filenames[A])
+  cat("Downloading and unzipping AK NLCD data - will take time\n")
+  utils::download.file(NLCD_URL,download_location,method = "curl",quiet = T)
+  utils::unzip(download_location,exdir=NLCD_folder,overwrite = T)
+  
+  #delete the temp file
+  unlink(download_location)
+  
+  
+  AK_NLCD=terra::rast(list.files(pattern=".img",NLCD_folder,full.names=T))
+  cat("Reclassifying AK NLCD\n")
+  AK_NLCD <- terra::classify(AK_NLCD,matrix(ncol=3,c(0,20.5,0,
+                                                     20.5,22.5,1,
+                                                     22.5,1000,0),byrow=T))
+  cat("Calculating AK total Septic relevant landcover\n")
+  AK_area[A] <- unlist(terra::global(AK_NLCD,sum,na.rm=T)*0.03*0.03)
+}
+
+################################################################################
+#linearly interpolate across years for AK NLCD and add to the national total
+
+AK_data <- data.frame("year"=c(2011,2016),"area"=AK_area)
+AK_fit <- lm(area ~ year,data = AK_data)
+
+newdata = data.frame("year"=as.numeric(names(annual_national_area)))
+newdata$area = predict(AK_fit,newdata)
+
+annual_national_area <- annual_national_area + newdata$area
 
 ################################################################################
 #combine across years into a single multilayer raster
@@ -174,54 +199,5 @@ terra::writeRaster(Combined_wastewater_NLCD,file.path(input_directory,"combined_
 # test=mask(national_NLCD_reprojected,NLCD_states_trans[NLCD_states_trans$STUSPS=="AZ",],touches=F)*
 #   cellSize(mask(national_NLCD_reprojected,NLCD_states_trans[NLCD_states_trans$STUSPS=="AZ",],touches=F),unit="km")
 # global(test,sum,na.rm=T)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-main_page_URL <- "https://www.sciencebase.gov/catalog/item/5f650b8682ce38aaa23be1bd?format=json"
-NLCD_filenames <- jsonlite::fromJSON(main_page_URL)
-NLCD_filenames <- NLCD_filenames$files$name
-
-NLCD_filenames <- NLCD_filenames[c(grep("NLCD_2011_Land_Cover_AK",NLCD_filenames),
-                                   grep("NLCD_2016_Land_Cover_AK",NLCD_filenames))]
-
-download_location <- tempfile(fileext = ".zip")
-
-AK_area <- vector(length=2)
-#loop to download and unzip each 1 in sequence
-for(A in 1:length(NLCD_filenames)){
-  NLCD_folder <- file.path(NLCD_directory,paste0("AK_",c(2011,2016)[A],"_NLCD_Land_Cover"))
-  
-  NLCD_URL <- paste0("https://www.mrlc.gov/downloads/sciweb1/shared/mrlc/data-bundles/",NLCD_filenames[A])
-  utils::download.file(NLCD_URL,download_location,method = "curl",quiet = T)
-  utils::unzip(download_location,exdir=NLCD_folder)
-  
-  #delete the temp file
-  unlink(download_location)
-  
-  
-  AK_NLCD=rast(list.files(pattern=".img",NLCD_folder,full.names=T))
-  cat("Reclassifying AK NLCD\n")
-  AK_NLCD <- terra::classify(AK_NLCD,matrix(ncol=3,c(0,20.5,0,
-                                                     20.5,22.5,1,
-                                                     22.5,1000,0),byrow=T))
-  cat("Calculating AK total Septic relevant landcover\n")
-  AK_area[A] <- terra::global(AK_NLCD,sum,na.rm=T)*0.03*0.03
-}
-
-
-
-
-
 
 

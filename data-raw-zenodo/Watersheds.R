@@ -1,6 +1,6 @@
 ## code to prepare `Watersheds` dataset goes here
 
-input_directory <- "G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Manuscript/All inventory data/Prepared inventory data/"
+output_directory <- "G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Manuscript/All inventory data/Prepared inventory data/"
 
 ################################################################################
 #download
@@ -28,7 +28,7 @@ watersheds <- terra::aggregate(watersheds,by="NAW1_EN")
 ################################################################################
 #save
 
-terra::writeVector(watersheds,file.path(input_directory,"Watersheds.gpkg"))
+terra::writeVector(watersheds,file.path(output_directory,"Watersheds.gpkg"))
 
 unlink(temp_out,recursive=T)
 
