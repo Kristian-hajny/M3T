@@ -314,7 +314,7 @@
 #'
 #' Data for facilities with stationary combustion
 #'
-#' @format `GHGRP_combustion` A data frame with 68,122 rows, and 5 columns:
+#' @format `GHGRP_combustion_emissions` A data frame with 68,122 rows, and 5 columns:
 #' \describe{
 #'   \item{facility_id}{Unique GHGRP ID for each facility}
 #'   \item{facility_name}{Name of facility}
@@ -324,7 +324,7 @@
 #' }
 #' @source
 #' <https://enviro.epa.gov/envirofacts/metadata/table/ghg/c_subpart_level_information>
-'GHGRP_combustion'
+'GHGRP_combustion_emissions'
 
 
 

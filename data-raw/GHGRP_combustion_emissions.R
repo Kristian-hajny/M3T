@@ -38,6 +38,6 @@ make_consistent <- function(input){
   return(input)
 }
 
-GHGRP_combustion <- make_consistent(ghgrp_combustion_emissions)
+GHGRP_combustion_emissions <- make_consistent(ghgrp_combustion_emissions)
 
-usethis::use_data(GHGRP_combustion, overwrite = TRUE)
+usethis::use_data(GHGRP_combustion_emissions, overwrite = TRUE)
