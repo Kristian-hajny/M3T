@@ -54,32 +54,32 @@ M3T_config$Base_timeout <- 60*20
 {
   M3T_config$Combine_sectors <- TRUE
   #Relevant for combining sectors only
-  M3T_config$Separate_thermo=TRUE
-  
-  #How to access datasets
-  {
-    #Census tigerlines
-    M3T_config$Source_Tigerlines_data <- "download"
-    
-    #EPA GHGRP/GHGI data used across >1 sector
-    M3T_config$Source_GHGRP_facility_data <- "download"
-    M3T_config$Source_GHGRP_combustion="download"
-    M3T_config$Source_GHGI="download"
-    M3T_config$Source_GHGRP_NG="download"
-    
-    #solely for visuals
-    M3T_config$Source_Cartographic_Boundaries_data <- "download" #https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html
-    
-    #used in downscaling (see below)
-    M3T_config$Source_ACES="default"
-    M3T_config$Source_Vulcan="default"
-  }
+  M3T_config$Separate_thermo=FALSE
   
   #Method variations
   {
     #used in NG distribution and stationary combustion for downscaling
     M3T_config$Use_ACES <- TRUE
     M3T_config$Use_Vulcan <- TRUE
+  }
+  
+  #How to access datasets
+  {
+    #Census tigerlines
+    M3T_config$Source_Tigerlines_data <- "M3T"
+    
+    #EPA GHGRP/GHGI data used across >1 sector
+    M3T_config$Source_GHGRP_facility_data <- "M3T"
+    M3T_config$Source_GHGRP_combustion="M3T"
+    M3T_config$Source_GHGI="M3T"
+    M3T_config$Source_GHGRP_NG="M3T"
+    
+    #solely for visuals
+    M3T_config$Source_Cartographic_Boundaries_data <- "M3T"
+    
+    #used in downscaling (see below)
+    M3T_config$Source_ACES="M3T"
+    M3T_config$Source_Vulcan="download"
   }
 }
 
@@ -95,12 +95,6 @@ M3T_config$Base_timeout <- 60*20
 {
   M3T_config$Process_landfills <- TRUE
   
-  #How to access datasets
-  {
-    M3T_config$Source_GHGRP_landfills="download"
-    M3T_config$Source_LMOP="download"
-  }
-  
   #Method variations
   {
     #2 GHGRP methods (reported = facility chosen method between the 2, will vary
@@ -108,6 +102,12 @@ M3T_config$Base_timeout <- 60*20
     M3T_config$landfill_ghgrp_reported <- TRUE
     M3T_config$landfill_ghgrp_modeled <- TRUE
     M3T_config$landfill_ghgrp_collection_efficiency <- TRUE
+  }
+  
+  #How to access datasets
+  {
+    M3T_config$Source_GHGRP_landfills="M3T"
+    M3T_config$Source_LMOP="M3T"
   }
   
   #Emission factors, and similar
@@ -128,19 +128,19 @@ M3T_config$Base_timeout <- 60*20
 {
   M3T_config$Process_natural_gas_distribution <- TRUE
   
-  #How to access datasets
-  {
-    M3T_config$Source_EIA_NG_file = "D:/MMMT STUFF/testing_config/in/EIA/EIA_form_176_all_years_downloaded_2025_09_27.csv"
-    M3T_config$Source_PHMSA_file = "D:/MMMT STUFF/testing_config/in/PHMSA_annual_gas_distribution_2010_present/annual_gas_distribution_2024.xlsx"
-    M3T_config$Source_GHGRP_LDC = "download"
-  }
-  
   #Method variations
   {
     #aggregation before disaggregating to pixel
     M3T_config$NG_distribution_by_LDC <- FALSE
     M3T_config$NG_distribution_by_state <- TRUE
     M3T_config$NG_distribution_by_domain <- TRUE
+  }
+  
+  #How to access datasets
+  {
+    M3T_config$Source_EIA_NG_file = "M3T"
+    M3T_config$Source_PHMSA_file = "M3T"
+    M3T_config$Source_GHGRP_LDC = "M3T"
   }
   
   #Emission factors, and similar
@@ -185,8 +185,8 @@ M3T_config$Base_timeout <- 60*20
   
   #How to access datasets
   {
-    M3T_config$Source_HIFLD_compressor_file="D:/MMMT STUFF/testing_config/in/HIFLD_Natural_Gas_Compressor_Stations_updated.xlsx"
-    M3T_config$Source_EIA_transmission_file="download"
+    M3T_config$Source_HIFLD_compressor_file="M3T"
+    M3T_config$Source_EIA_transmission_file="M3T"
   }
   
   #Emission factors, and similar
@@ -214,17 +214,17 @@ M3T_config$Base_timeout <- 60*20
   #API key to access SEDS data API
   M3T_config$EIA_API_key <- "1kLep4UApTZKwdOrDkW6J8qlO0niiw8ej0JPliyc"
   
-  #How to access datasets
-  {
-    M3T_config$Source_EIA_SEDS_data="download"
-    M3T_config$Source_NEI_data="download"
-  }
-  
   #Method variations
   {
     #aggregation before disaggregating to counties
     M3T_config$stationary_combustion_by_state <- TRUE
     M3T_config$stationary_combustion_by_domain <- TRUE
+  }
+  
+  #How to access datasets
+  {
+    M3T_config$Source_EIA_SEDS_data="M3T"
+    M3T_config$Source_NEI_data="M3T"
   }
   
   #Emission factors, and similar
@@ -264,15 +264,6 @@ M3T_config$Base_timeout <- 60*20
 {
   M3T_config$Process_wastewater <- TRUE
   
-  #How to access datasets
-  {
-    M3T_config$Source_wastewater_NLCD="D:/MMMT STUFF/All inventory data/Automated/NLCD/2024"
-    M3T_config$Source_CWNS="D:/MMMT STUFF/All inventory data/Not Automated/2022_CWNS_NATIONAL_APR2024"
-    M3T_config$Source_DMR="D:/MMMT STUFF/All inventory data/Not Automated/DMR_2024_downloaded_2025_09_28.csv"
-    M3T_config$Source_State_population_data="download"
-    M3T_config$Source_GHGRP_wastewater="download"
-  }
-  
   #Method variations
   {
     #2 datasets with flow activity data by site
@@ -286,6 +277,15 @@ M3T_config$Base_timeout <- 60*20
     #National septic fraction or state level septic fraction data
     M3T_config$Wastewater_national_septic <- TRUE
     M3T_config$Wastewater_state_septic <- TRUE
+  }
+  
+  #How to access datasets
+  {
+    M3T_config$Source_wastewater_NLCD="M3T"
+    M3T_config$Source_CWNS="M3T"
+    M3T_config$Source_DMR="M3T"
+    M3T_config$Source_State_population_data="M3T"
+    M3T_config$Source_GHGRP_wastewater="M3T"
   }
   
   #Emission factors, and similar
@@ -350,13 +350,6 @@ M3T_config$Base_timeout <- 60*20
 {
   M3T_config$Process_wetlands_and_inland_waters <- TRUE
   
-  #How to access datasets
-  {
-    M3T_config$Source_wetland_NLCD="D:/MMMT STUFF/All inventory data/Automated/NLCD/2024"
-    M3T_config$Source_Watershed_file="download"
-    M3T_config$Source_wetcharts="D:/MMMT STUFF/All inventory data/Automated/MonthlyWetland_CH4_WetCHARTsV2_2346/MonthlyWetland_CH4_WetCHARTsV2_2346/data/WetCHARTs_v1_3_3_2022.nc"
-  }
-  
   #Method variations, emission factors, and similar
   {
     #Methodology for Wetland and freshwater methane emissions.  State Of the
@@ -365,9 +358,16 @@ M3T_config$Base_timeout <- 60*20
     M3T_config$Use_SOCCR1 <- TRUE
     M3T_config$Use_SOCCR2 <- TRUE
     M3T_config$Use_Wetcharts <- TRUE
-
+    
     M3T_config$Wetcharts_model_subset <- list(c(1913,1914,1923,1924,1933,1934,2913,2914,2923,
                                                 2924,2933,2934,3913,3914,3923,3924,3933,3934))
+  }
+  
+  #How to access datasets
+  {
+    M3T_config$Source_wetland_NLCD="M3T"
+    M3T_config$Source_Watershed_file="M3T"
+    M3T_config$Source_wetcharts="M3T"
   }
   
   #Emission factors, and similar
