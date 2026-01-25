@@ -1,7 +1,7 @@
 ## code to prepare `EIA_transmission` dataset.
 
 
-input_directory <- "G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Manuscript/All inventory data/Prepared inventory data/"
+output_directory <- "G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Manuscript/All inventory data/Prepared inventory data/"
 
 ################################################################################
 #Download
@@ -19,5 +19,5 @@ EIA_transmission <- terra::crop(EIA_transmission,terra::ext(c(-130,-60,20,55)))
 ################################################################################
 #save
 
-terra::writeVector(file.path(input_directory,"EIA_transmission_pipelines.gpkg"),x=EIA_transmission)
+terra::writeVector(file.path(output_directory,"EIA_transmission_pipelines.gpkg"),x=EIA_transmission)
 

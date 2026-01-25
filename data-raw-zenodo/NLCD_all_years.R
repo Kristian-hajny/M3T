@@ -2,7 +2,7 @@
 ## data available and combines them to a single file. Annual NLCD files are
 ## available at 
 
-input_directory <- "G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Manuscript/All inventory data/Prepared inventory data/"
+output_directory <- "G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Manuscript/All inventory data/Prepared inventory data/"
 
 #these are large files and may take longer than the default timeout
 options("timeout"=60*10)
@@ -10,7 +10,7 @@ options("timeout"=60*10)
 ################################################################################
 #save partial data given the significant processing time/memory needed
 
-NLCD_output_directory <- file.path(input_directory,"NLCD_data")
+NLCD_output_directory <- file.path(output_directory,"NLCD_data")
 dir.create(NLCD_output_directory,showWarnings = F,recursive = T)
 
 ################################################################################
@@ -40,10 +40,3 @@ for(A in 1:length(NLCD_filenames)){
   cat("\rFinished downloading",A,"of",length(NLCD_filenames),"                    ")
 }
 
-################################################################################
-#check the output
-
-# test=rast(file.path(NLCD_output_directory,"2020","Annual_NLCD_LndCov_2020_CU_C1V1.tif"))
-# NLCD_key <- data.frame("Value"=c(11,12,21:24,31,41:43,52,71,81:82,90,95),
-#                        "Land_Class"=levels(test)[[1]][,2])
-# levels(test) <- NLCD_key

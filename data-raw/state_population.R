@@ -1,6 +1,7 @@
 ## code to prepare `state_population` dataset goes here
 
-unlink(c(Old_State_pop_file,))
+
+
 ################################################################################
 #download
 
@@ -26,8 +27,8 @@ utils::download.file(data_URL,New_State_pop_file,quiet=T)
 
 ################################################################################
 #Clean and combine
-Old_State_population <- read.csv(Old_State_pop_file)
-New_State_population <- read.csv(New_State_pop_file)
+Old_State_population <- utils::read.csv(Old_State_pop_file)
+New_State_population <- utils::read.csv(New_State_pop_file)
 
 #remove unneeded data - all columns other than pop, regional data, states
 #outside of CONUS, and the old version of 2020 estimates

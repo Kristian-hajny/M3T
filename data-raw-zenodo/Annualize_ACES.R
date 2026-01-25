@@ -1,11 +1,10 @@
 ## code to prepare 'ACES' data.  Download hourly files for each year and
 ## annualize. Note this is extremely time consuming and memory intensive to run
 ## as it's processing thousands of hours of CONUS data. A significant number of
-## files constituting hundreds of GB will be downloaded as part of this process.
+## files constituting hundreds of GB must be downloaded before running.
 
 
-# input_directory <- "G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Manuscript/All inventory data/Prepared inventory data/"
-ACES_output_directory <- "C:/Users/Kristian/Downloads/downthemall"
+output_directory <- "G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Manuscript/All inventory data/Prepared inventory data/"
 
 #URLs for manual download - requires login
 sectors <- c("Commercial","Elec","Industrial","Residential") #required sectors
@@ -26,8 +25,8 @@ paste0("http://data.ornldaac.earthdata.nasa.gov/protected/nacp/NACP_ACES_V2/data
 ################################################################################
 #save partial data given the significant processing time/memory needed
 
-# ACES_output_directory <- file.path(input_directory,"ACES")
-# dir.create(ACES_output_directory,showWarnings = F,recursive = T)
+ACES_output_directory <- file.path(output_directory,"ACES")
+dir.create(ACES_output_directory,showWarnings = F,recursive = T)
 
 ACES_years <- 2012:2017
 

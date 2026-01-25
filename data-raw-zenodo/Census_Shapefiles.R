@@ -1,7 +1,6 @@
 ## code to prepare census tigerlines (state, county, urban) and cartographic
 ## boundary files for all available years starting in 2010
 
-# output_directory <- "D:/MMMT STUFF/All inventory data/Automated/"
 output_directory <- "G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Manuscript/All inventory data/Prepared inventory data/"
 
 ################################################################################
