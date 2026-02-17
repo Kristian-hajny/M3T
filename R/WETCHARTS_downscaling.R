@@ -163,20 +163,14 @@ Disaggregate_Wetcharts <- function(input_directory,
   ################################################################################
   #define the domain of interest + a little buffer, crop wetcharts
   
-  Wetcharts <- terra::crop(Wetcharts,terra::ext(terra::project(domain,terra::crs(Wetcharts)))+0.5)
+  Wetcharts <- terra::crop(Wetcharts,terra::ext(terra::project(domain,terra::crs(Wetcharts)))+2)
   ################################################################################
   #load in the landcover - national land cover database (NLCD)
   NLCD_file <- file.path(input_directory,"NLCD")
   dir.create(NLCD_file,showWarnings = F)
-  if(Source_wetland_NLCD=="default"){
-    #UPDATE TO ZENODO
-    NLCD_file <- file.path(input_directory,"NLCD","Annual_NLCD_LndCov_2024_CU_C1V1.tif")
-  }else{
-    invisible(file.copy(list.files(Source_wetland_NLCD,full.names=T),
-                        NLCD_file,overwrite = T,recursive=T))
-    NLCD_file <- list.files(NLCD_file,pattern="*.tif$",full.names=T)
-    # NLCD_file <- list.files(Source_wetland_NLCD,pattern="*.tif$",full.names=T)
-  }
+  invisible(file.copy(list.files(Source_wetland_NLCD,full.names=T),
+                      NLCD_file,overwrite = T,recursive=T))
+  NLCD_file <- list.files(NLCD_file,pattern="*.tif$",full.names=T)
   NLCD <- terra::rast(NLCD_file)
   
   #correct levels from the R interpreted ones (provided in manual)
@@ -191,7 +185,7 @@ Disaggregate_Wetcharts <- function(input_directory,
   NLCD <- terra::crop(NLCD,
                       terra::project(x=terra::ext(Wetcharts),from=terra::crs(Wetcharts),to=terra::crs(NLCD)))
   
-  cat("Finished loading in all data at",round(difftime(Sys.time(),starttime,units = "min"),2),"minutes since start. Next step is time-consuming.\n")
+  cat("Finished loading in all data at",format(Sys.time(),"%H:%M"),". Next step is time-consuming.\n")
   ################################################################################
   #set wetlands to a value of 1 and all other land cover to 0, then project to
   #domain CRS at 0.1 deg.
@@ -213,10 +207,9 @@ Disaggregate_Wetcharts <- function(input_directory,
   template_poly <- terra::project(template_poly,terra::crs(NLCD))
   NLCD=terra::crop(NLCD,template_poly,snap="out")
   NLCD=terra::mask(x=NLCD,mask=template_poly,touches=F)
-  NLCD[is.na(NLCD)] <- 0
   NLCD=terra::project(NLCD,template,method="sum")
-  
-  cat("Finished reprojecting land cover data at",round(difftime(Sys.time(),starttime,units = "min"),2),"minutes since start\n")
+
+  cat("Finished reprojecting land cover data at",format(Sys.time(),"%H:%M"),"\n")
   ################################################################################
   #now calculate the wetland fraction
   
@@ -308,9 +301,6 @@ Disaggregate_Wetcharts <- function(input_directory,
   NLCD_Downscaled_Averaged_wetcharts <- lapply(Downscaled_Averaged_wetcharts,FUN=function(x){
     terra::crop(x*NLCD_wetland_fraction/terra::cellSize(x),terra::project(domain,terra::crs(NLCD_wetland_fraction)),snap="out")})
   
-  #for comparison later
-  NLCD_pixel_check <- NLCD_Downscaled_Averaged_wetcharts[[1]]
-  
   ################################################################################
   # reproject output to match domain exactly
   
@@ -345,6 +335,14 @@ Disaggregate_Wetcharts <- function(input_directory,
       NLCD_Downscaled_Averaged_wetcharts[[A]][cover[,'cell']] <- NLCD_Downscaled_Averaged_wetcharts[[A]][cover[,'cell']]*cover[,'weight']
     }
     NLCD_Downscaled_Averaged_wetcharts <- lapply(NLCD_Downscaled_Averaged_wetcharts,FUN=function(x){terra::project(terra::extend(x,fill=0,terra::ext(x)+(terra::res(terra::project(domain_template,terra::crs(x)))*5)),domain_template,method="average")})
+    
+    #this approach will not NA out areas outside polygon domains - do so now.
+    #Pixels with no data and are outside the domain.  It's possible for
+    #something to be very slightly outside the domain and non zero due to the
+    #reprojecting and this will retain any such data.
+    for(A in 1:length(NLCD_Downscaled_Averaged_wetcharts)){
+      NLCD_Downscaled_Averaged_wetcharts[[A]][terra::mask(NLCD_Downscaled_Averaged_wetcharts[[A]],domain,inverse=T)==0] <- NA
+    }
   }
   ################################################################################
   #write output
@@ -410,6 +408,6 @@ Disaggregate_Wetcharts <- function(input_directory,
     }
   }
   
-  cat("Finished wetland sector: Disaggregate_Wetcharts in",round(difftime(Sys.time(),starttime,units = "min"),2),"minutes\n\n")
+  cat("Finished wetland sector: Disaggregate_Wetcharts at",format(Sys.time(),"%H:%M"),"with a total runtime of",round(difftime(Sys.time(),starttime,units = "min"),2),"minutes\n\n")
 }
 
