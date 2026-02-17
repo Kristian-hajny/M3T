@@ -70,23 +70,10 @@
 #Combine_inventories <- function(output_directory="~/../Desktop/out/",
 #                                separate_thermo=T)
 
-
-
-
-#edit this so any number of sectors can be included, e.g., someone wants to use
-#a not wetcharts biogenic CH4 or in general just wants anthropogenic
-
-
-#edit to include a mean, max, and min - and also for thermo/non-thermo
-
-
-
-
-
-
-
 Combine_inventories <- function(output_directory,
                                 separate_thermo,
+                                Create_summary_combinations,
+                                Create_individual_combinations,
                                 plot_directory,
                                 County_Tigerlines,
                                 State_CB,
@@ -99,6 +86,8 @@ Combine_inventories <- function(output_directory,
   
   Combined_output_directory <- file.path(output_directory,"Combined_files")
   dir.create(Combined_output_directory,showWarnings = F)
+  Summary_combination_output_directory <- file.path(Combined_output_directory,"summary_combinations")
+  dir.create(Summary_combination_output_directory,showWarnings = F)
   ################################################################################
   #tiny helper function as get fails in an apply otherwise
   local_get <- function(x){get(x,envir=environment())}
@@ -128,7 +117,7 @@ Combine_inventories <- function(output_directory,
                                     MARGIN = 1,FUN=function(x){paste0(x,collapse="_")}))
   
   #1 character vector with all options that can be referenced
-  all_options <- ls(pattern="options")
+  all_options <- ls(pattern="options$")
   
   ################################################################################
   #these are assigned in the below section, but R doesn't see them being created
@@ -144,23 +133,36 @@ Combine_inventories <- function(output_directory,
   
   output_files <- list.files(output_directory,pattern="*.nc")
   
+  set_output <- set_output[set_output %in% output_files]
+  
   for(A in 1:length(all_options)){
     subset_options <- local_get(all_options[A])
+    
     #this any(grepl()) subset keeps only those that are in the output files list
     subset_options <- subset_options[sapply(subset_options,function(x){any(grepl(x,output_files))})]
-    #update the variables
-    assign(all_options[A],subset_options)
-    
-    #grep here replaces the values with the exact filename instead, save
-    #separately
-    subset_options <- sapply(subset_options,function(x){output_files[grep(x,output_files)]})
-    assign(paste0(all_options[A],"_filenames"),subset_options)
+    if(length(subset_options)==0){
+      #remove the "filenames" variable, remove the "options" variable, and remove it from all options
+      rm(list = paste0(all_options[A],"_filenames"))
+      rm(list=all_options[A])
+      all_options[A] <- NA
+      next
+    }else{
+      #update the variables
+      assign(all_options[A],subset_options)
+      
+      #grep here replaces the values with the exact filename instead, save
+      #separately
+      subset_options <- sapply(subset_options,function(x){output_files[grep(x,output_files)]})
+      assign(paste0(all_options[A],"_filenames"),subset_options)
+    }
   }
+  
+  all_options <- all_options[!is.na(all_options)]
   ################################################################################
   #load in all of the options - will pull from these to get the unique
   #combinations
   
-  #these don't vary, we will always use them
+  #these don't vary
   set_rast <- terra::rast(file.path(output_directory,set_output))
   
   #any variations that were run
@@ -180,65 +182,115 @@ Combine_inventories <- function(output_directory,
   ################################################################################
   #for naming later, adjust these slightly
   
-  NG_dist_options <- gsub("NG_distribution_sector_total_","",NG_dist_options)
-  stat_comb_options <- gsub("\\.\\*","",gsub("Stationary_combustion_sector_","",stat_comb_options))
+  if(exists("NG_dist_options")){
+    NG_dist_options <- gsub("NG_distribution_sector_total_","",NG_dist_options)
+  }
+  if(exists("stat_comb_options")){
+    stat_comb_options <- gsub("\\.\\*","",gsub("Stationary_combustion_sector_","",stat_comb_options))
+  }
   
   #since the wood and fossil fuel are 2 files for 1 variant, this will be a
   #matrix if there are more than 2.  Need to combine into a single entry for
   #later
-  if(isa(stat_comb_options_filenames[1],"matrix")){
-    stat_comb_options_filenames <- apply(stat_comb_options_filenames,2,FUN=function(x){paste0(x,collapse = ",")})
+  if(exists("stat_comb_options_filenames")){
+    if(isa(stat_comb_options_filenames[1],"matrix")){
+      stat_comb_options_filenames <- apply(stat_comb_options_filenames,2,FUN=function(x){paste0(x,collapse = ",")})
+    }
   }
   
   #wetcharts can be multiple files per type if more than 1 wetcharts model
   #subset was set.  These are each unique variations, so just unlist.  Dealing
   #with the subset number here in this way simplifies things compared to
   #alternatives (e.g., save as input to this function)
-  if(isa(Wetland_options_filenames,"list")){
-    Wetland_options_filenames <- unlist(Wetland_options_filenames)
-    Wetland_options <- gsub("Wetland_sector_total_","",
-                            gsub(".nc","",Wetland_options_filenames))
+  if(exists("Wetland_options_filenames")){
+    if(isa(Wetland_options_filenames,"list")){
+      Wetland_options_filenames <- unlist(Wetland_options_filenames)
+      Wetland_options <- gsub("Wetland_sector_total_","",
+                              gsub(".nc","",Wetland_options_filenames))
+    }
   }
   
   ################################################################################
   #combine into total inventories
   
+  list_all_options <- lapply(all_options,local_get)
+  list_all_filename_options <- lapply(all_filename_options,local_get)
+  
   #expand.grid does the heavy lifting - run separately for the filenames and
   #variation descriptions - those are just for a key in excel
-  Possible_combinations <- expand.grid(lapply(all_options,local_get),stringsAsFactors = F)
-  Possible_combination_filenames <- expand.grid(lapply(all_filename_options,local_get),stringsAsFactors = F)
+  Possible_combinations <- expand.grid(list_all_options,stringsAsFactors = F)
+  Possible_combination_filenames <- expand.grid(list_all_filename_options,stringsAsFactors = F)
   
-  all_combinations_rast <- domain_template
-  for(A in 1:nrow(Possible_combinations)){
-    #For the each unique combination, identify the relevant variable_rast
-    #layers.  The as.vector... is simply to split stationary combustion into 2
-    #files since they were 1 entry before.
-    indx <- basename(terra::sources(variable_rast)) %in% as.vector(unlist(strsplit((unlist(Possible_combination_filenames[A,])),",")))
+  
+  
+  #summary versions only - substantially faster
+  if(Create_summary_combinations){
+    summary_combinations_rast <- terra::rast(set_rast,nlyrs=3,vals=NA)
+    for(A in 1:3){summary_combinations_rast[[A]]=sum(set_rast,na.rm=T)}
+    names(summary_combinations_rast) <- c("min","mean","max")
     
-    #sum across sectors, include the sectors that don't have options, save
-    out_rast <- sum(c(variable_rast[[indx]],set_rast))
-    if(verbose){
-      all_combinations_rast <- sum(all_combinations_rast,out_rast,na.rm=T)
+    for(A in 1:length(list_all_options)){
+      #For each sector, identify the relevant variable_rast layers.
+      #The as.vector... is simply to split stationary combustion into 2 files
+      #since they were 1 entry before.
+      indx <- basename(terra::sources(variable_rast)) %in% as.vector(unlist(strsplit((list_all_filename_options[[A]]),",")))
+      sub_rast <- variable_rast[[indx]]
+      
+      #calculate mean, max, and min across combinations
+      summary_combinations_rast$mean <- sum(c(summary_combinations_rast$mean,terra::mean(sub_rast,na.rm=T)),na.rm=T)
+      summary_combinations_rast$max <- sum(c(summary_combinations_rast$max,max(sub_rast,na.rm=T)),na.rm=T)
+      summary_combinations_rast$min <- sum(c(summary_combinations_rast$min,min(sub_rast,na.rm=T)),na.rm=T)
+      cat("\rFinished adding sector",A,"of",length(list_all_options),"to the summary combinations        ")
+      rm(sub_rast);gc()
     }
     
-    writeCDF_no_newline(out_rast,file.path(Combined_output_directory,
-                                           paste0("Combined_inventory_combination_",
-                                                  sprintf(paste0("%0",nchar(nrow(Possible_combination_filenames)),"d"),A),
-                                                  ".nc")),overwrite=T)
-    cat("\rFinished creating unique inventory",A,"of",nrow(Possible_combinations),"   ")
-    out_rast <- NULL;gc()
+    writeCDF_no_newline(summary_combinations_rast,
+                        file.path(Summary_combination_output_directory,"Summary_combination_inventories.nc"),
+                        force_v4=TRUE,
+                        varname='methane_emissions',
+                        unit='nmol/m2/s',
+                        longname="The sum of the min, mean, max for each sector across all variations considered",
+                        missval=-9999,
+                        overwrite=TRUE)
+    rm(indx);gc()
+  }
+  
+  
+  
+  #all unique combinations
+  if(Create_individual_combinations){
+    for(A in 1:nrow(Possible_combinations)){
+      #For each unique combination, identify the relevant variable_rast layers.
+      #The as.vector... is simply to split stationary combustion into 2 files
+      #since they were 1 entry before.
+      indx <- basename(terra::sources(variable_rast)) %in% as.vector(unlist(strsplit((unlist(Possible_combination_filenames[A,])),",")))
+      
+      #sum across sectors, include the sectors that don't have options, save
+      out_rast <- sum(c(variable_rast[[indx]],set_rast),na.rm=T)
+      
+      writeCDF_no_newline(out_rast,file.path(Combined_output_directory,
+                                             paste0("Combined_inventory_combination_",
+                                                    sprintf(paste0("%0",nchar(nrow(Possible_combination_filenames)),"d"),A),
+                                                    ".nc")),overwrite=T)
+      cat("\rFinished creating unique inventory",A,"of",nrow(Possible_combinations),"   ")
+      rm(out_rast);gc()
+    }
   }
   
   ################################################################################
   #create and save a key
   
-  #add useful column names and inventory numbers
-  Possible_combinations <- cbind(1:nrow(Possible_combinations),Possible_combinations)
-  colnames(Possible_combinations) <- c("Inventory_Number",gsub("NG_dist","Natural_Gas_Distribution",
-                                                               gsub("stat_comb","Stationary_Combustion",all_options)))
-  utils::write.csv(Possible_combinations,file = file.path(Combined_output_directory,"Combined_inventory_key.csv"),
-                   quote = F,row.names = F)
-  
+  if(Create_individual_combinations){
+    #add useful column names and inventory numbers
+    Possible_combinations <- cbind(1:nrow(Possible_combinations),Possible_combinations)
+    colnames(Possible_combinations) <- c("Inventory_Number",gsub("NG_dist","Natural_Gas_Distribution",
+                                                                 gsub("stat_comb","Stationary_Combustion",all_options)))
+    for(A in 1:length(set_output)){
+      Possible_combinations[,paste0("Nonvarying_sector_",A)] <- gsub(".nc","",set_output[A])
+    }
+    utils::write.csv(Possible_combinations,file = file.path(Combined_output_directory,"Combined_inventory_key.csv"),
+                     quote = F,row.names = F)
+  }
   
   ################################################################################
   #repeat for thermogenic and non-thermogenic if the option was set
@@ -250,35 +302,108 @@ Combine_inventories <- function(output_directory,
     dir.create(thermo_output_directory,showWarnings = F)
     dir.create(nonthermo_output_directory,showWarnings = F)
     
-    for(A in 1:nrow(Possible_combinations)){
-      #all files in the first unique combination
-      filename_subset <- as.vector(unlist(strsplit((unlist(Possible_combination_filenames[A,])),",")))
+    thermo_set_indx <- grep("GEPA_thermo.nc|NG_transmission_sector_total.nc",terra::sources(set_rast))
+    non_thermo_set_indx <- grep("GEPA_non_thermo.nc|GEPA_ind_landfill.nc",terra::sources(set_rast))
+    
+    
+    
+    
+    #summary combinations
+    if(Create_summary_combinations){
+      thermo_summary_combinations_rast <- terra::rast(domain_template,nlyrs=3)
+      for(A in 1:3){thermo_summary_combinations_rast[[A]]=domain_template}
+      names(thermo_summary_combinations_rast) <- c("min","mean","max")
+      non_thermo_summary_combinations_rast <- thermo_summary_combinations_rast
       
-      #pull only the thermo ones, otherwise process in the same way.  Note
-      #set_rast is subset by index.
-      thermo_files <- filename_subset[filename_subset %in% thermo_options]
-      indx <- basename(terra::sources(variable_rast)) %in% thermo_files
-      thermo_rast <- sum(c(variable_rast[[indx]],set_rast[[3:4]]))
-      writeCDF_no_newline(thermo_rast,file.path(thermo_output_directory,
-                                                paste0("Thermogenic_combined_inventory_combination_",
-                                                       sprintf(paste0("%0",nchar(nrow(Possible_combination_filenames)),"d"),A),
-                                                       ".nc")),overwrite=T)
-      
-      nonthermo_files <- filename_subset[filename_subset %in% nonthermo_options]
-      indx <- basename(terra::sources(variable_rast)) %in% nonthermo_files
-      nonthermo_rast <- sum(c(variable_rast[[indx]],set_rast[[1:2]]))
-      writeCDF_no_newline(nonthermo_rast,file.path(nonthermo_output_directory,
-                                                   paste0("Non_thermogenic_combined_inventory_combination_",
-                                                          sprintf(paste0("%0",nchar(nrow(Possible_combination_filenames)),"d"),A),
-                                                          ".nc")),overwrite=T)
-      
-      #sanity check - all sectors should be either thermogenic or
-      #non-thermogenic
-      if(length(filename_subset)!=sum(length(nonthermo_files),length(thermo_files))){
-        stop("Splitting between thermogenic and nonthermogenic sectors encountered an error")
+      for(A in 1:length(list_all_options)){
+        #For each sector, identify the relevant variable_rast layers.
+        #The as.vector... is simply to split stationary combustion into 2 files
+        #since they were 1 entry before.
+        indx <- basename(terra::sources(variable_rast)) %in% as.vector(unlist(strsplit((list_all_filename_options[[A]]),",")))
+        sub_rast <- variable_rast[[indx]]
+        
+        if(any(basename(terra::sources(sub_rast)) %in% thermo_options)){
+          #calculate mean, max, and min across combinations
+          thermo_summary_combinations_rast$mean <- sum(c(thermo_summary_combinations_rast$mean,terra::mean(sub_rast,na.rm=T)),na.rm=T)
+          thermo_summary_combinations_rast$max <- sum(c(thermo_summary_combinations_rast$max,max(sub_rast,na.rm=T)),na.rm=T)
+          thermo_summary_combinations_rast$min <- sum(c(thermo_summary_combinations_rast$min,min(sub_rast,na.rm=T)),na.rm=T)
+        }else{
+          non_thermo_summary_combinations_rast$mean <- sum(c(non_thermo_summary_combinations_rast$mean,terra::mean(sub_rast,na.rm=T)),na.rm=T)
+          non_thermo_summary_combinations_rast$max <- sum(c(non_thermo_summary_combinations_rast$max,max(sub_rast,na.rm=T)),na.rm=T)
+          non_thermo_summary_combinations_rast$min <- sum(c(non_thermo_summary_combinations_rast$min,min(sub_rast,na.rm=T)),na.rm=T)
+        }
+        
+        cat("\rFinished adding sector",A,"of",length(list_all_options),"to the summary thermogenic/non-thermogenic combinations          ")
+        rm(sub_rast);gc()
       }
       
-      cat("\rFinished creating unique thermogenic and non-thermogenic inventory",A,"of",nrow(Possible_combinations),"   ")
+      if(length(thermo_set_indx)!=0){
+        for(A in 1:3){thermo_summary_combinations_rast[[A]]=sum(c(thermo_summary_combinations_rast[[A]],sum(set_rast[[thermo_set_indx]],na.rm=T)),na.rm=T)}
+      }
+      if(length(non_thermo_set_indx)!=0){
+        for(A in 1:3){non_thermo_summary_combinations_rast[[A]]=sum(c(non_thermo_summary_combinations_rast[[A]],sum(set_rast[[non_thermo_set_indx]],na.rm=T)),na.rm=T)}
+      }
+      
+      writeCDF_no_newline(thermo_summary_combinations_rast,
+                          file.path(Summary_combination_output_directory,"Summary_combination_thermogenic_inventories.nc"),
+                          force_v4=TRUE,
+                          varname='methane_emissions',
+                          unit='nmol/m2/s',
+                          longname="The sum of the min, mean, max for each thermogenic sector across all variations considered",
+                          missval=-9999,
+                          overwrite=TRUE)
+      writeCDF_no_newline(non_thermo_summary_combinations_rast,
+                          file.path(Summary_combination_output_directory,"Summary_combination_non_thermogenic_inventories.nc"),
+                          force_v4=TRUE,
+                          varname='methane_emissions',
+                          unit='nmol/m2/s',
+                          longname="The sum of the min, mean, max for each non-thermogenic sector across all variations considered",
+                          missval=-9999,
+                          overwrite=TRUE)
+      rm(indx);gc()
+    }
+    
+    
+    
+    
+    
+    
+    #individual combinations
+    if(Create_individual_combinations){
+      for(A in 1:nrow(Possible_combinations)){
+        #all files in the first unique combination
+        filename_subset <- as.vector(unlist(strsplit((unlist(Possible_combination_filenames[A,])),",")))
+        
+        #pull only the thermo ones, otherwise process in the same way.  Note
+        #set_rast is subset by index.
+        thermo_files <- filename_subset[filename_subset %in% thermo_options]
+        indx <- basename(terra::sources(variable_rast)) %in% thermo_files
+        if(length(thermo_set_indx)==0){
+          thermo_rast <- sum(variable_rast[[indx]])
+        }else{
+          thermo_rast <- sum(c(variable_rast[[indx]],set_rast[[thermo_set_indx]]))
+        }
+        writeCDF_no_newline(thermo_rast,file.path(thermo_output_directory,
+                                                  paste0("Thermogenic_combined_inventory_combination_",
+                                                         sprintf(paste0("%0",nchar(nrow(Possible_combination_filenames)),"d"),A),
+                                                         ".nc")),overwrite=T)
+        
+        
+        
+        nonthermo_files <- filename_subset[filename_subset %in% nonthermo_options]
+        indx <- basename(terra::sources(variable_rast)) %in% nonthermo_files
+        if(length(non_thermo_set_indx)==0){
+          nonthermo_rast <- sum(variable_rast[[indx]])
+        }else{
+          nonthermo_rast <- sum(c(variable_rast[[indx]],set_rast[[non_thermo_set_indx]]))
+        }
+        writeCDF_no_newline(nonthermo_rast,file.path(nonthermo_output_directory,
+                                                     paste0("Non_thermogenic_combined_inventory_combination_",
+                                                            sprintf(paste0("%0",nchar(nrow(Possible_combination_filenames)),"d"),A),
+                                                            ".nc")),overwrite=T)
+        
+        cat("\rFinished creating unique thermogenic and non-thermogenic inventory",A,"of",nrow(Possible_combinations),"        ")
+      }
     }
   }
   ################################################################################
@@ -286,15 +411,32 @@ Combine_inventories <- function(output_directory,
   #triggers log_plot to save to the proper folder and it is sum across sectors,
   #average across variations.
   
-  if(verbose){
-    Summed_final_inventory <- all_combinations_rast/nrow(Possible_combinations)
+  if(verbose & Create_summary_combinations){
+    Summed_final_inventory <- summary_combinations_rast$mean
     log_plot(Summed_final_inventory,
              "Final Inventory -\nAveraged across all variations\nSaturated low end",
              plot_directory=plot_directory,
              domain=domain,County_Tigerlines=County_Tigerlines,
              zlim_min=-4,
              State_CB=State_CB)
-    
+    if(separate_thermo){
+      Summed_thermogenic_sources <- thermo_summary_combinations_rast$mean
+      log_plot(Summed_thermogenic_sources,
+               "Final Inventory thermogenic sources -\nAveraged across all variations\nSaturated low end",
+               plot_directory=plot_directory,
+               domain=domain,County_Tigerlines=County_Tigerlines,
+               zlim_min=-4,
+               State_CB=State_CB)
+      Summed_non_thermogenic_sources <- non_thermo_summary_combinations_rast$mean
+      log_plot(Summed_non_thermogenic_sources,
+               "Final Inventory non-thermogenic sources-\nAveraged across all variations\nSaturated low end",
+               plot_directory=plot_directory,
+               domain=domain,County_Tigerlines=County_Tigerlines,
+               zlim_min=-4,
+               State_CB=State_CB)
+    }
   }
-  cat("\nFinished the process of combining emissions across all sectors: Combine_inventories in",round(difftime(Sys.time(),starttime,units = "min"),2),"minutes")
+  cat("\nFinished the process of combining emissions across all sectors: Combine_inventories at",format(Sys.time(),"%H:%M"),"with a total runtime of",round(difftime(Sys.time(),starttime,units = "min"),2),"minutes\n\n")
 }
+
+
