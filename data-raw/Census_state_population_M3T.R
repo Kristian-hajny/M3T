@@ -43,9 +43,9 @@ Old_State_population <- Old_State_population[!(Old_State_population$STATE==0),]
 New_State_population <- New_State_population[!(New_State_population$STATE %in% c(2,15,72)),-1]
 Old_State_population <- Old_State_population[!(Old_State_population$STATE %in% c(2,15,72)),-1]
 
-Census_state_population <- merge(Old_State_population,New_State_population,by="NAME")
+Census_state_population_M3T <- merge(Old_State_population,New_State_population,by="NAME")
 ################################################################################
 #save
 
-usethis::use_data(Census_state_population, overwrite = TRUE)
+usethis::use_data(Census_state_population_M3T, overwrite = TRUE)
 
