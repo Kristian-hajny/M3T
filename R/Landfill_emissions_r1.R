@@ -159,56 +159,61 @@ Municipal_solid_waste <- function(input_directory,
   ################################################################################
   #Get the GHGRP landfill data
   
-  if(Source_GHGRP_landfills=="download"){
-    #Download the relevant emissions data using the API
-    #(https://www.epa.gov/enviro/envirofacts-data-service-api)
+  #Source = M3T means the data is already available
+  if(Source_GHGRP_landfills!="M3T"){
     
-    #download the relevant landfill-sector data in MT CH4/yr
-    #(https://www.epa.gov/enviro/greenhouse-gas-model).  Must download the
-    #relevant data for each possible sector separately as emissions are split by
-    #sector (i.e., gas capture for electricity is subpart D, stationary combustion
-    #is C, and landfill emissions HH - all of which can occur at the same
-    #landfill).  Only C and HH are included as "reported" municipal emissions
-    #exclude subpart C and D. Landfills have 2 options for reporting their
-    #emissions - equation HH-6 and HH-8.  HH-6 is based on a first order decay
-    #model, HH-8 is based on collection efficiency of a gas collection system.
-    #The ghgrp_landfill_detail_emissions include both as either can be the
-    #"reported" value.
+    #otherwise, download and prep data
+    if(Source_GHGRP_landfills=="download"){
+      #Download the relevant emissions data using the API
+      #(https://www.epa.gov/enviro/envirofacts-data-service-api)
+      
+      #download the relevant landfill-sector data in MT CH4/yr
+      #(https://www.epa.gov/enviro/greenhouse-gas-model).  Must download the
+      #relevant data for each possible sector separately as emissions are split by
+      #sector (i.e., gas capture for electricity is subpart D, stationary combustion
+      #is C, and landfill emissions HH - all of which can occur at the same
+      #landfill).  Only C and HH are included as "reported" municipal emissions
+      #exclude subpart C and D. Landfills have 2 options for reporting their
+      #emissions - equation HH-6 and HH-8.  HH-6 is based on a first order decay
+      #model, HH-8 is based on collection efficiency of a gas collection system.
+      #The ghgrp_landfill_detail_emissions include both as either can be the
+      #"reported" value.
+      
+      ghgrp_landfill_file <- file.path(input_directory,"GHGRP","landfill_HH.csv")
+      ghgrp_landfill_system_details_file <- file.path(input_directory,"GHGRP","landfill_HH_details.csv")
+      
+      data_URL <- "https://data.epa.gov/dmapservice/ghg.hh_subpart_level_information/csv"
+      Trycatch_downloader(URL = data_URL,method = "save",output_location = ghgrp_landfill_file,
+                          error_message = paste0("Greenhouse Gas Reporting Program data could not be downloaded using API link: ",data_URL))
+      
+      data_URL <- "https://data.epa.gov/dmapservice/ghg.hh_gas_collection_system_detls/csv"
+      Trycatch_downloader(URL = data_URL,method = "save",output_location = ghgrp_landfill_system_details_file,
+                          error_message = paste0("Greenhouse Gas Reporting Program data could not be downloaded using API link: ",data_URL))
+    }else{
+      ghgrp_landfill_file <- file.path(input_directory,"GHGRP","User_supplied_landfill_file.csv")
+      ghgrp_landfill_system_details_file <- file.path(input_directory,"GHGRP","User_supplied_landfill_detail_file.csv")
+      
+      invisible(file.copy(Source_GHGRP_landfills,file.path(input_directory,"GHGRP",ghgrp_landfill_file,overwrite = T)))
+      invisible(file.copy(Source_GHGRP_landfills,file.path(input_directory,"GHGRP",ghgrp_landfill_system_details_file,overwrite = T)))
+    }
+    ################################################################################
+    #load in and combine the emission data appropriately
     
-    ghgrp_landfill_file <- file.path(input_directory,"GHGRP","landfill_HH.csv")
-    ghgrp_landfill_system_details_file <- file.path(input_directory,"GHGRP","landfill_HH_details.csv")
+    #load in the files
+    ghgrp_landfill_only_emissions <- utils::read.csv(ghgrp_landfill_file)
+    ghgrp_landfill_detail_emissions <- utils::read.csv(ghgrp_landfill_system_details_file)
     
-    data_URL <- "https://data.epa.gov/dmapservice/ghg.hh_subpart_level_information/csv"
-    Trycatch_downloader(URL = data_URL,method = "save",output_location = ghgrp_landfill_file,
-                        error_message = paste0("Greenhouse Gas Reporting Program data could not be downloaded using API link: ",data_URL))
+    ghgrp_landfill_only_emissions <- make_consistent(ghgrp_landfill_only_emissions)
     
-    data_URL <- "https://data.epa.gov/dmapservice/ghg.hh_gas_collection_system_detls/csv"
-    Trycatch_downloader(URL = data_URL,method = "save",output_location = ghgrp_landfill_system_details_file,
-                        error_message = paste0("Greenhouse Gas Reporting Program data could not be downloaded using API link: ",data_URL))
-  }else if(Source_GHGRP_landfills=="default"){
-    #UPDATE TO ZENODO
+    #Now add the HH-6 and HH-8 emission rates to the dataframe too
+    GHGRP_landfills <- merge(ghgrp_landfill_only_emissions,
+                             ghgrp_landfill_detail_emissions[,c("facility_id","reporting_year","equation_hh6_result","equation_hh8_result")],
+                             by.x=c("facility_id","year"),by.y=c("facility_id","reporting_year"),all.x=T)
+    colnames(GHGRP_landfills) <- gsub("equation_hh6_result","HH_modeled",colnames(GHGRP_landfills))
+    colnames(GHGRP_landfills) <- gsub("equation_hh8_result","HH_collection_efficiency",colnames(GHGRP_landfills))
   }else{
-    ghgrp_landfill_file <- file.path(input_directory,"GHGRP","User_supplied_landfill_file.csv")
-    ghgrp_landfill_system_details_file <- file.path(input_directory,"GHGRP","User_supplied_landfill_detail_file.csv")
-    
-    invisible(file.copy(Source_GHGRP_landfills,file.path(input_directory,"GHGRP",ghgrp_landfill_file,overwrite = T)))
-    invisible(file.copy(Source_GHGRP_landfills,file.path(input_directory,"GHGRP",ghgrp_landfill_system_details_file,overwrite = T)))
+    GHGRP_landfills <- M3T::GHGRP_landfills
   }
-  ################################################################################
-  #load in and combine the emission data appropriately
-  
-  #load in the files
-  ghgrp_landfill_only_emissions <- utils::read.csv(ghgrp_landfill_file)
-  ghgrp_landfill_detail_emissions <- utils::read.csv(ghgrp_landfill_system_details_file)
-  
-  ghgrp_landfill_only_emissions <- make_consistent(ghgrp_landfill_only_emissions)
-  
-  #Now add the HH-6 and HH-8 emission rates to the dataframe too
-  GHGRP_landfills <- merge(ghgrp_landfill_only_emissions,
-                           ghgrp_landfill_detail_emissions[,c("facility_id","reporting_year","equation_hh6_result","equation_hh8_result")],
-                           by.x=c("facility_id","year"),by.y=c("facility_id","reporting_year"),all.x=T)
-  colnames(GHGRP_landfills) <- gsub("equation_hh6_result","HH_modeled",colnames(GHGRP_landfills))
-  colnames(GHGRP_landfills) <- gsub("equation_hh8_result","HH_collection_efficiency",colnames(GHGRP_landfills))
   ################################################################################
   #Use yr determined in CH4 inventory build - closest to inventory year with
   #both GHGI and GHGRP
@@ -254,7 +259,8 @@ Municipal_solid_waste <- function(input_directory,
   
   #identify facilities that stopped reporting without a valid reason, then
   #subset to only landfill facilities and only those that we don't have data for
-  #(e.g., it stopped reporting back in 2015, but reported again post 2018)
+  #(e.g., it stopped reporting back one year, but started up again before
+  #inventory_year)
   nonreporting_facilities <- unique(GHGRP_facility_data$facility_id[GHGRP_facility_data$reporting_status=="STOPPED_REPORTING_UNKNOWN_REASON" & GHGRP_facility_data$year<=GHGRP_year])
   nonreporting_landfills <- nonreporting_facilities[which(nonreporting_facilities %in% unique(ghgrp_landfill_emissions$facility_id))]
   nonreporting_landfills <- nonreporting_landfills[!(nonreporting_landfills %in% unique(ghgrp$facility_id))]
@@ -357,49 +363,51 @@ Municipal_solid_waste <- function(input_directory,
   ################################################################################
   #Download, and load in LMOP data
   
-  if(Source_LMOP=="download"){
-    LMOP_file <- list.files(input_directory,pattern="*LMOP_landfill_only.xlsx",full.names = T)
+  #Source=M3T means the data is already available
+  if(Source_LMOP!="M3T"){
+    if(Source_LMOP=="download"){
+      LMOP_file <- list.files(input_directory,pattern="*LMOP_landfill_only.xlsx",full.names = T)
+      
+      # if(identical(LMOP_file,character(0))){
+      #download the webpage and load in the HTML
+      data_URL <- paste0("https://www.epa.gov/lmop/landfill-technical-data")
+      download_dest <- tempfile(fileext = ".html")
+      Trycatch_downloader(URL = data_URL,method = "save",output_location = download_dest,
+                          error_message = paste0("LMOP data could not be webscraped from webpage: ",data_URL))
+      HTML_data <- readChar(download_dest,file.info(download_dest)$size)
+      
+      #Search for https:// - any 60 or fewer characters - landfilllmopdata.xlsx in
+      #the HTML_data.  The link had about 40 characters between https:// and
+      #landfilllmopdata in the current version, but this should identify any
+      #version if the format is reasonably consistent.  The data URL webpage must
+      #still be up to date though.  
+      Matchtext <- regexpr("https://.{1,60}landfilllmopdata.xlsx",HTML_data)
+      data_URL2 <- substring(HTML_data,Matchtext[1],Matchtext[1]+attr( Matchtext , "match.length")-1)
+      
+      #Use regex to save the year of the dataset as part of the download for
+      #clarity
+      LMOP_yr <- substr(data_URL2,regexpr("20.{2}",data_URL2)[1],regexpr("20.{2}",data_URL2)[1]+3)
+      LMOP_file <- file.path(input_directory,paste0(LMOP_yr,"_LMOP_landfill_only.xlsx"))
+      Trycatch_downloader(URL = data_URL2,method = "save",output_location = LMOP_file,
+                          error_message = paste0("LMOP data could not be downloaded from webpage:\n",data_URL2,"\nMake sure the main EPA page for it is still accurate:\n",data_URL))
+      unlink(download_dest)
+    }else{
+      LMOP_file <- file.path(input_directory,"User_supplied_LMOP_file.xlsx")
+      file.copy(Source_LMOP,LMOP_file,overwrite = T)
+    }
+    ################################################################################
+    #Remove LMOP sites already in GHGRP.  Note facilities that used to report to
+    #GHGRP and stopped with a valid reason are being retained as LMOP facilities
+    #in this approach.
+    LMOP <- readxl::read_xlsx(LMOP_file,sheet="LMOP Database",col_names = T)
     
-    # if(identical(LMOP_file,character(0))){
-    #download the webpage and load in the HTML
-    data_URL <- paste0("https://www.epa.gov/lmop/landfill-technical-data")
-    download_dest <- tempfile(fileext = ".html")
-    Trycatch_downloader(URL = data_URL,method = "save",output_location = download_dest,
-                        error_message = paste0("LMOP data could not be webscraped from webpage: ",data_URL))
-    HTML_data <- readChar(download_dest,file.info(download_dest)$size)
-    
-    #Search for https:// - any 60 or fewer characters - landfilllmopdata.xlsx in
-    #the HTML_data.  The link had about 40 characters between https:// and
-    #landfilllmopdata in the current version, but this should identify any
-    #version if the format is reasonably consistent.  The data URL webpage must
-    #still be up to date though.  
-    Matchtext <- regexpr("https://.{1,60}landfilllmopdata.xlsx",HTML_data)
-    data_URL2 <- substring(HTML_data,Matchtext[1],Matchtext[1]+attr( Matchtext , "match.length")-1)
-    
-    #Use regex to save the year of the dataset as part of the download for
-    #clarity
-    LMOP_yr <- substr(data_URL2,regexpr("20.{2}",data_URL2)[1],regexpr("20.{2}",data_URL2)[1]+3)
-    LMOP_file <- file.path(input_directory,paste0(LMOP_yr,"_LMOP_landfill_only.xlsx"))
-    Trycatch_downloader(URL = data_URL2,method = "save",output_location = LMOP_file,
-                        error_message = paste0("LMOP data could not be downloaded from webpage:\n",data_URL2,"\nMake sure the main EPA page for it is still accurate:\n",data_URL))
-    unlink(download_dest)
-    # }
-    
-  }else if(Source_LMOP=="default"){
-    #UPDATE TO ZENODO
-    # LMOP <- LMOP_data
+    #This has some nans in, remove those
+    LMOP <- subset(LMOP,!is.na(LMOP$Latitude))
   }else{
-    LMOP_file <- file.path(input_directory,"User_supplied_LMOP_file.xlsx")
-    file.copy(Source_LMOP,LMOP_file,overwrite = T)
+    LMOP <- M3T::LMOP_data
   }
   ################################################################################
-  #Remove LMOP sites already in GHGRP.  Note facilities that used to report to
-  #GHGRP and stopped with a valid reason are being retained as LMOP facilities
-  #in this approach.
-  LMOP <- readxl::read_xlsx(LMOP_file,sheet="LMOP Database",col_names = T)
-  
-  #This has some nans in, remove those
-  LMOP <- subset(LMOP,!is.na(LMOP$Latitude))
+  #Process LMOP
   
   LMOP_non_ghgrp <- LMOP[!(LMOP$`GHGRP ID` %in% ghgrp$facility_id),]
   
@@ -437,14 +445,6 @@ Municipal_solid_waste <- function(input_directory,
   LMOP_flux <- LMOP_rast*1e9/(terra::cellSize(LMOP_rast,unit="m"))
   LMOP_flux[is.na(LMOP_flux)]<-0
   LMOP_flux <- terra::mask(LMOP_flux,domain)
-  
-  if(verbose){
-    if(nrow(LMOP_crop)>0){
-      LMOP_crop <- LMOP_crop[order(LMOP_crop$`Landfill Name`),]
-      
-      utils::write.csv(LMOP_crop, file.path(Landfill_output_directory,"MSW_LMOP_all.csv"))
-    }
-  }
   
   writeCDF_no_newline(LMOP_flux,
                       file.path(Landfill_output_directory,'MSW_LMOP.nc'),
@@ -568,6 +568,6 @@ Municipal_solid_waste <- function(input_directory,
              domain=domain,County_Tigerlines=County_Tigerlines,
              State_CB=State_CB)
   }
-  cat("Finished landfill sector: Municipal_solid_waste in",round(difftime(Sys.time(),starttime,units = "min"),2),"minutes\n\n")
+  cat("Finished landfill sector: Municipal_solid_waste at",format(Sys.time(),"%H:%M"),"with a total runtime of",round(difftime(Sys.time(),starttime,units = "min"),2),"minutes\n\n")
 }
 
