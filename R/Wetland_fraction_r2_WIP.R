@@ -36,8 +36,6 @@
 #'  These are used in further processing.
 #'@inheritParams Municipal_solid_waste
 #'
-#'@param Use_SOCCR1 Logical.  Pulled from \code{\link{M3T_config}}.
-#'@param Use_SOCCR2 Logical.  Pulled from \code{\link{M3T_config}}.
 #'@returns Nothing is returned from the function, but the main outputs are TIFF
 #'  files of the fractional wetland coverage per pixel for each wetland type and
 #'  state.  They are titled "state abbreviation _ wetland type
@@ -78,9 +76,7 @@ NWI_Wetland_fraction <- function(input_directory,
                                  output_directory,
                                  domain,
                                  domain_template,
-                                 state_name_list,
-                                 Use_SOCCR1,
-                                 Use_SOCCR2){
+                                 state_name_list){
   
   # Calculate wetland fraction using NWI state wetland cover data
   
@@ -109,10 +105,10 @@ NWI_Wetland_fraction <- function(input_directory,
     #pull the name of input for later, have to do so before editing input within
     #the function in any way
     input_name <- substitute(input)
-    if(paste0(state_name_list[i],'_',input_name,'.tiff') %in% Processed_NWI_files){
+    if(paste0(state_name_list[i],'_',input_name,'.tif') %in% Processed_NWI_files){
       cat(input_name,"already processed for",state_name_list[i],"\n")
     }else{
-      cat("Starting",input_name,"for",state_name_list[i],"at",round(difftime(Sys.time(),starttime,units = "min"),2),"minutes since start\n")
+      cat("Starting",input_name,"for",state_name_list[i],"at",format(Sys.time(),"%H:%M"),"\n")
       
       #identify any invalid polygons (errors such as too few vertices or
       #self-intersection).  Has to be done in multiple steps or it doesn't seem to
@@ -141,31 +137,43 @@ NWI_Wetland_fraction <- function(input_directory,
       output_rast <- terra::extend(output_rast,terra::ext(domain)+terra::res(domain_template)*20,fill=0)
       output_rast <- terra::crop(output_rast,terra::ext(domain)+terra::res(domain_template)*20)
       terra::writeRaster(output_rast,
-                         file.path(NWI_output_directory,paste0(state_name_list[i],'_',input_name,'.tiff')),
+                         file.path(NWI_output_directory,paste0(state_name_list[i],'_',input_name,'.tif')),
                          overwrite=T)
+      
+      invisible(rm(output_rast,input,invalid_polygons,validated_input,valid_polygons))
+      gc()
     }
   }
   ################################################################################
   #load in the wetlands files
   
-  #first check which have already been downloaded if any (note MN is special).
+  #first check which have already been downloaded if any (note AZ is special).
   input_directory_data <- list.files(NWI_input_directory)
   Downloaded_NWI_files <- paste0(state_name_list,"_Wetlands_Geopackage.gpkg") %in% input_directory_data
-  Downloaded_NWI_files[state_name_list=="MN"] <- "MN_geodatabase_wetlands" %in% input_directory_data
+  Downloaded_NWI_files[state_name_list=="AZ"] <- "AZ_geodatabase_wetlands" %in% input_directory_data
   
   #check those that have already been processed
-  Processed_NWI_files <- list.files(NWI_output_directory,pattern=".tiff")
+  Processed_NWI_files <- list.files(NWI_output_directory,pattern=".tif")
   
   for(i in 1:length(state_name_list)){
-    cat("Starting processing for",state_name_list[i],"at",round(difftime(Sys.time(),starttime,units = "min"),2),"minutes since start\n")
+    cat("Starting processing for",state_name_list[i],"at",format(Sys.time(),"%H:%M"),"\n")
     
+    ################################################################################
+    #Quick check for speed on restarting partial runs
+    if(state_name_list[i] %in% sapply(strsplit(Processed_NWI_files[grepl("PNF.tif",Processed_NWI_files)],"_"),"[[",1)){
+      cat(state_name_list[i],"already processed, skipping\n\n")
+      next
+    }
+    
+    ################################################################################
     #filename on the NWI website
-    if(state_name_list[i]=="MN"){
-      NWI_filename <- "MN_geodatabase_wetlands.zip"
+    if(state_name_list[i]=="AZ"){
+      NWI_filename <- "AZ_geodatabase_wetlands.zip"
     }else{
       NWI_filename <- paste0(state_name_list[i],"_geopackage_wetlands.zip")
     }
     
+    ################################################################################
     #download any not already downloaded
     if(!Downloaded_NWI_files[i]){
       data_URL <- paste0(NWI_url,NWI_filename)
@@ -185,14 +193,20 @@ NWI_Wetland_fraction <- function(input_directory,
       
       #in some cases, the file name in the zip differs.  Force it to match
       #expected.
-      new_file <- list.files(NWI_input_directory,full.names = T)[grep(state_name_list[i],list.files(NWI_input_directory,full.names = T))]
-      file.rename(new_file,file.path(NWI_input_directory,paste0(state_name_list[i],"_Wetlands_Geopackage.gpkg")))
+      if(state_name_list[i]=="AZ"){
+        new_file <- list.files(NWI_input_directory,full.names = T)[grep("AZ",list.files(NWI_input_directory,full.names = T))]
+        file.rename(new_file,file.path(NWI_input_directory,"AZ_geodatabase_wetlands.gdb"))
+      }else{
+        output_state <- sapply(strsplit(list.files(NWI_input_directory),"_"),"[[",1)
+        new_file <- list.files(NWI_input_directory,full.names = T)[output_state==state_name_list[i]]
+        file.rename(new_file,file.path(NWI_input_directory,paste0(state_name_list[i],"_Wetlands_Geopackage.gpkg")))
+      }
     }
     
     #The filename switches here from the .zip to the unzipped filename
-    if(state_name_list[i]=="MN"){
-      NWI_full_filename <- file.path(NWI_input_directory,"MN_geodatabase_wetlands.gdb")
-      wetlands <- terra::vect(NWI_full_filename,layer="MN_wetlands")
+    if(state_name_list[i]=="AZ"){
+      NWI_full_filename <- file.path(NWI_input_directory,"AZ_geodatabase_wetlands.gdb")
+      wetlands <- terra::vect(NWI_full_filename,layer="AZ_wetlands")
       wetlands <- wetlands[,"ATTRIBUTE"]
     }else{
       NWI_full_filename <- file.path(NWI_input_directory,paste0(state_name_list[i],"_Wetlands_Geopackage.gpkg"))
@@ -203,7 +217,7 @@ NWI_Wetland_fraction <- function(input_directory,
       wetlands <- wetlands[,"ATTRIBUTE"]
     }
     
-    cat("Finished loading and combining all wetland files at",round(difftime(Sys.time(),starttime,units = "min"),2),"minutes since start\n")
+    cat("Finished loading and combining all wetland files at",format(Sys.time(),"%H:%M"),"\n")
     ################################################################################
     #split them into the relevant parts and rasterize/save them
     
@@ -212,7 +226,7 @@ NWI_Wetland_fraction <- function(input_directory,
     wetlands <- terra::project(wetlands,terra::crs(domain))
     state_template <- domain_template
     terra::values(state_template) <- 0
-    state_template <- terra::extend(state_template,terra::ext(wetlands)+0.5,snap="out")
+    state_template <- terra::extend(state_template,terra::ext(wetlands)+2,snap="out")
     
     #split the wetlands file into the relevant wetland types
     Attribute_text <- wetlands$ATTRIBUTE
@@ -223,12 +237,10 @@ NWI_Wetland_fraction <- function(input_directory,
     R4 <- wetlands[startsWith(Attribute_text, 'R4'),]
     L1 <- wetlands[startsWith(Attribute_text, 'L1'),]
     L2 <- wetlands[startsWith(Attribute_text, 'L2'),]
-    if(Use_SOCCR1 | Use_SOCCR2){
-      M2 <- wetlands[startsWith(Attribute_text, 'M2'),]
-      E2 <- wetlands[startsWith(Attribute_text, 'E2'),]
-      PFO <- wetlands[startsWith(Attribute_text, 'PFO'),]
-      PNF <- wetlands[startsWith(Attribute_text, 'P')&!startsWith(Attribute_text, 'PFO'),]
-    }
+    M2 <- wetlands[startsWith(Attribute_text, 'M2'),]
+    E2 <- wetlands[startsWith(Attribute_text, 'E2'),]
+    PFO <- wetlands[startsWith(Attribute_text, 'PFO'),]
+    PNF <- wetlands[startsWith(Attribute_text, 'P')&!startsWith(Attribute_text, 'PFO'),]
     
     # if there is some of category R1
     if(dim(R1)[1]!=0){
@@ -254,29 +266,28 @@ NWI_Wetland_fraction <- function(input_directory,
     if(dim(L2)[1]!=0){
       rasterize_plus(L2)
     }
-    if(Use_SOCCR1 | Use_SOCCR2){
-      if(dim(M2)[1]!=0){
-        rasterize_plus(M2)
-      }
-      
-      if(dim(E2)[1]!=0){
-        rasterize_plus(E2)
-      }
-      
-      if(dim(PFO)[1]!=0){
-        rasterize_plus(PFO)
-      }
-      
-      if(dim(PNF)[1]!=0){
-        rasterize_plus(PNF)
-      }
+    if(dim(M2)[1]!=0){
+      rasterize_plus(M2)
     }
+    
+    if(dim(E2)[1]!=0){
+      rasterize_plus(E2)
+    }
+    
+    if(dim(PFO)[1]!=0){
+      rasterize_plus(PFO)
+    }
+    
+    if(dim(PNF)[1]!=0){
+      rasterize_plus(PNF)
+    }
+    
     #minor - just have one less newline at the end if this is the last one
     if(i==length(state_name_list)){
-      cat("Finished processing",state_name_list[i],"which is",i,"of",length(state_name_list),"at",round(difftime(Sys.time(),starttime,units = "min"),2),"minutes since start\n")
+      cat("Finished processing",state_name_list[i],"which is",i,"of",length(state_name_list),"at",format(Sys.time(),"%H:%M"),"\n")
     }else{
-      cat("Finished processing",state_name_list[i],"which is",i,"of",length(state_name_list),"at",round(difftime(Sys.time(),starttime,units = "min"),2),"minutes since start\n\n")
+      cat("Finished processing",state_name_list[i],"which is",i,"of",length(state_name_list),"at",format(Sys.time(),"%H:%M"),"\n\n")
     }
   }
-  cat("Finished wetland sector: NWI_Wetland_fraction in",round(difftime(Sys.time(),starttime,units = "min"),2),"minutes\n\n")
+  cat("Finished wetland sector: NWI_Wetland_fraction at",format(Sys.time(),"%H:%M"),"with a total runtime of",round(difftime(Sys.time(),starttime,units = "min"),2),"minutes\n\n")
 }
