@@ -40,7 +40,6 @@
 #'  files of the fractional wetland coverage per pixel for each wetland type and
 #'  state.  They are titled "state abbreviation _ wetland type
 #'  abbreviation.tiff".
-#'@inherit CH4_inventory_build author
 #'@seealso [CH4_inventory_build()] Calculates methane inventory using settings
 #'  provided in config.
 #'

@@ -48,7 +48,6 @@
 #'@author Israel Lopez-Coto, \email{test@@test.edu}
 #'@references \href{https://doi.org/10.1029/2020JD032974}{Vulcan}
 #'@references \href{https://doi.org/10.1002/2017JD027359}{ACES}
-#'@inherit CH4_inventory_build author
 #'@seealso [NG_distribution()] Calculates methane emissions for the natural gas
 #'  distribution sector.
 #'

@@ -44,7 +44,6 @@
 #'  are titled "GEPA_thermo.nc" for gridded EPA thermogenic,
 #'  "GEPA_non_thermo.nc" for non-thermogenic, "GEPA_ind_landfill.nc" for
 #'  industrial landfills.
-#'@inherit CH4_inventory_build author
 #'@references \href{https://doi.org/10.1021/acs.est.3c05138}{Maasakkers et al.}
 #'@inherit Municipal_solid_waste seealso
 #'@keywords internal
