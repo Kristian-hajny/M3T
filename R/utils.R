@@ -6,8 +6,6 @@
 #'   outputting a new line after running.  Improves flow of periodic user
 #'   updates within the package.
 #'
-#' @inherit CH4_inventory_build author
-#'
 #' @keywords internal
 
 #@examples
@@ -44,7 +42,6 @@ writeCDF_no_newline <- function(input_raster,...) {
 #'   connectivity.  It will attempt the download up to 5 times before failing.
 #'   Includes user updates throughout as well.
 #'
-#' @inherit CH4_inventory_build author
 #' @keywords internal
 
 
@@ -128,7 +125,6 @@ Trycatch_downloader <- function(URL, output_location = NULL, method, error_messa
 #'   tables.  It will also force the "ghg_name" and "facility_name" data to be
 #'   lower case and remove any data for a ghg besides methane.
 #' @returns input with changes described as in Details
-#' @inherit CH4_inventory_build author
 #' @keywords internal
 
 
