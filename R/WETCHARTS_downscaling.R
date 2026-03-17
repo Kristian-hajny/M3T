@@ -40,9 +40,6 @@
 #'  separately for each model subset used.
 #'@param Source_wetland_NLCD Character.  Pulled from \code{\link{M3T_config}}.
 #'@param Source_wetcharts Character.  Pulled from \code{\link{M3T_config}}.
-#'@param Source_wetland_NLCD Character.  Pulled from \code{\link{M3T_config}}.
-#'@param Source_wetland_NLCD Character.  Pulled from \code{\link{M3T_config}}.
-#'@param Source_wetland_NLCD Character.  Pulled from \code{\link{M3T_config}}.
 #'@param Wetcharts_model_subset List of numeric vectors.  Pulled from
 #'  \code{\link{M3T_config}}.
 #'@returns Nothing is returned from the function, but the main outputs are
@@ -55,7 +52,6 @@
 #'  plots with consistent axes are saved for each model subset used.  They are
 #'  named "Wetcharts_NLCD_subset_#_annual.png" where # is a numeric to identify
 #'  the model subset.
-#'@inherit CH4_inventory_build author
 #'@seealso [CH4_inventory_build()] Calculates methane inventory using settings
 #'  provided in config.
 #'
@@ -168,16 +164,23 @@ Disaggregate_Wetcharts <- function(input_directory,
   #load in the landcover - national land cover database (NLCD)
   NLCD_file <- file.path(input_directory,"NLCD")
   dir.create(NLCD_file,showWarnings = F)
-  invisible(file.copy(list.files(Source_wetland_NLCD,full.names=T),
-                      NLCD_file,overwrite = T,recursive=T))
-  NLCD_file <- list.files(NLCD_file,pattern="*.tif$",full.names=T)
+  if(dir.exists(Source_wetland_NLCD)){
+    invisible(file.copy(list.files(Source_wetland_NLCD,full.names=T),
+                        NLCD_file,overwrite = T,recursive=T))
+  }else{
+    invisible(file.copy(list.files(dirname(Source_wetland_NLCD),full.names=T),
+                        NLCD_file,overwrite = T,recursive=T))
+  }
+  NLCD_file <- list.files(NLCD_file,pattern="*.tif$|*.img$",full.names=T)
   NLCD <- terra::rast(NLCD_file)
   
-  #correct levels from the R interpreted ones (provided in manual)
-  NLCD_key <- data.frame("Value"=c(11,12,21:24,31,41:43,52,71,81:82,90,95),
-                         "Land_Class"=terra::levels(NLCD)[[1]][,2])
-  levels(NLCD) <- NLCD_key
-  
+  if(nrow(terra::levels(NLCD)[[1]])<100){
+    #correct levels from the R interpreted ones (provided in manual)
+    NLCD_key <- data.frame("Value"=c(11,12,21:24,31,41:43,52,71,81:82,90,95),
+                           "Land_Class"=terra::levels(NLCD)[[1]][,2])
+    levels(NLCD) <- NLCD_key
+  }
+
   # reproject states to matching CRS
   NLCD_states_trans <- terra::project(State_Tigerlines,terra::crs(NLCD))
   
