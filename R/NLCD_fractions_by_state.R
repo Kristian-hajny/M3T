@@ -30,7 +30,6 @@
 #'  developed open space + developed low intensity for the state on the same
 #'  grid as the input domain. The csv is titled "NLCD_state_total_areas.csv" and
 #'  provides the total area of each land cover type in each state.
-#'@inherit CH4_inventory_build author
 #'@seealso [CH4_inventory_build()] Calculates methane inventory using settings
 #'provided in config.
 #'
@@ -91,13 +90,15 @@ NLCD_open_and_low_int <- function(input_directory,
     invisible(file.copy(list.files(dirname(Source_wastewater_NLCD),full.names=T),
                         NLCD_file,overwrite = T,recursive=T))
   }
-  NLCD_file <- list.files(NLCD_file,pattern="*.tif$",full.names=T)
+  NLCD_file <- list.files(NLCD_file,pattern="*.tif$|*.img$",full.names=T)
   NLCD <- terra::rast(NLCD_file)
   
-  #correct levels from the R interpreted ones (provided in manual)
-  NLCD_key <- data.frame("Value"=c(11,12,21:24,31,41:43,52,71,81:82,90,95),
-                         "Land_Class"=terra::levels(NLCD)[[1]][,2])
-  levels(NLCD) <- NLCD_key
+  if(nrow(terra::levels(NLCD)[[1]])<100){
+    #correct levels from the R interpreted ones (provided in manual)
+    NLCD_key <- data.frame("Value"=c(11,12,21:24,31,41:43,52,71,81:82,90,95),
+                           "Land_Class"=terra::levels(NLCD)[[1]][,2])
+    levels(NLCD) <- NLCD_key
+  }
   
   # reproject states to matching CRS
   NLCD_states_trans <- terra::project(State_Tigerlines,terra::crs(NLCD))
