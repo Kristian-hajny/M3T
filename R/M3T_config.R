@@ -293,10 +293,6 @@ M3T_config$Base_timeout <- 60*20
     #cover from the NLCD in km2
     M3T_config$Total_national_open_or_low_int_area <- "M3T"
     
-    #1990 census data on state estimated septic fractions.
-    M3T_config$Wastewater_State_info <- data.frame("State"          =c("AL"    ,"AZ"    ,"AR"    ,"CA"      ,"CO"    ,"CT"    ,"DE"    ,"DC"    ,"FL"      ,"GA"    ,"ID"    ,"IL"    ,"IN"    ,"IA"    ,"KS"    ,"KY"    ,"LA"    ,"ME"    ,"MD"    ,"MA"      ,"MI"    ,"MN"    ,"MS"    ,"MO"    ,"MT"    ,"NE"    ,"NV"    ,"NH"    ,"NJ"    ,"NM"    ,"NY"      ,"NC"    ,"ND"    ,"OH"      ,"OK"    ,"OR"    ,"PA"    ,"RI"    ,"SC"    ,"SD"    ,"TN"    ,"TX"      ,"UT"    ,"VT"    ,"VA"    ,"WA"    ,"WV"    ,"WI"    ,"WY"),
-                                                   "Septic_Fraction"=c(0.4360  ,0.1700  ,0.3820  ,0.0980    ,0.1240  ,0.2860  ,0.2570  ,0.0020  ,0.1265    ,0.3680  ,0.3460  ,0.1330  ,0.3130  ,0.2320  ,0.1790  ,0.3980  ,0.2580  ,0.5130  ,0.1810  ,0.2670    ,0.2830  ,0.2530  ,0.3830  ,0.2420  ,0.3750  ,0.1780  ,0.1170  ,0.4900  ,0.1160  ,0.2550  ,0.1615    ,0.4850  ,0.2410  ,0.2150    ,0.2610  ,0.2930  ,0.2450  ,0.2860  ,0.4060  ,0.2680  ,0.3860  ,0.1810    ,0.1090  ,0.5500  ,0.2830  ,0.3100  ,0.4080  ,0.2830  ,0.2410))
-    
     #All state septic fractions from the american housing survey as of 2025.
     M3T_config$Wastewater_reported_State_info <- rbind(data.frame("State"          =rep("CA",3),
                                                                   "Year"           =c(2015  ,2021  ,2023),
