@@ -101,7 +101,6 @@
 #'  (industrial); fuel is abbreviated as wood, petr (petroleum), gas (natural
 #'  gas), and coal; variation is bystate or bydomain; and inventory is ACES or
 #'  Vulcan.
-#'@inherit CH4_inventory_build author
 #'@seealso [CH4_inventory_build()] Calculates methane inventory using settings
 #'provided in config.
 #'
@@ -198,6 +197,7 @@ Stationary_combustion <- function(input_directory,
                                   output_directory,
                                   inventory_year,
                                   GHGI_data_yr,
+                                  State_Tigerlines,
                                   verbose,
                                   County_Tigerlines,
                                   Use_ACES,
@@ -239,46 +239,93 @@ Stationary_combustion <- function(input_directory,
   SEDS_yr <- GHGI_data_yr
   
   ################################################################################
-  #download SEDS data
+  #download SEDS data via bulk download
   
-  SEDS_state_name_list <- c(state_name_list,"US")
-  SEDS_filename <- file.path(input_directory,"EIA","SEDS.csv")
-  
+  SEDS_filename <- file.path(input_directory,"EIA","SEDS.txt")
+
   if(Source_EIA_SEDS_data=="M3T"){
     #UPDATE TO ZENODO
     EIA_raw_data <- M3T::EIA_SEDS
-    EIA_raw_data <- EIA_raw_data[EIA_raw_data$period==SEDS_yr,]
   }else{
     if(Source_EIA_SEDS_data=="download"){
-      #see https://www.eia.gov/opendata/browser/seds.  Filtered to only sectors,
-      #states, and years of interest here.  All in billion BTU/yr units (last
-      #digit B instead of P - short tons)
+      SEDS_state_name_list <- c(paste0("USA-",state_name_list),"USA\"")
       
-      SEDS_URL <- paste0("https://api.eia.gov/v2/seds/data/?frequency=annual&data[0]=value&facets[seriesId][]=CLCCB",
-                         "&facets[seriesId][]=CLEIB&facets[seriesId][]=CLICB&facets[seriesId][]=NGCCB&facets[seriesId][]=NGEIB&facets[seriesId][]=NGICB&facets[seriesId][]=PACCB&facets[seriesId][]=PAEIB&facets[seriesId][]=PAICB&facets[seriesId][]=PARCB&facets[seriesId][]=WDRCB&facets[seriesId][]=WWCCB&facets[seriesId][]=WWEIB&facets[seriesId][]=WWICB",
-                         paste0("&facets[stateId][]=",SEDS_state_name_list,collapse = ""),
-                         "&start=",SEDS_yr-1,"&end=",SEDS_yr+1,
-                         "&sort[0][column]=seriesId&sort[0][direction]=asc&offset=0&api_key=",EIA_API_key)
-      
-      #download directly into R and keep only the data table
-      EIA_raw_data <- Trycatch_downloader(SEDS_URL,output_location=NULL,method="JSON",
-                                          error_message=paste0("\nEIA State Energy Data System data could not be downloaded using API link: ",SEDS_URL,"\n\nmake sure you have an active EIA API key in the config!"))
-      EIA_raw_data <- EIA_raw_data$response$data
-      
-      #frustratingly, the API seems inconsistent. Sometimes 2022 - 2022 grabs
-      #only 2022.  Other times doing that gives you no data, and you have to set
-      #to 2021 - 2022 or 2022 - 2023 to get the data you want.  This is just to
-      #handle these cases.  Download desired year +/-1, then filter to just the
-      #year of interest.
-      EIA_raw_data <- EIA_raw_data[EIA_raw_data$period==SEDS_yr,]
-      
-      utils::write.csv(file = SEDS_filename,x = EIA_raw_data,row.names = F)
+      temp_zip <- tempfile(fileext = ".zip")
+      temp_dir <- tempdir()
+      Trycatch_downloader("https://www.eia.gov/opendata/bulk/SEDS.zip",temp_zip,"save","Failed download of EIA SEDS data from https://www.eia.gov/opendata/bulk/SEDS.zip, check https://www.eia.gov/opendata/")
+      utils::unzip(temp_zip,exdir=temp_dir,overwrite = T)
+      file.copy(file.path(temp_dir,"SEDS.txt"),SEDS_filename)
     }else{
       invisible(file.copy(Source_EIA_SEDS_data,SEDS_filename,overwrite = T))
     }
-    EIA_raw_data <- utils::read.csv(SEDS_filename,header=T)
+    
+    #see https://www.eia.gov/opendata/browser/seds.  Filtered to only sectors,
+    #states, and years of interest here.  All in billion BTU/yr units (last
+    #digit B instead of P - short tons)
+    EIA_raw_json <- readLines(SEDS_filename)
+    EIA_raw_json <- EIA_raw_json[grep("CLCCB|CLEIB|CLICB|NGCCB|NGEIB|NGICB|PACCB|PAEIB|PAICB|PARCB|WDRCB|WWCCB|WWEIB|WWICB",EIA_raw_json)]
+    EIA_raw_json <- EIA_raw_json[grep(paste0(SEDS_state_name_list,collapse="|"),EIA_raw_json)]
+    
+    #load data from 1 entry and format to align with the API download format
+    subset_data <- jsonlite::fromJSON(EIA_raw_json[1])
+    EIA_raw_data <- data.frame("period"=as.numeric(subset_data$data[,1]),
+                               "seriesId"=strsplit(subset_data$series_id,"\\.")[[1]][2],
+                               "seriesDescription"=subset_data$name,
+                               "stateId"=strsplit(subset_data$series_id,"\\.")[[1]][3],
+                               "value"=as.numeric(subset_data$data[,2]))
+    for(A in 2:length(EIA_raw_json)){
+      subset_data <- jsonlite::fromJSON(EIA_raw_json[A])
+      temp <- data.frame("period"=as.numeric(subset_data$data[,1]),
+                         "seriesId"=strsplit(subset_data$series_id,"\\.")[[1]][2],
+                         "seriesDescription"=subset_data$name,
+                         "stateId"=strsplit(subset_data$series_id,"\\.")[[1]][3],
+                         "value"=as.numeric(subset_data$data[,2]))
+      EIA_raw_data <- rbind(EIA_raw_data,temp)
+    }
   }
+  EIA_raw_data <- EIA_raw_data[EIA_raw_data$period==SEDS_yr,]
   
+  # ################################################################################
+  # #download SEDS data via API
+  # 
+  # SEDS_state_name_list <- c(state_name_list,"US")
+  # SEDS_filename <- file.path(input_directory,"EIA","SEDS.csv")
+  # 
+  # if(Source_EIA_SEDS_data=="M3T"){
+  #   #UPDATE TO ZENODO
+  #   EIA_raw_data <- M3T::EIA_SEDS
+  #   EIA_raw_data <- EIA_raw_data[EIA_raw_data$period==SEDS_yr,]
+  # }else{
+  #   if(Source_EIA_SEDS_data=="download"){
+  #     #see https://www.eia.gov/opendata/browser/seds.  Filtered to only sectors,
+  #     #states, and years of interest here.  All in billion BTU/yr units (last
+  #     #digit B instead of P - short tons)
+  #     
+  #     SEDS_URL <- paste0("https://api.eia.gov/v2/seds/data/?frequency=annual&data[0]=value&facets[seriesId][]=CLCCB",
+  #                        "&facets[seriesId][]=CLEIB&facets[seriesId][]=CLICB&facets[seriesId][]=NGCCB&facets[seriesId][]=NGEIB&facets[seriesId][]=NGICB&facets[seriesId][]=PACCB&facets[seriesId][]=PAEIB&facets[seriesId][]=PAICB&facets[seriesId][]=PARCB&facets[seriesId][]=WDRCB&facets[seriesId][]=WWCCB&facets[seriesId][]=WWEIB&facets[seriesId][]=WWICB",
+  #                        paste0("&facets[stateId][]=",SEDS_state_name_list,collapse = ""),
+  #                        "&start=",SEDS_yr-1,"&end=",SEDS_yr+1,
+  #                        "&sort[0][column]=seriesId&sort[0][direction]=asc&offset=0&api_key=",EIA_API_key)
+  #     
+  #     #download directly into R and keep only the data table
+  #     EIA_raw_data <- Trycatch_downloader(SEDS_URL,output_location=NULL,method="JSON",
+  #                                         error_message=paste0("\nEIA State Energy Data System data could not be downloaded using API link: ",SEDS_URL,"\n\nmake sure you have an active EIA API key in the config!"))
+  #     EIA_raw_data <- EIA_raw_data$response$data
+  #     
+  #     #frustratingly, the API seems inconsistent. Sometimes 2022 - 2022 grabs
+  #     #only 2022.  Other times doing that gives you no data, and you have to set
+  #     #to 2021 - 2022 or 2022 - 2023 to get the data you want.  This is just to
+  #     #handle these cases.  Download desired year +/-1, then filter to just the
+  #     #year of interest.
+  #     EIA_raw_data <- EIA_raw_data[EIA_raw_data$period==SEDS_yr,]
+  #     
+  #     utils::write.csv(file = SEDS_filename,x = EIA_raw_data,row.names = F)
+  #   }else{
+  #     invisible(file.copy(Source_EIA_SEDS_data,SEDS_filename,overwrite = T))
+  #   }
+  #   EIA_raw_data <- utils::read.csv(SEDS_filename,header=T)
+  # }
+  # 
   ################################################################################
   #prepare SEDS data
   
@@ -576,9 +623,11 @@ Stationary_combustion <- function(input_directory,
   ################################################################################
   #Now load in the shapefiles and ACES/Vulcan, merge geometries
   
-  #add leading zeroes to the fips codes - when saving to csv these were removed
-  df_wide$STATE_FIPS <- sprintf("%02d",as.numeric(df_wide$STATE_FIPS))
-  df_wide$COUNTY_FIPS <- sprintf("%03d",as.numeric(df_wide$COUNTY_FIPS))
+  #add leading zeroes to the fips codes - when saving to csv these were removed.
+  #As.character first to ensure the actual value, not factor level is used
+  #(converted to factor earlier).
+  df_wide$STATE_FIPS <- sprintf("%02d",as.numeric(as.character(df_wide$STATE_FIPS)))
+  df_wide$COUNTY_FIPS <- sprintf("%03d",as.numeric(as.character(df_wide$COUNTY_FIPS)))
   
   merge_with_poly <- terra::merge(x = County_Tigerlines,y = df_wide,
                                   by.y=c('STATE_FIPS', 'COUNTY_FIPS'),
@@ -739,6 +788,18 @@ Stationary_combustion <- function(input_directory,
     # disaggregation_level <- tail(strsplit(input_name,"_")[[1]],1)
     inventory_name <- strsplit(input_name,"_")[[1]][1]
     
+    
+    #if CONUS or custom with a very large domain - reprojecting domain can be
+    #problematic
+    if(any(terra::ext(domain)/terra::ext(State_Tigerlines) > 1.1)){
+      domain_reproj <- terra::as.polygons(terra::ext(domain_template)/terra::ext(State_Tigerlines) * terra::ext(terra::project(State_Tigerlines,input)))
+      terra::crs(domain_reproj) <- terra::crs(input)
+    }else{
+      domain_reproj <- terra::as.polygons(terra::ext(terra::project(domain_template,terra::crs(input))))
+      terra::crs(domain_reproj) <- terra::crs(input)
+    }
+    
+    
     #project to a grid with the exact right resolution, extent and origin. First
     #put domain in ACES/Vulcan crs, then crop/mask input to it, add a few pixels
     #worth of buffer (at the domain resolution) filled with 0's so the average
@@ -750,7 +811,6 @@ Stationary_combustion <- function(input_directory,
     #(building emissions partially from all counties a pixel is within).  Here
     #we account for pixels partially within the domain (excluding the fraction
     #of pixels outside the domain).
-    domain_reproj <- terra::project(domain,terra::crs(input))
     input=terra::crop(input,domain_reproj,snap="out")
     input=terra::mask(input,domain_reproj,touches=T,updatevalue=0)
     cover <- terra::extract(input,domain_reproj,weights=T,cells=T)
