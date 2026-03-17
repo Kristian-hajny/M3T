@@ -17,8 +17,6 @@
 #'
 #'@returns SpatVector
 #'
-#'@inherit CH4_inventory_build author
-#'
 #'@seealso [CH4_inventory_build()] Calculates methane inventory using settings
 #'  provided in config.
 #'@keywords internal

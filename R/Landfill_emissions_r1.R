@@ -88,7 +88,6 @@
 #'  netcdf files are titled "Landfill_sector_total_GHGRP_reported.nc",
 #'  "Landfill_sector_total_GHGRP_modeled.nc", and
 #'  "Landfill_sector_total_GHGRP_collection_efficiency.nc".
-#'@inherit CH4_inventory_build author
 #'@seealso [CH4_inventory_build()] Calculates methane inventory using settings
 #'  provided in config.
 #'

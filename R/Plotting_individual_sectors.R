@@ -11,7 +11,6 @@
 #'  emissions.
 #'@returns The log-scaled input data is returned, after removing infinite
 #'  values.
-#'@inherit CH4_inventory_build author
 #'@seealso [log_plot()] plots the data in simple log-scale visuals.
 #'@keywords internal
 
@@ -63,7 +62,6 @@ prep_plot_data <- function(input){
 #'  gridded methane data colored on a log scale with NA values set to black. All
 #'  axes are clearly labeled and state, county, and, if relevant, focus city
 #'  boundaries are overlaid in greys and white.
-#'@inherit CH4_inventory_build author
 #'@inherit Municipal_solid_waste seealso
 #'@seealso
 #'
@@ -222,7 +220,6 @@ log_plot <- function(input,title,zlim_min=NULL,zlim_max=NULL,
 #'@returns This function returns nothing, but does produce a plot with the
 #'  gridded methane data colored with NA values set to black. All axes are
 #'  clearly labeled and state and county, boundaries are overlaid.
-#'@inherit CH4_inventory_build author
 #'@inherit Municipal_solid_waste seealso
 #'@seealso 
 #'
