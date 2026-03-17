@@ -350,11 +350,6 @@ CH4_inventory_build <- function(run_directory,
     error_text <- paste0(error_text,"\n\nMust set M3T_config$Process_wetlands_and_inland_waters or M3T_config$Use_Wetcharts to FALSE or set M3T_config$Source_wetland_NLCD to \"M3T\" to use preprocessed wetcharts or set M3T_config$Source_wetland_NLCD to the filepath for the raw wetcharts data to use")
   }
   
-  if(M3T_config$Process_wastewater & sum(!unique(M3T_config$Wastewater_State_info$Method) %in% c("scaled","reported"))){
-    error_found <- TRUE
-    error_text <- paste0(error_text,"\n\nMust set M3T_config$Process_wastewater to FALSE or set M3T_config$Wastewater_State_info method values to either scaled or reported for all entries")
-  }
-  
   if(M3T_config$Combine_sectors & !(M3T_config$Create_summary_combinations | M3T_config$Create_individual_combinations)){
     error_found <- TRUE
     error_text <- paste0(error_text,"\n\nMust set M3T_config$Combine_sectors to FALSE or set either M3T_config$Create_summary_combinations or M3T_config$Create_individual_combinations to TRUE")
@@ -1278,7 +1273,6 @@ CH4_inventory_build <- function(run_directory,
                Source_State_population_data=M3T_config$Source_State_population_data,
                inventory_year=inventory_year,
                National_wastewater_info=M3T_config$National_wastewater_info,
-               Wastewater_State_info=M3T_config$Wastewater_State_info,
                Wastewater_reported_State_info=M3T_config$Wastewater_reported_State_info,
                GHGI_data_yr=GHGI_data_yr,
                GHGI_wastewater_data=M3T_config$GHGI_wastewater_data,
