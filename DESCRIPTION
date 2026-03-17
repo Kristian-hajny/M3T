@@ -1,8 +1,9 @@
 Package: M3T
 Title: Develop Reasonable Methane Inventories for Urban Areas
 Version: 0.0.0.9000
-Authors@R: 
-    person("Kristian", "Hajny", , "kris.hajny@gmail.com", role = c("aut", "cre"),   comment = c(ORCID = "0000-0003-3249-7157"))
+Authors@R: c(
+    person(given = "Kristian", family = "Hajny", email = "kris.hajny@gmail.com", role = c("aut", "cre"), comment = c(ORCID = "0000-0003-3249-7157")),
+	person(given = "Joseph", family = "Pitt", email = "joseph.pitt@bristol.ac.uk", role = "ctb", comment=c(ORCID = "0000-0002-8660-5136")))
 Description: The Modular Methane Mapping Tool (M3T) uses a user defined mix of a variety of literature based methods to estimate gridded methane emissions for several sectors relevant for urban areas.  Available only for the Continental United States with user specified resolution (minimum of 0.01 deg or 1 km2), year (> 2011), and domain.
 URL: GITHUB/vignette, publication
 BugReports: https://github.com/Kristian-hajny/M3T/issues
