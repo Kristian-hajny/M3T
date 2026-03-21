@@ -295,12 +295,6 @@ Combine_inventories <- function(output_directory,
   #repeat for thermogenic and non-thermogenic if the option was set
   
   if(Separate_thermo){
-    #save these in their own folders
-    thermo_output_directory <- file.path(Combined_output_directory,"thermogenic")
-    nonthermo_output_directory <- file.path(Combined_output_directory,"non_thermogenic")
-    dir.create(thermo_output_directory,showWarnings = F)
-    dir.create(nonthermo_output_directory,showWarnings = F)
-    
     thermo_set_indx <- grep("GEPA_thermo.nc|NG_transmission_sector_total.nc",terra::sources(set_rast))
     non_thermo_set_indx <- grep("GEPA_non_thermo.nc|GEPA_ind_landfill.nc",terra::sources(set_rast))
     
@@ -371,6 +365,12 @@ Combine_inventories <- function(output_directory,
     
     #individual combinations
     if(Create_individual_combinations){
+      #save these in their own folders
+      thermo_output_directory <- file.path(Combined_output_directory,"thermogenic")
+      nonthermo_output_directory <- file.path(Combined_output_directory,"non_thermogenic")
+      dir.create(thermo_output_directory,showWarnings = F)
+      dir.create(nonthermo_output_directory,showWarnings = F)
+      
       for(A in 1:nrow(Possible_combinations)){
         #all files in the first unique combination
         filename_subset <- as.vector(unlist(strsplit((unlist(Possible_combination_filenames[A,])),",")))
