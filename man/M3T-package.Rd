@@ -23,6 +23,7 @@ Useful links:
 Other contributors:
 \itemize{
   \item Joseph Pitt \email{joseph.pitt@bristol.ac.uk} (\href{https://orcid.org/0000-0002-8660-5136}{ORCID}) [contributor]
+  \item The Research Foundation for The State University of New York [copyright holder]
 }
 
 }
