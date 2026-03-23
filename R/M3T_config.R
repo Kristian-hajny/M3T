@@ -129,7 +129,7 @@ M3T_config$Base_timeout <- 60*20
     #aggregation before disaggregating to pixel
     M3T_config$NG_distribution_by_LDC <- FALSE
     M3T_config$NG_distribution_by_state <- TRUE
-    M3T_config$NG_distribution_by_domain <- TRUE
+    M3T_config$NG_distribution_by_domain <- FALSE
   }
   
   #How to access datasets
@@ -211,7 +211,7 @@ M3T_config$Base_timeout <- 60*20
   {
     #aggregation before disaggregating to counties
     M3T_config$stationary_combustion_by_state <- TRUE
-    M3T_config$stationary_combustion_by_domain <- TRUE
+    M3T_config$stationary_combustion_by_domain <- FALSE
   }
   
   #How to access datasets
