@@ -56,26 +56,6 @@
 #'@keywords internal
 
 
-#@examples
-# aces_res <- rast(paste0(ACES_directory,"/Sectoral/",ACES_year,'_Annual_ACES_Residential.nc'))
-# res_totals <- c('mains_ER_total_res',
-#                 'serv_ER_total_res',
-#                 'MnR_ER_total_res',
-#                 'meter_ER_total_res',
-#                 'upset_ER_total_res',
-#                 'post_meter_ER_total_res')
-# cover_all <- list(extract(aces_res,all_merge_LCC_domain,weights=T,exact=T,cells=T))
-# disaggregation(aces_res,
-#                res_totals,
-#                agg_level="state",
-#                NEI_input=all_merge_LCC_state,
-#                cover_all,
-#                out_envir=environment())
-
-
-#Write a function to disaggregate total emissions using ACES/Vulcan or both
-#within sub domain bounds (states, Local Distribution Companies, Counties)
-
 disaggregation <- function(input_inventory,totals,agg_level,NEI_input,cover_all,out_envir){
   #pull the input name (aces_res/com or vu_res/com) for naming later.  Note -
   #this must be done before input_inventory is edited

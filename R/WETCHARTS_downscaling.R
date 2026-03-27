@@ -62,43 +62,6 @@
 #'  the state of the carbon cycle report instead.
 #'@keywords internal
 
-
-
-#@examples
-# library(terra)
-# grid_bbox=cbind(c(-76.65,-73.65),c(38.97,40.97))
-# grid_res=0.01
-# grid_crs="epsg:4326"
-# grid <- rast(nrows=diff(range(grid_bbox[,2]))/grid_res,
-#              ncols=diff(range(grid_bbox[,1]))/grid_res, xmin=min(grid_bbox[,1]),
-#              xmax=max(grid_bbox[,1]), ymin=min(grid_bbox[,2]), ymax=max(grid_bbox[,2]),
-#              crs=grid_crs)
-# grid_vect <- as.polygons(ext(grid),crs=grid_crs)
-# 
-# Disaggregate_Wetcharts(input_directory="~/../Desktop/in/",
-#                        output_directory="~/../Desktop/out/",
-#                        domain=grid_vect,
-#                        domain_template=grid,
-#                        verbose=TRUE,
-#                        inventory_year=2018,
-#                        plot_directory="~/../Desktop/plots/",
-#                        State_CB=vect("~/../Desktop/in/State_CB/tl_2018_us_state.shp"),
-#                        County_Tigerlines=vect("~/../Desktop/in/County_Tigerlines/tl_2018_us_county.shp"),
-#                        Use_NLCD=TRUE,
-#                        Use_NALCMS=TRUE,
-#                        NLCD_file=file.path("~/../Desktop/in/nlcd_2019_land_cover_l48_20210604/nlcd_2019_land_cover_l48_20210604.img"),
-#                        NALCMS_file=file.path("~/../Desktop/in/NALCMS_2020_land_cover/NA_NALCMS_landcover_2020_30m/data/NA_NALCMS_landcover_2020_30m.tif"),
-#                        Wetcharts_model_subset=list(c(1913,1914,1923,1924,1933,1934,2913,2914,2923,
-#                                                      2924,2933,2934,3913,3914,3923,3924,3933,3934)))
-
-
-
-
-
-
-#code to disaggregate Wetcharts by a factor of ~5 using NALCMS or NLCD data.
-#Assumes that NALCMS value 14 = wetlands and NLCD values > 89 = wetlands.
-
 Disaggregate_Wetcharts <- function(input_directory,
                                    output_directory,
                                    domain,

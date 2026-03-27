@@ -51,34 +51,12 @@
 #'@keywords internal
 
 
-#@examples
-# library(terra)
-# grid_bbox=cbind(c(-76.65,-73.65),c(38.97,40.97))
-# grid_res=0.01
-# grid_crs="epsg:4326"
-# grid <- rast(nrows=diff(range(grid_bbox[,2]))/grid_res,
-#              ncols=diff(range(grid_bbox[,1]))/grid_res, xmin=min(grid_bbox[,1]),
-#              xmax=max(grid_bbox[,1]), ymin=min(grid_bbox[,2]), ymax=max(grid_bbox[,2]),
-#              crs=grid_crs)
-# grid_vect <- as.polygons(ext(grid),crs=grid_crs)
-# 
-# NWI_Wetland_fraction(input_directory="~/../Desktop/in/",
-#                      output_directory="~/../Desktop/out/",
-#                      Use_SOCCR1=TRUE,
-#                      Use_SOCCR2=TRUE,
-#                      Include_freshwater=TRUE,
-#                      domain=grid_vect,
-#                      domain_template=grid,
-#                      state_name_list=c("DE","MD","NJ","NY","PA"))
-
 NWI_Wetland_fraction <- function(input_directory,
                                  output_directory,
                                  domain,
                                  domain_template,
                                  state_name_list){
-  
-  # Calculate wetland fraction using NWI state wetland cover data
-  
+
   starttime <- Sys.time()
   cat("Starting wetland sector: NWI_Wetland_fraction\n")
   

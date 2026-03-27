@@ -48,37 +48,6 @@
 #'@inherit Municipal_solid_waste seealso
 #'@keywords internal
 
-
-
-
-#@examples
-# library(terra)
-# grid_bbox=cbind(c(-76.65,-73.65),c(38.97,40.97))
-# grid_res=0.01
-# grid_crs="epsg:4326"
-# grid <- rast(nrows=diff(range(grid_bbox[,2]))/grid_res,
-#              ncols=diff(range(grid_bbox[,1]))/grid_res, xmin=min(grid_bbox[,1]),
-#              xmax=max(grid_bbox[,1]), ymin=min(grid_bbox[,2]), ymax=max(grid_bbox[,2]),
-#              crs=grid_crs)
-# grid_vect <- as.polygons(ext(grid),crs=grid_crs)
-# Prepare_GEPA(inventory_year=2018,
-#              input_directory="~/../Desktop/in/",
-#              output_directory="~/../Desktop/out/",
-#              domain=grid_vect,
-#              domain_template=grid,
-#              verbose=TRUE,
-#              State_CB=vect("~/../Desktop/in/State_CB/tl_2018_us_state.shp"),
-#              County_Tigerlines=vect("~/../Desktop/in/County_Tigerlines/tl_2018_us_county.shp"),
-#              plot_directory="~/../Desktop/plots/")
-
-
-
-
-
-#download the gridded epa inventory if it hasn't already been downloaded, then
-#split into the components that we don't have in our inventory and save them to
-#incorporate into the total easily later.
-
 Prepare_GEPA <- function(inventory_year,
                          input_directory,
                          output_directory,

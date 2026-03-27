@@ -39,32 +39,6 @@
 #'[Wastewater()] Calculates methane emissions for the wastewater sector.
 #'@keywords internal
 
-
-
-
-
-#@examples
-# library(terra)
-# grid_bbox=cbind(c(-76.65,-73.65),c(38.97,40.97))
-# grid_res=0.01
-# grid_crs="epsg:4326"
-# grid <- rast(nrows=diff(range(grid_bbox[,2]))/grid_res,
-#              ncols=diff(range(grid_bbox[,1]))/grid_res, xmin=min(grid_bbox[,1]),
-#              xmax=max(grid_bbox[,1]), ymin=min(grid_bbox[,2]), ymax=max(grid_bbox[,2]),
-#              crs=grid_crs)
-# grid_vect <- as.polygons(ext(grid),crs=grid_crs)
-# NLCD_open_and_low_int <- function(NLCD_file="~/../Desktop/in/NLCD_2019_land_cover_l48_20210604/NLCD_2019_land_cover_l48_20210604.img",
-#                                   State_Tigerlines=vect("~/../Desktop/in/State_Tigerlines/tl_2018_us_state.shp"),
-#                                   state_name_list=c("DE","MD","NJ","NY","PA"),
-#                                   domain=grid_vect,
-#                                   domain_template=grid,
-#                                   output_directory="~/../Desktop/out/")
-
-
-
-# Calculate NLCD fractions for the states in the d03 domain
-## Finalized: 2023-02-03
-
 NLCD_open_and_low_int <- function(input_directory,
                                   Source_wastewater_NLCD,
                                   domain,

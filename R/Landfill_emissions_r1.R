@@ -96,40 +96,6 @@
 #'@keywords internal
 
 
-
-#@examples
-#We strongly recommend users do not use this function directly, but rely on
-#\code{\link{CH4_inventory_build}} and \code{\link{M3T_config}} instead.
-
-
-## Landfill_emissions_r1.R
-## Developed: 2021-10-22 17:00
-## Finalized: 2023-02-03
-#
-# Calculate emissions from landfills
-# There are 2 sources of data:
-# GHGRP - has emissions but only certain landfills
-# LMOP - has more landfills than GHGRP, and some details about them, but not 
-# emissions
-#
-# Note - to convert to fluxes this code uses the raster packages area function.
-# This simplifies the area calculation of a lat/long box and is not appropriate
-# near the poles
-#
-# The national EPA (GHGI) inventory total comes from taking the GHGRP emissions 
-# and applying a scale factor to account for the non-reporting landfills.
-# This scale factor is based on the LMOP database and the WBJ directory (which it appears you have to pay for: https://www.wasteinfo.com/diratlas.htm)
-# Details are given on page 168 (A-457) of this report:
-# https://www.epa.gov/sites/production/files/2021-04/documents/us-ghg-inventory-2021-annex-3-additional-source-or-sink-categories-part-b.pdf
-# They identified 1544 landfills that accepted MSW between 1940 and 2016 and had never reported to the GHGRP
-# For now, calculate total emissions for non-GHGRP-reporting landfills in LMOP as a residual between the GHGI and GHGRP totals
-# Then allocate equally among non-GHGRP reporters at the national level (note that many landfills don't report waste in place)
-# Note that we can only do MSW landfills like this, as industrial waste landfills don't report to LMOP
-# There are far fewer GHGRP industrial waste landfills
-# To get the non-reporters I could potentially trawl through the FRS data and work out what is an industrial landfill and what isn't
-# But leave this out here and just use the GEPA industrial landfill emissions
-
-
 Municipal_solid_waste <- function(input_directory,
                                   domain,
                                   domain_template,

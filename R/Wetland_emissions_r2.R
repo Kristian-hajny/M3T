@@ -63,53 +63,6 @@
 #'  wetland type in each pixel.
 #'@keywords internal
 
-
-
-
-#@examples
-# library(terra)
-# grid_bbox=cbind(c(-76.65,-73.65),c(38.97,40.97))
-# grid_res=0.01
-# grid_crs="epsg:4326"
-# grid <- rast(nrows=diff(range(grid_bbox[,2]))/grid_res,
-#              ncols=diff(range(grid_bbox[,1]))/grid_res, xmin=min(grid_bbox[,1]),
-#              xmax=max(grid_bbox[,1]), ymin=min(grid_bbox[,2]), ymax=max(grid_bbox[,2]),
-#              crs=grid_crs)
-# grid_vect <- as.polygons(ext(grid),crs=grid_crs)
-# EFs <- data.frame("E2"=c(10.3,15.29*16.043/12.011),
-#                           "M2"=c(10.3,15.29*16.043/12.011),
-#                           "PFO"=c(36,18.52*16.043/12.011),
-#                           "PNF"=c(36,24.92*16.043/12.011),
-#                           "L1"=5,
-#                           "L2"=5,
-#                           "R1"=7.88,
-#                           "R2"=7.88,
-#                           "R3"=7.88,
-#                           "R4"=7.88)
-# rownames(EFs) <- c("SOCCR1","SOCCR2")
-# 
-# # convert from g CH4 per m2 per yr to nmol/m2/s
-# EFs=EFs*1E9/(16.043*365.25*24*60*60)
-# 
-# SOCCR_Wetlands(output_directory="~/../Desktop/out/",
-#                plot_directory="~/../Desktop/plots/",
-#                domain=grid,
-#                Use_SOCCR1=TRUE,
-#                Use_SOCCR2=TRUE,
-#                Include_freshwater=TRUE,
-#                Wetland_EFs=EFs,
-#                verbose=TRUE,
-#                County_Tigerlines=vect("~/../Desktop/in/County_Tigerlines/tl_2018_us_county.shp"),
-#                State_CB=vect("~/../Desktop/in/State_CB/tl_2018_us_state.shp"),
-#                Watershed_file="~/../Desktop/in/watersheds_shapefile/watershed_p_v2.shp")
-
-
-
-
-
-
-
-
 SOCCR_Wetlands <- function(input_directory,
                            output_directory,
                            plot_directory,
@@ -126,13 +79,6 @@ SOCCR_Wetlands <- function(input_directory,
                            Source_Watershed_file,
                            Use_Wetcharts,
                            Wetcharts_model_subset){
-  
-  ## Wetland_emissions_r2.R
-  ## In use: 2021-11-02 20:00
-  #
-  # Load in the various state wetland fraction rasters
-  # These overlap somewhat, so crop each to the squares within each state
-  # Then add together and assign fluxes to each class
   
   
   # convert from g CH4 per m2 per yr to nmol/m2/s
