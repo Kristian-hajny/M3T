@@ -14,13 +14,6 @@
 #'@seealso [log_plot()] plots the data in simple log-scale visuals.
 #'@keywords internal
 
-#@examples
-# prep_plot_data(central_flux)
-
-
-#build functions to plot up most sectors as they finish running.  
-
-#take log and remove 0 or negative values
 prep_plot_data <- function(input){
   output <- input
   output <- log10(output)
@@ -72,13 +65,6 @@ prep_plot_data <- function(input){
 #'@export
 
 
-#@examples
-# log_plot(central_flux,filename="Wastewater_dom_central",
-# title="Domestic Wastewater -\n EPA total distributed using \nClean Watersheds Needs Survey")
-
-
-
-#plot for log scale
 log_plot <- function(input,title,zlim_min=NULL,zlim_max=NULL,
                      filename,plot_directory,domain,County_Tigerlines,
                      State_CB){
@@ -226,17 +212,6 @@ log_plot <- function(input,title,zlim_min=NULL,zlim_max=NULL,
 #'[log_plot()] plots the data in simple log-scale visuals.
 #'@export
 
-
-
-#@examples
-# not_log_plot(septic_flux,filename="Wastewater_dom_septic_national",
-#              "Domestic Wastewater - Septic\n national EPA septic distributed using \ndeveloped open space/low intensity land cover",
-#              global(min(septic_flux,septic_flux2),min),
-#              global(max(septic_flux,septic_flux2),max))
-
-
-
-#plot for linear scale - mostly identical
 not_log_plot <- function(input,title,zlim_min=NULL,zlim_max=NULL,
                          filename,plot_directory,domain,County_Tigerlines,
                          State_CB){

@@ -96,45 +96,6 @@
 #'@inherit Municipal_solid_waste seealso
 #'@keywords internal
 
-
-
-
-
-
-#@examples
-# library(terra)
-# grid_bbox=cbind(c(-76.65,-73.65),c(38.97,40.97))
-# grid_res=0.01
-# grid_crs="epsg:4326"
-# grid <- rast(nrows=diff(range(grid_bbox[,2]))/grid_res,
-#              ncols=diff(range(grid_bbox[,1]))/grid_res, xmin=min(grid_bbox[,1]),
-#              xmax=max(grid_bbox[,1]), ymin=min(grid_bbox[,2]), ymax=max(grid_bbox[,2]),
-#              crs=grid_crs)
-# grid_vect <- as.polygons(ext(grid),crs=grid_crs)
-# Transmission(GHGI_transmission_compressors="GHGI",
-#                       GHGI_Pipeline="GHGI",
-#                       Source_HIFLD_compressor_file="~/../Desktop/in/Natural_Gas_Compressor_Stations.csv",
-#                       GHGRP_facility_data="~/../Desktop/in/GHGRP/facility_info.csv",
-#                       domain=grid_vect,
-#                       domain_template=grid,
-#                       state_name_list=c("DE","MD","NJ","NY","PA"),
-#                       output_directory="~/../Desktop/out/",
-#                       input_directory="~/../Desktop/in/",
-#                       inventory_year=2018,
-#                       verbose=TRUE,
-#                       State_Tigerlines=vect("~/../Desktop/in/State_Tigerlines/tl_2018_us_state.shp"),
-#                       County_Tigerlines=vect("~/../Desktop/in/County_Tigerlines/tl_2018_us_county.shp"),
-#                       plot_directory="~/../Desktop/plots/")
-
-
-
-
-## NG_transmission_emissions_r1.R
-## In use: 2021-11-02 20:00
-## Finalized: 2023-02-03
-#
-# Calculate NG transmission emissions for d03 domain
-
 Transmission <- function(input_directory,
                          GHGI_transmission_compressors,
                          GHGI_Pipeline,
