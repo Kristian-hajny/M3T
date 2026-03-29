@@ -581,7 +581,7 @@ Natural_Gas_Distribution <- function(domain,
     #the domain
     if(any(GHGRP_csv$state!=GHGRP_csv$operating_state)){
       update_ordered <- GHGRP_csv[order(GHGRP_csv$facility_name),]
-      cat(paste("\n",update_ordered$facility_name[update_ordered$state!=update_ordered$operating_state],"    rewritten from",update_ordered$state_name[update_ordered$state!=update_ordered$operating_state],"    to",update_ordered$operating_state_name[update_ordered$state!=update_ordered$operating_state]))
+      cat(paste(update_ordered$facility_name[update_ordered$state!=update_ordered$operating_state],"    rewritten from",update_ordered$state_name[update_ordered$state!=update_ordered$operating_state],"    to",update_ordered$operating_state_name[update_ordered$state!=update_ordered$operating_state]),"\n")
       rm(update_ordered)
     }
     ################################################################################
@@ -658,7 +658,7 @@ Natural_Gas_Distribution <- function(domain,
     all_merge_clean$GHGRP_MnR_above <- all_merge_clean$PHMSA_MMILES_TOTAL*above_grade_MnR$stations_per_mile
     all_merge_clean$GHGRP_MnR_below <- all_merge_clean$PHMSA_MMILES_TOTAL*below_grade_MnR$stations_per_mile
     
-    cat("\nFinished downloading and merging all input data at",format(Sys.time(),"%H:%M"),"\n")
+    cat("Finished downloading and merging all input data at",format(Sys.time(),"%H:%M"),"\n")
   }else{
     ############################################################################
     #load in the output of NG_distribution_by_LDC_prep.R.  Note that is a
