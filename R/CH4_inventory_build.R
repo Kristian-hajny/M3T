@@ -26,10 +26,11 @@
 #'  Code.  For example: "DE", "Delaware", and "10" are all equivalent and "Long
 #'  Neck, DE" and "51202" are equivalent. It can also be "CONUS" to run for the
 #'  entire continental United States or "custom" for a domain created by the
-#'  user interactively. Lastly, it can be a filepath pointing to a polygon file
-#'  that can be interpreted by the terra package. Names must match exactly and
-#'  FIPS or urban area codes must include leading 0's.  Lists of the names and
-#'  codes for all urban areas for the most recent census are available
+#'  user interactively. Multiple states can be set (e.g., c("RI","CT"). Lastly,
+#'  it can be a filepath pointing to a polygon or raster file that can be
+#'  interpreted by the terra package. Names must match exactly and FIPS or urban
+#'  area codes must include leading 0's.  Lists of the names and codes for all
+#'  urban areas for the most recent census are available
 #'  \href{https://www.census.gov/programs-surveys/geography/guidance/geo-areas/urban-rural.html}{here}.
 #'  Links to previous census urban areas are on the same page.  A list with
 #'  state fips codes is available
@@ -40,10 +41,11 @@
 #'  \href{https://proj.org/en/stable/operations/projections/index.html}{PROJ
 #'  string} or \href{https://epsg.io/}{EPSG codes} or
 #'  \href{https://docs.ogc.org/is/12-063r5/12-063r5.html}{WKT} formats. Commonly
-#'  desired crs include "epsg:4326" for lat/long and "+proj=lcc +lat_0=40
+#'  used crs include "epsg:4326" for lat/long and "+proj=lcc +lat_0=40
 #'  +lon_0=-97 +lat_1=33 +lat_2=45 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs"
 #'  for a m grid in the lambert conformal conical projection used by some CO2
-#'  inventories for the continental US
+#'  inventories for the continental US. Many crs can be seen at
+#'  \href{https://spatialreference.org/}{spatialreference.org}.
 #'@param run_directory Character providing the full filepath to load/save input
 #'  and output data.  Subfolders will be created.
 #'@param inventory_year Numeric indicating the desired year of data to use.  The
@@ -61,6 +63,13 @@
 #'                     domain_res=1,
 #'                     domain_crs="epsg:4326",
 #'                     verbose=F)
+#'                     
+#' CH4_inventory_build(run_directory=tempdir(),
+#'                     inventory_year=2019,
+#'                     domain = as.data.frame(cbind(c(-75,-72),c(39,42))),
+#'                     domain_res=1,
+#'                     domain_crs="epsg:4326",
+#'                     verbose=F)
 #'@seealso [M3T_config] Generates the config function with user-editable
 #'  settings used throughout processing.
 
@@ -68,7 +77,7 @@
 CH4_inventory_build <- function(run_directory,
                                 inventory_year,
                                 domain,
-                                domain_res,
+                                domain_res=NULL,
                                 domain_crs="epsg:4326",
                                 verbose=FALSE){
   ################################################################################
@@ -79,11 +88,20 @@ CH4_inventory_build <- function(run_directory,
          paste0(names(M3T_get_config())[(M3T_get_config() %in% c("M3T","download"))],collapse="\n"))
   }
   ################################################################################
+  #error checking inputs
+  
+  if(inherits(suppressWarnings(try(terra::crs(domain_crs))),"try-error")){
+    stop("Domain_crs is not valid.  Default is a lat/long projection or, if using an existing raster file for domain, the projection in the file.
+    \"epsg:4326\" and Mercator (\"+proj=mer\") are common lat/long projections.  A common meter grid for the US is lambert conformal conic (\"+proj=lcc +lat_0=40 +lon_0=-97 +lat_1=33 +lat_2=45 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs\").
+         
+    See domain_crs in help(CH4_inventory_build) to learn more.")
+  }
+  ################################################################################
   #Create input/output directories
   
   #very minor, but saw issues running vector layers with ~/.. type paths.
   #Convert here just in case.
-  run_directory <- normalizePath(run_directory)
+  run_directory <- normalizePath(run_directory,mustWork = F)
   
   input_directory <- file.path(run_directory,"in")
   output_directory <- file.path(run_directory,"out")
@@ -183,7 +201,7 @@ CH4_inventory_build <- function(run_directory,
     #UPDATE TO ZENODO
     
     invisible(file.copy(list.files("G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Manuscript/All inventory data/Prepared inventory data/M3T_Zenodo_data/Processed/",full.names = T),
-                        input_directory,recursive=T))
+                        input_directory,recursive=T,overwrite=T))
     
   }
   ################################################################################
@@ -222,6 +240,7 @@ CH4_inventory_build <- function(run_directory,
     # ACES_year <- 2017
     if(inventory_year!=ACES_year){
       cat("ACES does not include",inventory_year,"using",ACES_year,"as the nearest data available\n")
+      Sys.sleep(2)
     }
     
     ACES_directory <- file.path(input_directory,"ACES V2.0")
@@ -245,9 +264,10 @@ CH4_inventory_build <- function(run_directory,
   
   if(M3T_config$Use_Vulcan & (M3T_config$Process_stationary_combustion | M3T_config$Process_natural_gas_distribution)){
     #year of Vulcan v4.0 data.
-    vulcan_year <- (2010:2021)[which.min(abs(2010:2021 - inventory_year))]
+    vulcan_year <- (2010:2022)[which.min(abs(2010:2022 - inventory_year))]
     if(inventory_year!=vulcan_year){
-      cat("Vulcan does not include",inventory_year,"using",(2010:2015)[vulcan_year],"as the nearest data available\n")
+      cat("Vulcan does not include",inventory_year,"using",vulcan_year,"as the nearest data available\n")
+      Sys.sleep(2)
     }
     
     vulcan_directory <- file.path(input_directory,"Vulcan_v4.0")
@@ -340,7 +360,7 @@ CH4_inventory_build <- function(run_directory,
   
   if(M3T_config$Process_wetlands_and_inland_waters & M3T_config$Use_Wetcharts & M3T_config$Source_wetland_NLCD!="M3T" & !file.exists(M3T_config$Source_wetland_NLCD)){
     error_found <- TRUE
-    error_text <- paste0(error_text,"\n\nMust set M3T_config$Process_wetlands_and_inland_waters or M3T_config$Use_Wetcharts to FALSE or set M3T_config$Source_wetland_NLCD to \"M3T\" to use preprocessed wetcharts or set M3T_config$Source_wetland_NLCD to the filepath for the raw wetcharts data to use")
+    error_text <- paste0(error_text,"\n\nMust set M3T_config$Process_wetlands_and_inland_waters or M3T_config$Use_Wetcharts to FALSE or set M3T_config$Source_wetland_NLCD to \"M3T\" to use preprocessed wetcharts or set M3T_config$Source_wetland_NLCD to an existing filepath for the raw wetcharts data to use")
   }
   
   if(M3T_config$Combine_sectors & !(M3T_config$Create_summary_combinations | M3T_config$Create_individual_combinations)){
@@ -396,6 +416,7 @@ CH4_inventory_build <- function(run_directory,
       #update filenames too
       Census_filenames <- gsub(inventory_year,Census_match_yr,Census_filenames)
       cat("Census data does not include",inventory_year,"using",Census_match_yr,"for Tigerline data as the nearest data available\n")
+      Sys.sleep(2)
     }
     invisible(file.remove(download_location))
     
@@ -441,6 +462,7 @@ CH4_inventory_build <- function(run_directory,
     Census_match_yr <- as.character(State_yrs[which.min(abs(State_yrs - inventory_year))])
     if(inventory_year!=Census_match_yr){
       cat("M3T census data does not include",inventory_year,"using",Census_match_yr,"for Tigerline data as the nearest data available\n")
+      Sys.sleep(2)
     }
     
     #load them in
@@ -484,7 +506,7 @@ CH4_inventory_build <- function(run_directory,
   if(all(tolower(domain)=="custom") | verbose==T){
     cb_file <- file.path(input_directory,"Cartographic_Boundary_500k","cb_2024_us_all_500k.gpkg")
     
-    if(!file.exists(cb_file)){
+    if(M3T_config$Source_Cartographic_Boundaries_data!="M3T"){
       if(M3T_config$Source_Cartographic_Boundaries_data=="download"){
         #first download cb file - same as tigerlines, but excluding water boundaries
         download_location <- tempfile(fileext = ".zip")
@@ -507,7 +529,7 @@ CH4_inventory_build <- function(run_directory,
   ################################################################################
   #create the domain
   
-  if(length(domain_res)==1){
+  if(length(domain_res)==1 & !is.null(domain_res)){
     domain_res <- rep(domain_res,2)
   }
   
@@ -550,7 +572,19 @@ CH4_inventory_build <- function(run_directory,
         domain <- Urban_Tigerlines[unlist(terra::values(Urban_Tigerlines[,3])) %in% domain,]
       }else{
         #assume it's a filepath - otherwise it's been incorrectly supplied
-        domain <- terra::vect(domain)
+        
+        #try as a raster - if it is, use the crs and res (if not specified)
+        if(!inherits(suppressWarnings(try(terra::rast(domain))),"try-error")){
+          domain <- terra::rast(domain)
+          if(is.null(domain_res)){
+            domain_res <- terra::res(domain)
+          }
+          domain_crs <- terra::crs(domain)
+          domain <- terra::as.polygons(terra::ext(domain),crs=domain_crs)
+        }else{
+          #file, but not raster, assume vector
+          domain <- terra::vect(domain)
+        }
       }
       #text is actually a number
     }else{
@@ -566,6 +600,32 @@ CH4_inventory_build <- function(run_directory,
   }
   
   domain_template <- terra::rast(domain,resolution=domain_res,crs=domain_crs,vals=NA)
+  
+  ################################################################################
+  #check resolution is appropriate
+  
+  #First convert to ACES/Vulcan crs.
+  if(M3T_config$Use_ACES){
+    res_check <- terra::project(domain_template,y=terra::crs(aces_res))
+  }else if(M3T_config$Use_Vulcan){
+    res_check <- terra::project(domain_template,y=terra::crs(vu_res))
+  }
+  
+  #Compare resolution to ACES/Vulcan.  Give a slight buffer, but if finer than
+  #aces/vulcan then change to their resolution.
+  if(any(terra::res(res_check)<950) & (M3T_config$Process_stationary_combustion | M3T_config$Process_natural_gas_distribution)){
+    terra::res(res_check)[which(terra::res(res_check)<950)] <- 1000
+    terra::values(res_check) <- NA
+    
+    #rewrite template and polygon
+    domain_template <- terra::project(res_check,domain_crs)
+    domain_template <- terra::rast(domain,resolution=domain_res,crs=domain_crs,vals=NA)
+    domain <- terra::as.polygons(terra::ext(domain_template),crs=domain_crs)
+    
+    #update user
+    cat("Domain resolution cannot be finer than the equivalent of 0.01 by 0.01 deg if processing stationary combustion or natural gas distributoin given this is the resolution of the proxy data.  Updating resolution to",round(terra::res(domain_template),2),"in provided crs.\n")
+    Sys.sleep(2)
+  }
   
   ################################################################################
   # Now crop/mask the tigerlines to the domain
@@ -601,6 +661,7 @@ CH4_inventory_build <- function(run_directory,
   if(length(state_name_list)==1 & M3T_config$stationary_combustion_by_domain & M3T_config$stationary_combustion_by_state){
     M3T_config$stationary_combustion_by_domain <- FALSE
     cat("setting bydomain to FALSE for stationary combustion and NG distribution as there is only 1 state in the domain\n")
+    Sys.sleep(2)
   }
   if(length(state_name_list)==1 & M3T_config$NG_distribution_by_domain & M3T_config$NG_distribution_by_state){
     M3T_config$NG_distribution_by_domain <- FALSE
@@ -615,7 +676,7 @@ CH4_inventory_build <- function(run_directory,
     GHGRP_facility_data_file <- file.path(input_directory,"GHGRP","facility_data.csv")
     
     #source = M3T means the zenodo file will be used and the file already exists
-    if(!file.exists(GHGRP_facility_data_file)){
+    if(M3T_config$Source_GHGRP_facility_data!="M3T"){
       if(M3T_config$Source_GHGRP_facility_data=="download"){
         #download data and read in an R dataframe.  Cannot filter to year as
         #previous year's data is used in some functions.  Cannot filter to state
@@ -643,7 +704,7 @@ CH4_inventory_build <- function(run_directory,
     ghgrp_oil_and_gas_file <- file.path(input_directory,"/GHGRP/Oil_and_gas_W.csv")
     
     #source = M3T means the zenodo file will be used and the file already exists
-    if(!file.exists(ghgrp_oil_and_gas_file)){
+    if(M3T_config$Source_GHGRP_NG!="M3T"){
       if(M3T_config$Source_GHGRP_NG=="download"){
         #download the relevant LDC-sector data
         #(https://www.epa.gov/enviro/greenhouse-gas-model).  
@@ -664,7 +725,7 @@ CH4_inventory_build <- function(run_directory,
     if(M3T_config$Source_GHGRP_combustion!="M3T"){
       ghgrp_combustion_file <- file.path(input_directory,"GHGRP","combustion_C.csv")
       
-      if(!file.exists(ghgrp_combustion_file)){
+      if(M3T_config$Source_GHGRP_combustion!="M3T"){
         if(M3T_config$Source_GHGRP_combustion=="download"){
           data_URL <- "https://data.epa.gov/dmapservice/ghg.c_subpart_level_information/csv"
           Trycatch_downloader(URL = data_URL,method = "save",output_location = ghgrp_combustion_file,
@@ -703,6 +764,7 @@ CH4_inventory_build <- function(run_directory,
       if(inventory_year>GHGI_file_yr){
         #update user
         cat("GHGI/GHGRP not available for",inventory_year,"using",GHGI_file_yr,"for GHGI data as the nearest data available\n")
+        Sys.sleep(2)
         GHGI_data_yr <- GHGI_file_yr
       }else{
         GHGI_data_yr <- inventory_year
@@ -778,6 +840,7 @@ CH4_inventory_build <- function(run_directory,
         if(inventory_year>GHGI_file_yr){
           #update user
           cat("GHGI/GHGRP not available for",inventory_year,"using",GHGI_file_yr,"for GHGI data as the nearest data available\n")
+          Sys.sleep(2)
           GHGI_data_yr <- GHGI_file_yr
         }else{
           GHGI_data_yr <- inventory_year
@@ -1056,7 +1119,7 @@ CH4_inventory_build <- function(run_directory,
   #the 2012 clean watershed needs survey has no SC data - alert users
   if(M3T_config$Process_wastewater & M3T_config$Wastewater_use_CWNS & inventory_year<2017){
     cat("WARNING - AK & SC did not report to the 2012 clean watershed needs survey. We recommend using the DMR dataset instead - especially if SC is within the domain.\nIf downscaling GHGI data and using the CWNS data, AK & SC wastewater emissions will be apportioned to other states.\n")
-    Sys.sleep(3)
+    Sys.sleep(2)
   }
   ################################################################################
   #do some basic processing to prep NLCD data for the domain if needed
@@ -1072,6 +1135,7 @@ CH4_inventory_build <- function(run_directory,
     wetcharts <- wetcharts[[wetcharts_years %in% wetcharts_nearest_year]]
     if(inventory_year!=wetcharts_nearest_year){
       cat("Prepared wetcharts does not include",inventory_year,"using",wetcharts_nearest_year,"as the nearest data available\n")
+      Sys.sleep(2)
     }
     
     if(any(terra::ext(domain)/terra::ext(State_Tigerlines) > 1.1)){
