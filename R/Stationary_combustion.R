@@ -35,26 +35,25 @@
 #'  it does not exist in the U.S. anymore and residential gas is ignored as it
 #'  is accounted for elsewhere.
 #'
-#'  The necessary SEDS and NEI data will be automatically downloaded.
-#'
 #'  The GHGI is intended to capture all national emissions.  The SEDS
 #'  consumption data provides state-level consumption broken down by fuel (coal,
 #'  natural gas, petroleum, wood, geothermal, solar, and electricity) and sector
 #'  (residential, commercial, industrial, electric, transportation).  The NEI
 #'  data being used provides CO emissions at the county level.  The GHGI is
 #'  available starting in 1990 and is generally about 2 years behind present
-#'  day.  SEDS data is available starting in 1960 and generally is about 2 years
-#'  behind present day.  NEI data is available beginning in at least 1990, is
-#'  released every three years, and generally takes three years to complete
+#'  day.  SEDS data is available starting in 1960 and generally is about
+#'  2 years behind present day, though there are periodic updates between
+#'  October and June.  NEI data is available beginning in at least 1990,
+#'  is released every three years, and generally takes three years to complete
 #'  (i.e., 2023 NEI is released in 2026).  All data is annual.  The SEDS data is
 #'  at the state scale, NEI data is at the county scale, and GHGI data is at the
 #'  national scale.
 #'
 #'  The GHGI is available at
 #'  \url{https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks}
-#'  The SEDS is available at
-#'  \url{https://www.eia.gov/state/seds/seds-data-complete.php?sid=US} The NEI
-#'  is available at
+#'  The SEDS bulk files are available at
+#'  \url{https://www.mrlc.gov/downloads/sciweb1/shared/mrlc/data-bundles/NLCD_2011_Land_Cover_AK_20200724.zip}
+#'  The NEI is available at
 #'  \url{https://www.epa.gov/air-emissions-inventories/national-emissions-inventory-nei}
 #'  ACES is available at \url{https://doi.org/10.3334/ORNLDAAC/1943} and Vulcan
 #'  is available at \url{https://doi.org/10.3334/ORNLDAAC/1741}.
@@ -102,13 +101,13 @@
 #'  gas), and coal; variation is bystate or bydomain; and inventory is ACES or
 #'  Vulcan.
 #'@seealso [CH4_inventory_build()] Calculates methane inventory using settings
-#'provided in config.
+#'  provided in config.
 #'
-#'[M3T_config] Generates the config function with user-editable settings used
-#'throughout processing.
+#'  [M3T_config] Generates the config function with user-editable settings used
+#'  throughout processing.
 #'
-#'[Inventory_based_disaggregation()] Disaggregates data from the county level to pixels using a
-#'sectoral CO2 inventory.
+#'  [Inventory_based_disaggregation()] Disaggregates data from the county level
+#'  to pixels using a sectoral CO2 inventory.
 #'@keywords internal
 
 Stationary_combustion <- function(input_directory,

@@ -167,7 +167,7 @@
 #'
 #' Accessing Datasets
 #' \itemize{
-#'   \item{\bold{Source_EIA_SEDS_data} - character stating "M3T", "download", or a filepath pointing to the needed file. State Energy Data System (SEDS) fuel consumption by economic sector and state from the \href{https://www.eia.gov/state/seds/seds-data-complete.php?sid=US}{Energy Information Administration (EIA)}. Default "M3T".}
+#'   \item{\bold{Source_EIA_SEDS_data} - character stating "M3T", "download", or a filepath pointing to the needed file. State Energy Data System (SEDS) fuel consumption by economic sector and state from the bulk file provided by the \href{https://www.eia.gov/opendata/}{Energy Information Administration (EIA)}. Default "M3T".}
 #'   \item{\bold{Source_NEI_data} - character stating "M3T", "download", or a filepath pointing to the needed file. National Emissions Inventory (NEI) CO emissions data by county, fuel, and economic sector from the \href{https://www.epa.gov/air-emissions-inventories/national-emissions-inventory-nei}{Environmental Protection Agency (EPA)}. Default "M3T".}
 #'   }
 #'
