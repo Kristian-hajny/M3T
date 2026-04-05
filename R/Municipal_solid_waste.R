@@ -22,7 +22,7 @@
 #'  equation HH-6 and HH-8.  HH-6 is based on a first order decay model, HH-8 is
 #'  based on the collection efficiency of a gas collection system. Landfills can
 #'  choose to treat either as the reported value, but both are provided to the
-#'  GHGRP.  The modeled values (HH-6) or collection efficiency (HH-8) can be
+#'  GHGRP.  The generation first values (HH-6) or collection first (HH-8) can be
 #'  used rather than the reported values when a gas collection system exists.
 #'  Note the GHGRP total used for the LMOP calculation will be the reported
 #'  values regardless, as these are what are used in the GHGI.
@@ -55,7 +55,7 @@
 #'  5 plots of the gridded methane emissions on log scales, one for LMOP
 #'  facilities, one for each variation of the GHGRP facilities, and one with the
 #'  sum of LMOP and GHGRP emissions. The GHGRP data is the first available in
-#'  the order of reported, modeled, then collection efficiency.
+#'  the order of reported, generation first, then collection first.
 #'@param GHGI_landfill_total Numeric.  Pulled from \code{\link{M3T_config}}.
 #'@param GHGRP_facility_data Data.frame with the GHGRP location data for all
 #'  years and states as prepared in \code{\link{CH4_inventory_build}} using the
@@ -69,8 +69,8 @@
 #'  \code{\link{M3T_config}}.
 #'@param Source_LMOP Character.  Pulled from \code{\link{M3T_config}}.
 #'@param landfill_ghgrp_reported Logical.  Pulled from \code{\link{M3T_config}}.
-#'@param landfill_ghgrp_modeled Logical.  \code{\link{M3T_config}}.
-#'@param landfill_ghgrp_collection_efficiency Logical. \code{\link{M3T_config}}.
+#'@param landfill_ghgrp_generation_first Logical.  \code{\link{M3T_config}}.
+#'@param landfill_ghgrp_collection_first Logical. \code{\link{M3T_config}}.
 #'@param plot_directory Character. \strong{Optional}. Provides the full filepath
 #'  to save figures. Only relevant if \code{verbose} = TRUE.
 #'@param County_Tigerlines SpatVector. \strong{Optional}.
@@ -83,11 +83,11 @@
 #'@returns Nothing is returned from the function, but the main outputs are up to
 #'  4 main netcdf files and 3 sector total netcdf files of gridded methane
 #'  emissions from municipal landfills. The main files are titled
-#'  "MSW_GHGRP_reported.nc", "MSW_GHGRP_modeled.nc",
-#'  "MSW_GHGRP_collection_efficiency.nc", and "MSW_LMOP.nc". The sector total
+#'  "MSW_GHGRP_reported.nc", "MSW_GHGRP_generation_first.nc",
+#'  "MSW_GHGRP_collection_first.nc", and "MSW_LMOP.nc". The sector total
 #'  netcdf files are titled "Landfill_sector_total_GHGRP_reported.nc",
-#'  "Landfill_sector_total_GHGRP_modeled.nc", and
-#'  "Landfill_sector_total_GHGRP_collection_efficiency.nc".
+#'  "Landfill_sector_total_GHGRP_generation_first.nc", and
+#'  "Landfill_sector_total_GHGRP_collection_first.nc".
 #'@seealso [CH4_inventory_build()] Calculates methane inventory using settings
 #'  provided in config.
 #'
@@ -110,8 +110,8 @@ Municipal_solid_waste <- function(input_directory,
                                   Source_GHGRP_landfills,
                                   Source_LMOP,
                                   landfill_ghgrp_reported,
-                                  landfill_ghgrp_modeled,
-                                  landfill_ghgrp_collection_efficiency,
+                                  landfill_ghgrp_generation_first,
+                                  landfill_ghgrp_collection_first,
                                   plot_directory,
                                   County_Tigerlines,
                                   State_CB){
@@ -308,20 +308,20 @@ Municipal_solid_waste <- function(input_directory,
     ghgrp_reported <- Finalize_ghgrp(outname="MSW_GHGRP_reported.nc",longname='Methane emissions from municipal solid waste landfills that report to GHGRP')
   }
   
-  if(landfill_ghgrp_modeled){
+  if(landfill_ghgrp_generation_first){
     #overwrite ghg quantity using the HH modeled landfill CH4 rather than the
     #reported
     ghgrp_all_data$ghg_quantity[!is.na(ghgrp_all_data[,c("HH_modeled")])] <- rowSums(ghgrp_all_data[,c("HH_modeled","C_emissions")],na.rm=T)[!is.na(ghgrp_all_data[,c("HH_modeled")])]
     ghgrp$ghg_quantity[!is.na(ghgrp[,c("HH_modeled")])] <- rowSums(ghgrp[,c("HH_modeled","C_emissions")],na.rm=T)[!is.na(ghgrp[,c("HH_modeled")])]
-    ghgrp_modeled <- Finalize_ghgrp(outname="MSW_GHGRP_modeled.nc",longname='Methane emissions from municipal solid waste landfills that report to GHGRP - forcing the method to the first order decay method for facilities with gas collection systems')
+    ghgrp_modeled <- Finalize_ghgrp(outname="MSW_GHGRP_generation_first.nc",longname='Methane emissions from municipal solid waste landfills that report to GHGRP - forcing the method to the first order decay method for facilities with gas collection systems')
   }
   
-  if(landfill_ghgrp_collection_efficiency){
+  if(landfill_ghgrp_collection_first){
     #overwrite ghg quantity using the HH collection efficiency landfill CH4
     #rather than the reported
     ghgrp_all_data$ghg_quantity[!is.na(ghgrp_all_data[,c("HH_collection_efficiency")])] <- rowSums(ghgrp_all_data[,c("HH_collection_efficiency","C_emissions")],na.rm=T)[!is.na(ghgrp_all_data[,c("HH_collection_efficiency")])]
     ghgrp$ghg_quantity[!is.na(ghgrp[,c("HH_collection_efficiency")])] <- rowSums(ghgrp[,c("HH_collection_efficiency","C_emissions")],na.rm=T)[!is.na(ghgrp[,c("HH_collection_efficiency")])]
-    ghgrp_collection_efficiency <- Finalize_ghgrp(outname="MSW_GHGRP_collection_efficiency.nc",longname='Methane emissions from municipal solid waste landfills that report to GHGRP - forcing the method to the collection efficiency based method for facilities with gas collection systems')
+    ghgrp_collection_efficiency <- Finalize_ghgrp(outname="MSW_GHGRP_collection_first.nc",longname='Methane emissions from municipal solid waste landfills that report to GHGRP - forcing the method to the collection efficiency based method for facilities with gas collection systems')
   }
   
   rm(ghgrp_all_data,nonreporting_facilities,nonreporting_landfills)
@@ -435,9 +435,9 @@ Municipal_solid_waste <- function(input_directory,
                         overwrite=TRUE)
   }
   
-  if(landfill_ghgrp_modeled){
+  if(landfill_ghgrp_generation_first){
     writeCDF_no_newline(LMOP_flux+ghgrp_modeled,
-                        file.path(output_directory,paste0('Landfill_sector_total_GHGRP_modeled.nc')),
+                        file.path(output_directory,paste0('Landfill_sector_total_GHGRP_generation_first.nc')),
                         force_v4=TRUE,
                         varname='methane_emissions',
                         unit='nmol/m2/s',
@@ -446,9 +446,9 @@ Municipal_solid_waste <- function(input_directory,
                         overwrite=TRUE)
   }
   
-  if(landfill_ghgrp_collection_efficiency){
+  if(landfill_ghgrp_collection_first){
     writeCDF_no_newline(LMOP_flux+ghgrp_collection_efficiency,
-                        file.path(output_directory,paste0('Landfill_sector_total_GHGRP_collection_efficiency.nc')),
+                        file.path(output_directory,paste0('Landfill_sector_total_GHGRP_collection_first.nc')),
                         force_v4=TRUE,
                         varname='methane_emissions',
                         unit='nmol/m2/s',
@@ -475,13 +475,13 @@ Municipal_solid_waste <- function(input_directory,
       zlim_min <- min(terra::global(ghgrp_reported,min,na.rm=T),zlim_min,na.rm=T)
     }
     
-    if(landfill_ghgrp_modeled){
+    if(landfill_ghgrp_generation_first){
       ghgrp_modeled[ghgrp_modeled==0] <- NA
       zlim_max <- max(terra::global(ghgrp_modeled,max,na.rm=T),zlim_max,na.rm=T)
       zlim_min <- min(terra::global(ghgrp_modeled,min,na.rm=T),zlim_min,na.rm=T)
     }
     
-    if(landfill_ghgrp_collection_efficiency){
+    if(landfill_ghgrp_collection_first){
       ghgrp_collection_efficiency[ghgrp_collection_efficiency==0] <- NA
       zlim_max <- max(terra::global(ghgrp_collection_efficiency,max,na.rm=T),zlim_max,na.rm=T)
       zlim_min <- min(terra::global(ghgrp_collection_efficiency,min,na.rm=T),zlim_min,na.rm=T)
@@ -498,15 +498,15 @@ Municipal_solid_waste <- function(input_directory,
                domain=domain,County_Tigerlines=County_Tigerlines,
                State_CB=State_CB)
     }
-    if(landfill_ghgrp_modeled){
-      log_plot(ghgrp_modeled,filename="MSW_GHGRP_modeled",
+    if(landfill_ghgrp_generation_first){
+      log_plot(ghgrp_modeled,filename="MSW_GHGRP_generation_first",
                "Municipal Solid Waste -\n GHGRP reporters - decay model based emissions",
                zlim_min=zlim_min,zlim_max=zlim_max,plot_directory=plot_directory,
                domain=domain,County_Tigerlines=County_Tigerlines,
                State_CB=State_CB)
     }
-    if(landfill_ghgrp_collection_efficiency){
-      log_plot(ghgrp_collection_efficiency,filename="MSW_GHGRP_collection_efficiency",
+    if(landfill_ghgrp_collection_first){
+      log_plot(ghgrp_collection_efficiency,filename="MSW_GHGRP_collection_first",
                "Municipal Solid Waste -\n GHGRP reporters - collection efficiency based\nemissions",
                zlim_min=zlim_min,zlim_max=zlim_max,plot_directory=plot_directory,
                domain=domain,County_Tigerlines=County_Tigerlines,
@@ -521,12 +521,12 @@ Municipal_solid_waste <- function(input_directory,
     if(landfill_ghgrp_reported){
       Summed_solid_waste <- sum(c(ghgrp_reported,LMOP_flux),na.rm=T)
       title <- "Municipal Solid Waste -\n GHGRP reported emissions + (GHGI - GHGRP) distributed using \nLandfill Methane Outreach Program"
-    }else if(landfill_ghgrp_modeled){
+    }else if(landfill_ghgrp_generation_first){
       Summed_solid_waste <- sum(c(ghgrp_modeled,LMOP_flux),na.rm=T)
-      title <- "Municipal Solid Waste -\n GHGRP modeled emissions + (GHGI - GHGRP) distributed using \nLandfill Methane Outreach Program"
-    }else if(landfill_ghgrp_collection_efficiency){
+      title <- "Municipal Solid Waste -\n GHGRP generation first emissions + (GHGI - GHGRP) distributed using \nLandfill Methane Outreach Program"
+    }else if(landfill_ghgrp_collection_first){
       Summed_solid_waste <- sum(c(ghgrp_collection_efficiency,LMOP_flux),na.rm=T)
-      title <- "Municipal Solid Waste -\n GHGRP collection efficiency emissions + (GHGI - GHGRP) distributed using \nLandfill Methane Outreach Program"
+      title <- "Municipal Solid Waste -\n GHGRP collection first emissions + (GHGI - GHGRP) distributed using \nLandfill Methane Outreach Program"
     }
     log_plot(Summed_solid_waste,title,
              plot_directory=plot_directory,
