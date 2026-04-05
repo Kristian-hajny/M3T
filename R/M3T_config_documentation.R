@@ -24,8 +24,8 @@
 #'
 #' Method Variations
 #' \itemize{
-#'   \item{\bold{Use_ACES} - logical stating whether the \href{https://doi.org/10.3334/ORNLDAAC/1943}{ACES CO2 inventory} should be used to downscale the stationary combustion and natural gas distribution emissions. Default TRUE.}
-#'   \item{\bold{Use_Vulcan} - logical stating whether the \href{https://doi.org/10.5281/zenodo.15446748}{Vulcan CO2 inventory} should be used to downscale the stationary combustion and natural gas distribution emissions. Default TRUE.}
+#'   \item{\bold{Use_ACES} - logical stating whether the \href{https://doi.org/10.3334/ORNLDAAC/1943}{ACES CO2 inventory} should be used to disaggregate the stationary combustion and natural gas distribution emissions. Default FALSE.}
+#'   \item{\bold{Use_Vulcan} - logical stating whether the \href{https://doi.org/10.5281/zenodo.15446748}{Vulcan CO2 inventory} should be used to disaggregate the stationary combustion and natural gas distribution emissions. Default TRUE.}
 #'   }
 #'
 #' Accessing Datasets
@@ -36,8 +36,8 @@
 #'   \item{\bold{Source_GHGRP_combustion} - character stating "M3T", "download", or a filepath pointing to the needed file. Data on facility combustion emissions (subpart C) from the \href{https://enviro.epa.gov/envirofacts/metadata/table/ghg/c_subpart_level_information}{EPA Greenhouse Gas Reporting Program's Envirofacts API}. Used for the landfill and natural gas transmission sectors as these sources report to subpart C. Default "M3T".}
 #'   \item{\bold{Source_GHGRP_NG} - character stating "M3T", "download", or a filepath pointing to the needed file. Data on petroleum and natural gas system facility-level emissions (subpart W) from the \href{https://enviro.epa.gov/envirofacts/metadata/table/ghg/w_subpart_level_information}{EPA Greenhouse Gas Reporting Program's Envirofacts API}. Used for the natural gas distribution and natural gas transmission sectors as these sources report to subpart W. Default "M3T".}
 #'   \item{\bold{Source_GHGI} - character stating "M3T", "download", or a filepath pointing to a directory with the needed files. The main text and annex tables from the \href{https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks-1990-2022}{EPA Greenhouse Gas Inventory}. Optionally used for the landfill, natural gas distribution, natural gas transmission, and stationary combustion sectors to get the national activity and emission factor data used. Default "M3T".}
-#'   \item{\bold{Source_ACES} - character stating "M3T" or a filepath pointing to a directory with the needed files.  \bold{Cannot} be set to "download" as there is no simple way to automatically download these files, they are hundreds of gigabytes, and annualizing them is considerably time consuming. Annual rasters of the industrial, residential, electric production, and commercial sectors from the \href{https://doi.org/10.3334/ORNLDAAC/1943}{ACES CO2 inventory}. Optionally used to downscale stationary combustion and natural gas distribution methane emissions. Code to convert the hourly data to annual is available on the \href{https://zenodo.org/}{companion Zenodo}. Default "M3T".}
-#'   \item{\bold{Source_Vulcan} - character stating "download" or a filepath pointing to a directory with the needed files.  \bold{Cannot} be set to "M3T" as there is no version saved within the package - it relies on publicly available versions of the data so there is no need. Annual rasters of the industrial, residential, electric production, and commercial sectors from the \href{https://doi.org/10.5281/zenodo.15446748}{Vulcan v4.0 CO2 inventory}. Optionally used to downscale stationary combustion and natural gas distribution methane emissions. Default "download".}
+#'   \item{\bold{Source_ACES} - character stating "M3T" or a filepath pointing to a directory with the needed files.  \bold{Cannot} be set to "download" as there is no simple way to automatically download these files, they are hundreds of gigabytes, and annualizing them is considerably time consuming. Annual rasters of the industrial, residential, electric production, and commercial sectors from the \href{https://doi.org/10.3334/ORNLDAAC/1943}{ACES v2.0 CO2 inventory}. Optionally used to disaggregate stationary combustion and natural gas distribution methane emissions. Code to convert the hourly data to annual is available on the \href{https://zenodo.org/}{companion Zenodo}. Default "M3T".}
+#'   \item{\bold{Source_Vulcan} - character stating "download" or a filepath pointing to a directory with the needed files.  \bold{Cannot} be set to "M3T" as there is no version saved within the package - it relies on publicly available versions of the data so there is no need. Annual rasters of the industrial, residential, electric production, and commercial sectors from the \href{https://doi.org/10.5281/zenodo.15446748}{Vulcan v4.0 CO2 inventory}. Optionally used to disaggregate stationary combustion and natural gas distribution methane emissions. Default "download".}
 #'   }
 #' }
 #'
@@ -62,9 +62,9 @@
 #' Note landfills without gas collection systems will still be included using
 #' the modeled emission estimate if forcing to the collection efficiency
 #' estimate.
-#'   \item{\bold{landfill_ghgrp_reported} - logical stating if the "reported" estimate should be used. Default TRUE.}
-#'   \item{\bold{landfill_ghgrp_modeled} - logical stating if the decay model estimate should be used. Default TRUE.}
-#'   \item{\bold{landfill_ghgrp_collection_efficiency} - logical stating if the collection efficiency estimate should be used. Default TRUE.}
+#'   \item{\bold{landfill_ghgrp_reported} - logical stating if the "reported" estimate should be used. Default FALSE.}
+#'   \item{\bold{landfill_ghgrp_generation_first} - logical stating if the decay model estimate (HH-6) should be used. Default TRUE.}
+#'   \item{\bold{landfill_ghgrp_collection_first} - logical stating if the collection efficiency estimate (HH-8) should be used. Default FALSE.}
 #'   }
 #'
 #' Accessing Datasets
@@ -99,7 +99,7 @@
 #' \href{https://zenodo.org/}{companion Zenodo}.
 #'   \item{\bold{NG_distribution_by_LDC} - logical. Default FALSE.}
 #'   \item{\bold{NG_distribution_by_state} - logical. Default TRUE.}
-#'   \item{\bold{NG_distribution_by_domain} - logical. Default TRUE.}
+#'   \item{\bold{NG_distribution_by_domain} - logical. Default FALSE.}
 #'   }
 #'
 #' Accessing Datasets
@@ -173,7 +173,6 @@
 #'
 #' Emission Factors and similar
 #' \itemize{
-#'   \item{\bold{stationary_combustion_GHGI_data} - data.frame with columns "State", "com_coal", "ind_coal", "elec_coal", "res_petr", "com_petr", "ind_petr", "elec_petr", "com_gas", "ind_gas", "elec_gas", "res_wood", "com_wood", "ind_wood", and "elec_wood" or "GHGI" to indicate this data should be pulled automatically from GHGI files. State should be "US_EPA" and each column should list the trillion British Thermal Units (TBTU) of energy consumed for the economic sector - fuel combination. Res = residential, com = commercial, ind = industrial, elec = electric, and petr = petroleum. Res_coal is 0 in the US and res_gas is handled separately. Default is "GHGI", which pulls this information from the \href{https://www.epa.gov/ghgemissions/natural-gas-and-petroleum-systems-ghg-inventory-additional-information-1990-2022-ghg}{EPA Greenhouse Gas Inventory annex files}.}
 #'   \item{\bold{stationary_combustion_emission_factors} - data.frame with columns "com_coal", "ind_coal", "elec_coal", "res_petr", "com_petr", "ind_petr", "elec_petr", "com_gas", "ind_gas", "elec_gas", "res_wood", "com_wood", "ind_wood", and "elec_wood". Each column should list the emission factor in g/Giga Joule for the economic sector - fuel combination. Res = residential, com = commercial, ind = industrial, elec = electric, and petr = petroleum. Res_coal is 0 in the US and res_gas is handled separately. Default is \href{https://www.ipcc-nggip.iges.or.jp/public/2006gl/vol2.html}{Intergovernmental Panel on Climate Change (IPCC)} 2006 volume 2, energy tables 2.2 through 2.5, except the natural gas electric sector which comes from \href{https://doi.org/10.1021/acs.est.9b01875}{Hajny et al., 2019}.}
 #'   }
 #' }
@@ -197,12 +196,12 @@
 #' \href{https://www.epa.gov/cwns}{Clean Watershed Needs Survey (CWNS)} or
 #' \href{https://echo.epa.gov/trends/loading-tool/water-pollution-search}{Discharge
 #' Monitoring Reports (DMR)}.
-#'   \item{\bold{Wastewater_use_CWNS} - logical. Rely on the CWNS wastewater flow data. The CWNS is typically reported every 4 years though the 2 most recent reports that are handled by this code are 2012 and 2022. Default TRUE.}
+#'   \item{\bold{Wastewater_use_CWNS} - logical. Rely on the CWNS wastewater flow data. The CWNS is typically reported every 4 years though the 2 most recent reports that are handled by this code are 2012 and 2022. Default FALSE.}
 #'   \item{\bold{Wastewater_use_DMR} - logical. Rely on the DMR wastewater flow data. Default TRUE.}
 #'   \item{\bold{Wastewater_Municipal_Method_Moore_EF} - logical. Use the measured emission factor from \href{https://doi.org/10.1038/s44221-025-00490-z}{Moore et al., 2025} to convert flow rate to emission rate. They measured 96 facilities (~10% of total US flow) and showed scaling their emission factors nationally results in more than double the emissions estimated by the GHGI. Default TRUE.}
-#'   \item{\bold{Wastewater_Municipal_Method_GHGI} - logical. Use the Environmental Protection Agency's (EPA) \href{https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks-1990-2022}{Greenhouse Gas Inventory (GHGI)} estimate of national municipal wastewater emissions. These are scaled to individual facilities based on flow. Default TRUE.}
+#'   \item{\bold{Wastewater_Municipal_Method_GHGI} - logical. Use the Environmental Protection Agency's (EPA) \href{https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks-1990-2022}{Greenhouse Gas Inventory (GHGI)} estimate of national municipal wastewater emissions. These are scaled to individual facilities based on flow. Default FALSE.}
 #'   \item{\bold{Wastewater_national_septic} - logical. Rely on the GHGI and a national estimate of land cover used in this work to distribute septic emissions (impervious surface <50%). Default TRUE.}
-#'   \item{\bold{Wastewater_state_septic} - logical. Rely on the state level septic fraction, national level septic fraction, population, and a per capita septic emission factor. State septic data is uses if available within 1 year of the inventory year (biannually reported), but 1990 state data is scaled using the change in national septic fraction during the same timeframe otherwise as this is the last year with data for all states. Default TRUE.}
+#'   \item{\bold{Wastewater_state_septic} - logical. Rely on the state level septic fraction, national level septic fraction, population, and a per capita septic emission factor. State septic data is uses if available within 1 year of the inventory year (biannually reported), but 1990 state data is scaled using the change in national septic fraction during the same timeframe otherwise as this is the last year with data for all states. Default FALSE.}
 #'   }
 #'
 #' Accessing Datasets
@@ -253,18 +252,18 @@
 #' Wildlife Service's National Wetland Inventory (NWI)}, or the
 #' \href{https://doi.org/10.3334/ORNLDAAC/2346}{WetCHARTs model} as published in
 #' \href{https://doi.org/10.5194/gmd-10-2141-2017}{Bloom et al., 2017}
-#' downscaled from 0.5 deg to 0.1 deg using the
+#' disaggregated from 0.5 deg to 0.1 deg using the
 #' \href{https://doi.org/10.5066/P94UXNTS}{National Land Cover Database (NLCD)}.
 #' NWI data is used for freshwater regardless.
-#'   \item{\bold{Use_SOCCR1} - logical. Default TRUE.}
-#'   \item{\bold{Use_SOCCR2} - logical. Default TRUE.}
+#'   \item{\bold{Use_SOCCR1} - logical. Default FALSE.}
+#'   \item{\bold{Use_SOCCR2} - logical. Default FALSE.}
 #'   \item{\bold{Use_Wetcharts} - logical. Default TRUE.}
 #'   \item{\bold{Wetcharts_model_subset} - list of numeric vectors providing the models within WetCHARTs to average across. A single entry or multiple can be used. \href{https://doi.org/10.1029/2021AV000408}{Ma et al., 2021} ranked model performance as compared to a GOSAT satellite-based inversion and some subsequent works subset to the 9 highest performing models \code{c(1913,1914,1923,1924,1933,1934,2913,2914,2924)}, though \href{https://doi.org/10.5194/acp-24-5069-2024}{Nesser et al., 2024} further subset these to only the 7 \code{c(1913,1914,1924,1933,1934,2914,2924)} as 2 showed overestimation in North America compared to GOSAT in \href{https://doi.org/10.5194/acp-22-395-2022}{Lu et al., 2022}. Wetcharts models are defined with digit 1 = global scale factor (1=124.5 Tg/yr, 2=166 Tg/yr, 3=207.5 Tg/yr), digit 2 = heterotrophic respiration model (1-8=MsTMIP models, 9=CARDAMOM), 3 = temperature dependence (CH4:C q10 value of 1 - 3), and 4 = extent parameterization (1=SWAMPS+GLWD, 2=SWAMPS+GLOBCOVER, 3=PREC+GLWD, 4=PREC+GLOBCOVER) as described in the user guide on the main download page. Default is all models \code{c(1913,1914,1923,1924,1933,1934,2913,2914,2923,2924,2933,2934,3913,3914,3923,3924,3933,3934)}.}
 #'   }
 #'
 #' Accessing Datasets
 #' \itemize{
-#'   \item{\bold{Source_wetland_NLCD} - character stating "M3T" or a filepath pointing to the needed file. \bold{Cannot} be set to "download" as there is no simple way to automatically download these files. The \href{https://doi.org/10.5066/P94UXNTS}{National Land Cover Database (NLCD)} is high resolution (30 m) land cover data used to distribute septic emissions. Default "M3T", which is actually the WetCHARTs data downscaled using the NLCD, to speed analyses.}
+#'   \item{\bold{Source_wetland_NLCD} - character stating "M3T" or a filepath pointing to the needed file. \bold{Cannot} be set to "download" as there is no simple way to automatically download these files. The \href{https://doi.org/10.5066/P94UXNTS}{National Land Cover Database (NLCD)} is high resolution (30 m) land cover data used to distribute septic emissions. Default "M3T", which is actually the WetCHARTs data disaggregated using the NLCD, to speed analyses.}
 #'   \item{\bold{Source_Watershed_file} - character stating "M3T", "download", or a filepath pointing to the needed file. A shapefile from \href{http://www.cec.org/north-american-environmental-atlas/watersheds/}{the Commission for Environmental Cooperation's (CEC) North American Environmental Atlas} that outlines the watersheds in North America. Only relevant if using SOCCR2 as it has different emission factors for different watersheds. Default "M3T".}
 #'   \item{\bold{Source_wetcharts} - character stating a filepath pointing to the needed file. \bold{Cannot} be set to "download" as the data has recently moved and cannot be automatically accessed easily yet or "M3T" as the data is used as is. Only needed if Source_wetland_NLCD is not "M3T" and Use_Wetcharts is TRUE. Default empty as Source_wetland_NLCD is "M3T" by default.}
 #'   \item{\bold{Source_NWI} - character stating "M3T", "download", or a filepath pointing to the needed directory. Should be a directory including state shapefiles outlining different wetland and inland water types by the \href{https://www.fws.gov/program/national-wetlands-inventory}{U.S. Fish and Wildlife Service's National Wetland Inventory (NWI)} in geopackage format (except MN which is a geodatabase). Default is "M3T" which uses 1 km x 1 km processed files for speed.}
@@ -308,7 +307,7 @@
 #'
 #' Method Variations
 #' \itemize{
-#'   \item{\bold{Separate_thermo} - logical stating whether combined inventories should also be calculated separately for thermogenic (i.e., natural gas) and non-thermogenic sources. Be aware that this will triple the number of inventories created. Default TRUE.}
+#'   \item{\bold{Separate_thermo} - logical stating whether combined inventories should also be calculated separately for thermogenic (i.e., natural gas) and non-thermogenic sources. Be aware that this will triple the number of inventories created. Default FALSE.}
 #'   \item{\bold{Create_summary_combinations} - logical stating whether or not to create summary inventories of the mean, max, and min across variations for each sector.  Default TRUE.}
 #'   \item{\bold{Create_individual_combinations} - logical stating whether or not to create all possible unique inventory combinations across variations. Be aware that with many variations this can create >1,000 inventories. Default FALSE.}
 #'   }
