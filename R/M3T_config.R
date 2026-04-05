@@ -55,7 +55,7 @@ M3T_config$Base_timeout <- 60*20
   #Method variations
   {
     #used in NG distribution and stationary combustion for downscaling
-    M3T_config$Use_ACES <- TRUE
+    M3T_config$Use_ACES <- FALSE
     M3T_config$Use_Vulcan <- TRUE
   }
   
@@ -95,9 +95,9 @@ M3T_config$Base_timeout <- 60*20
   {
     #2 GHGRP methods (reported = facility chosen method between the 2, will vary
     #across domain)
-    M3T_config$landfill_ghgrp_reported <- TRUE
-    M3T_config$landfill_ghgrp_modeled <- TRUE
-    M3T_config$landfill_ghgrp_collection_efficiency <- TRUE
+    M3T_config$landfill_ghgrp_reported <- FALSE
+    M3T_config$landfill_ghgrp_generation_first <- TRUE
+    M3T_config$landfill_ghgrp_collection_first <- FALSE
   }
   
   #How to access datasets
@@ -155,6 +155,7 @@ M3T_config$Base_timeout <- 60*20
     #grams NG consumed / yr.  This is used as a conversion factor from cubic
     #feet to grams here.  Then convert from g/yr to mol/s.
     M3T_config$natural_gas_res_post_meter_emission_factor <- 0.5/100  *7850/401/(16.043*60*60*24*365)
+    #no published data exists so this is set to 0
     M3T_config$natural_gas_com_post_meter_emission_factor <- 0
     
     #emission factors and activity data for local distribution company pipeline
@@ -222,9 +223,6 @@ M3T_config$Base_timeout <- 60*20
   
   #Emission factors, and similar
   {
-    #GHGI activity data
-    M3T_config$stationary_combustion_GHGI_data <- "GHGI"
-    
     #IPCC EFs - Hajny et al. for elec-gas
     M3T_config$stationary_combustion_emission_factors <- data.frame(
       "com_coal"=10,
@@ -260,16 +258,16 @@ M3T_config$Base_timeout <- 60*20
   #Method variations
   {
     #2 datasets with flow activity data by site
-    M3T_config$Wastewater_use_CWNS <- TRUE
+    M3T_config$Wastewater_use_CWNS <- FALSE
     M3T_config$Wastewater_use_DMR <- TRUE
     
     #Downscaling GHGI estimate or use Moore et al. published EF
     M3T_config$Wastewater_Municipal_Method_Moore_EF <- TRUE
-    M3T_config$Wastewater_Municipal_Method_GHGI <- TRUE
+    M3T_config$Wastewater_Municipal_Method_GHGI <- FALSE
     
     #National septic fraction or state level septic fraction data
     M3T_config$Wastewater_national_septic <- TRUE
-    M3T_config$Wastewater_state_septic <- TRUE
+    M3T_config$Wastewater_state_septic <- FALSE
   }
   
   #How to access datasets
@@ -343,8 +341,8 @@ M3T_config$Base_timeout <- 60*20
     #Methodology for Wetland and freshwater methane emissions.  State Of the
     #Carbon Cycle Report (SOCCR) emission factors combined with national wetland
     #inventory data, or downscaled wetcharts model.
-    M3T_config$Use_SOCCR1 <- TRUE
-    M3T_config$Use_SOCCR2 <- TRUE
+    M3T_config$Use_SOCCR1 <- FALSE
+    M3T_config$Use_SOCCR2 <- FALSE
     M3T_config$Use_Wetcharts <- TRUE
     
     M3T_config$Wetcharts_model_subset <- list(c(1913,1914,1923,1924,1933,1934,2913,2914,2923,
@@ -416,7 +414,7 @@ M3T_config$Base_timeout <- 60*20
   
   #Method variations
   {
-    M3T_config$Separate_thermo=TRUE
+    M3T_config$Separate_thermo=FALSE
     M3T_config$Create_summary_combinations=TRUE
     M3T_config$Create_individual_combinations=FALSE
   }
