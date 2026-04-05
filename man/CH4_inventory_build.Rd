@@ -9,7 +9,7 @@ CH4_inventory_build(
   run_directory,
   inventory_year,
   domain,
-  domain_res,
+  domain_res = NULL,
   domain_crs = "epsg:4326",
   verbose = FALSE
 )
@@ -35,10 +35,11 @@ state FIPS code (as a character), Urban Area name, or Urban Area Census
 Code.  For example: "DE", "Delaware", and "10" are all equivalent and "Long
 Neck, DE" and "51202" are equivalent. It can also be "CONUS" to run for the
 entire continental United States or "custom" for a domain created by the
-user interactively. Lastly, it can be a filepath pointing to a polygon file
-that can be interpreted by the terra package. Names must match exactly and
-FIPS or urban area codes must include leading 0's.  Lists of the names and
-codes for all urban areas for the most recent census are available
+user interactively. Multiple states can be set (e.g., c("RI","CT"). Lastly,
+it can be a filepath pointing to a polygon or raster file that can be
+interpreted by the terra package. Names must match exactly and FIPS or urban
+area codes must include leading 0's.  Lists of the names and codes for all
+urban areas for the most recent census are available
 \href{https://www.census.gov/programs-surveys/geography/guidance/geo-areas/urban-rural.html}{here}.
 Links to previous census urban areas are on the same page.  A list with
 state fips codes is available
@@ -51,10 +52,11 @@ length 1 for equal x and y resolution or length 2 (x, y).}
 \href{https://proj.org/en/stable/operations/projections/index.html}{PROJ
 string} or \href{https://epsg.io/}{EPSG codes} or
 \href{https://docs.ogc.org/is/12-063r5/12-063r5.html}{WKT} formats. Commonly
-desired crs include "epsg:4326" for lat/long and "+proj=lcc +lat_0=40
+used crs include "epsg:4326" for lat/long and "+proj=lcc +lat_0=40
 +lon_0=-97 +lat_1=33 +lat_2=45 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs"
 for a m grid in the lambert conformal conical projection used by some CO2
-inventories for the continental US}
+inventories for the continental US. Many crs can be seen at
+\href{https://spatialreference.org/}{spatialreference.org}.}
 
 \item{verbose}{Logical indicating whether to save sector and subsector
 visuals.}
@@ -83,6 +85,13 @@ the needed data.
 CH4_inventory_build(run_directory=tempdir(),
                     inventory_year=2019,
                     domain="RI",
+                    domain_res=1,
+                    domain_crs="epsg:4326",
+                    verbose=F)
+                    
+CH4_inventory_build(run_directory=tempdir(),
+                    inventory_year=2019,
+                    domain = as.data.frame(cbind(c(-75,-72),c(39,42))),
                     domain_res=1,
                     domain_crs="epsg:4326",
                     verbose=F)

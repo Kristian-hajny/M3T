@@ -25,9 +25,9 @@ Stationary_combustion(
   vu_com,
   vu_ind,
   vu_elec,
+  stationary_combustion_GHGI_data,
   stationary_combustion_by_state,
   stationary_combustion_by_domain,
-  stationary_combustion_GHGI_data,
   stationary_combustion_emission_factors,
   Source_EIA_SEDS_data,
   Source_NEI_data,
@@ -79,9 +79,9 @@ Census Tigerlines} files for visualization. Only relevant if \code{verbose} = TR
 inventory as loaded in \code{\link{CH4_inventory_build}} based on
 \code{Use_ACES} and \code{Source_ACES}.}
 
-\item{aces_com}{SpatRaster of commercial CO2 emissions from the ACES
-inventory as loaded in \code{\link{CH4_inventory_build}} based on
-\code{Use_ACES} and \code{Source_ACES}.}
+\item{aces_com}{SpatRaster of commercial CO2 emissions from the ACES inventory
+as loaded in \code{\link{CH4_inventory_build}} based on \code{Use_ACES} and
+\code{Source_ACES}.}
 
 \item{aces_ind}{SpatRaster of industrial CO2 emissions from the ACES inventory
 as loaded in \code{\link{CH4_inventory_build}} based on \code{Use_ACES} and
@@ -113,9 +113,6 @@ on \code{Use_Vulcan} and \code{Source_Vulcan}.}
 \item{stationary_combustion_by_domain}{Logical.  Pulled from
 \code{\link{M3T_config}}.}
 
-\item{stationary_combustion_GHGI_data}{Data frame.  Pulled from
-\code{\link{M3T_config}}.}
-
 \item{stationary_combustion_emission_factors}{Data frame.  Pulled from
 \code{\link{M3T_config}}.}
 
@@ -141,11 +138,19 @@ abbreviated as com (commercial), res (residential), elec (electric), and ind
 (industrial); fuel is abbreviated as wood, petr (petroleum), gas (natural
 gas), and coal; variation is bystate or bydomain; and inventory is ACES or
 Vulcan.
+
+Then the 4 possible combinations for fossil fuel and wood separately (for a
+total of 8) are saved similarly as
+"Stationary_combustion_sector_type_total_inventory_variation.nc" where type
+is either fossil_fuel or wood.
 }
 \description{
-\code{Stationary_combustion} writes up to 56 netcdf files of gridded
-methane emissions from stationary combustion sources, as well as optional
-visuals
+\code{Stationary_combustion} is an internal function that we
+strongly recommend users do not use directly, instead using
+\code{\link{CH4_inventory_build}} and \code{\link{M3T_config}} which call
+this function. \code{Stationary_combustion} writes up to 64 netcdf files of
+gridded methane emissions from stationary combustion sources, as well as
+optional visuals
 }
 \details{
 This function calculates and grids methane emissions from stationary
@@ -156,8 +161,9 @@ the Vulcan and/or Anthropogenic Carbon Emission System (ACES) CO2
 inventories.  First, the ratio of SEDS national consumption by fuel-sector
 combination to the equivalent GHGI data is applied to SEDS state data so
 that they are approximately consistent with the GHGI.  The state total
-consumption is then converted to emissions using emission factors.  There
-are two variations at this step.
+consumption is then converted to emissions using the Integovernmental Panel
+on Climate Change (IPCC) emission factors.  There are two variations at this
+step.
 
 bystate: The state level emissions are then distributed to the county level
 using NEI CO concentrations to calculate weighting values for each county
@@ -179,8 +185,6 @@ are coal, natural gas, petroleum, and wood.  Residential coal is ignored as
 it does not exist in the U.S. anymore and residential gas is ignored as it
 is accounted for elsewhere.
 
-The necessary SEDS and NEI data will be automatically downloaded.
-
 The GHGI is intended to capture all national emissions.  The SEDS
 consumption data provides state-level consumption broken down by fuel (coal,
 natural gas, petroleum, wood, geothermal, solar, and electricity) and sector
@@ -188,20 +192,23 @@ natural gas, petroleum, wood, geothermal, solar, and electricity) and sector
 data being used provides CO emissions at the county level.  The GHGI is
 available starting in 1990 and is generally about 2 years behind present
 day.  SEDS data is available starting in 1960 and generally is about 2 years
-behind present day.  NEI data is available beginning in at least 1990, is
-released every three years, and generally takes three years to complete
-(i.e., 2023 NEI is released in 2026).  All data is annual.  The SEDS data is
-at the state scale, NEI data is at the county scale, and GHGI data is at the
-national scale.
+behind present day, though there are periodic updates between October and
+June.  NEI data is available beginning in at least 1990, is released every
+three years, and generally takes three years to complete (i.e., 2023 NEI is
+released in 2026).  All data is annual.  The SEDS data is at the state
+scale, NEI data is at the county scale, and GHGI data is at the national
+scale.
 
 The GHGI is available at
 \url{https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks}
-The SEDS is available at
-\url{https://www.eia.gov/state/seds/seds-data-complete.php?sid=US} The NEI
-is available at
+The SEDS bulk files are available at
+\url{https://www.mrlc.gov/downloads/sciweb1/shared/mrlc/data-bundles/NLCD_2011_Land_Cover_AK_20200724.zip}
+The NEI is available at
 \url{https://www.epa.gov/air-emissions-inventories/national-emissions-inventory-nei}
-ACES is available at \url{https://doi.org/10.3334/ORNLDAAC/1943} and Vulcan
-is available at \url{https://doi.org/10.3334/ORNLDAAC/1741}.
+IPCC emission factors are published at
+\url{https://www.ipcc-nggip.iges.or.jp/public/2006gl/vol2.html} ACES is
+available at \url{https://doi.org/10.3334/ORNLDAAC/1943} and Vulcan is
+available at \url{https://doi.org/10.5281/zenodo.15446748}.
 
 Each fuel-sector-inventory-variation combination is saved separately.
 
@@ -215,7 +222,7 @@ provided in config.
 \link{M3T_config} Generates the config function with user-editable settings used
 throughout processing.
 
-\code{\link[=Inventory_based_disaggregation]{Inventory_based_disaggregation()}} Disaggregates data from the county level to pixels using a
-sectoral CO2 inventory.
+\code{\link[=Inventory_based_disaggregation]{Inventory_based_disaggregation()}} Disaggregates data from the county level
+to pixels using a sectoral CO2 inventory.
 }
 \keyword{internal}

@@ -1,7 +1,11 @@
 #'@title Create gridded natural gas distribution methane emissions maps
 #'
-#'@description `Natural_Gas_Distribution` writes up to 63 netcdf files of gridded methane
-#'  emissions from natural gas distribution sources, as well as optional visuals
+#'@description \code{Natural_Gas_Distribution} is an internal function that we
+#'  strongly recommend users do not use directly, instead using
+#'  \code{\link{CH4_inventory_build}} and \code{\link{M3T_config}} which call
+#'  this function. \code{Natural_Gas_Distribution} writes up to 63 netcdf files of
+#'  gridded methane emissions from natural gas distribution sources, as well as
+#'  optional visuals
 #'
 #'@details This function calculates and grids methane emissions from natural gas
 #'  distribution.  It uses a Homeland Infrastructure Foundation-Level Data
@@ -26,8 +30,7 @@
 #'  as separately for above grade and below grade stations.  If calculating by
 #'  LDC, the PHMSA miles of pipeline per LDC is used in the calculation of
 #'  stations per mile, rather than the GHGRP, though the miles of pipeline for
-#'  each LDC in GHGRP and PHMSA are compared and if any LDC differs by > 5\% an
-#'  error will be flagged.
+#'  each LDC in GHGRP and PHMSA are generally consistent.
 #'
 #'  The GHGI Annex data is then pulled and includes emission factors and
 #'  activity data for metering an regulating stations separated by inlet
@@ -49,7 +52,7 @@
 #'  number of above and below grade stations for each LDC in the PHMSA dataset.
 #'
 #'  The combined miles of pipeline including services is calculated from the
-#'  PHMSA and the various input datasets are subset to only the necessary
+#'  PHMSA data and the various input datasets are subset to only the necessary
 #'  variables, aggregated to the state level and merged.  The variables kept
 #'  differ slightly if calculating by LDC.
 #'
@@ -93,11 +96,10 @@
 #'  and split into residential and commercial in the same manner as service and
 #'  pipeline emissions were.
 #'
-#'  Post-meter emissions are calculated, strictly for residential, using the
-#'  volume of gas delivered to residential customers and the
-#'  natural_gas_post_meter_emission_factor, which is based on Fischer et al. by
-#'  default.  Fischer et al. measured whole-house emissions from 75 homes in
-#'  California using mass balance.
+#'  Post-meter emissions are calculated using the volume of gas delivered and
+#'  the post meter emission factor, which is based on Fischer et al. by default
+#'  for residential and 0 for commercial.  Fischer et al. measured whole-house
+#'  emissions from 75 homes in California using mass balance.
 #'
 #'  Finally, ACES and/or Vulcan residential and commercial gridded CO2 emission
 #'  maps are loaded in.  The emissions for each subsector are then distributed
@@ -131,7 +133,7 @@
 #'  is updated approximately in sync with the GHGRP.  The HIFLD dataset is
 #'  updated infrequently and is available for 2019 and 2017.  The EIA form is
 #'  annually reported and is available starting in 1997 and is generally updated
-#'  in September to the previous year (i.e., Sept 2024 adds 2023 data).  The
+#'  in September for the previous year (i.e., Sept 2024 adds 2023 data).  The
 #'  PHMSA data is annual and is available starting in 1970 and is available up
 #'  to the most recent year.  The GHGRP includes only facilities that emit at
 #'  least 25,000 metric tons of carbon dioxide equivalent while the GHGI is
@@ -139,14 +141,13 @@
 #'  be inclusive of national facilities. All data is annual.  The GHGI is
 #'  national totals while all other datasets are at the facility scale.
 #'
-#'  GHGRP data, GHGI data, and the HIFLD shapefile will be automatically
-#'  downloaded.
-#'
 #'  The GHGRP is available at \url{https://ghgdata.epa.gov/ghgp/main.do}. For
 #'  individual LDC metering and regulating station counts, among other
 #'  variables, one must filter to the natural gas local distribution companies
-#'  sector, select an individual facility and select "View reported data".  The
-#'  GHGI is available at
+#'  sector, select an individual facility and select "View reported data" or use
+#'  the Envirofacts API
+#'  \url{https://enviro.epa.gov/model-old/ghg?parentNode=4277&parentDirection=LeftToRight}.
+#'  The GHGI is available at
 #'  \url{https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks}.
 #'  The necessary GHGI Annex data is available at
 #'  \url{https://www.epa.gov/ghgemissions/natural-gas-and-petroleum-systems-ghg-inventory-additional-information-1990-2022-ghg}
@@ -155,44 +156,47 @@
 #'  for 2024 there is a link to the file in Section 3.6: "Methodology for
 #'  Estimating CH4, CO2, and N2O Emissions from Natural Gas Systems".  The excel
 #'  file has multiple sheets, each of which has a separate layout.  The HIFLD
-#'  dataset is available at
-#'  \url{https://hifld-geoplatform.hub.arcgis.com/datasets/geoplatform::natural-gas-service-territories/about}
-#'  and can be donwloaded as both a shapefile or a csv. EIA form 176 is
-#'  available at
+#'  dataset is available at \url{https://doi.org/10.3886/E240245V1} EIA form 176
+#'  is available at
 #'  \url{https://www.eia.gov/naturalgas/ngqs/#?report=RP4&year1=2020&year2=2020&company=Name}
 #'  and can be downloaded as an excel file.  The PHMSA Gas Distribution Annual
 #'  Data can be download at
 #'  \url{https://www.phmsa.dot.gov/data-and-statistics/pipeline/gas-distribution-gas-gathering-gas-transmission-hazardous-liquids}
 #'  as a zip file with an excel file for each year. ACES is available at
 #'  \url{https://doi.org/10.3334/ORNLDAAC/1943} and Vulcan is available at
-#'  \url{https://doi.org/10.3334/ORNLDAAC/1741}.
+#'  \url{https://doi.org/10.5281/zenodo.15446748}.
 #'
 #'  See references \href{https://doi.org/10.1021/acs.est.0c00437}{Weller et
 #'  al.}, \href{https://doi.org/10.1021/acs.est.8b03217}{Fischer et al.},
 #'  \href{https://doi.org/10.1029/2020JD032974}{Vulcan} and,
 #'  \href{https://doi.org/10.1002/2017JD027359}{ACES}
 #'
-#'@inheritParams Municipal_solid_waste 
+#'@inheritParams Municipal_solid_waste
 #'
 #'@param Use_ACES Logical.  Pulled from \code{\link{M3T_config}}.
 #'@param Use_Vulcan Logical.  Pulled from \code{\link{M3T_config}}.
 #'@param aces_res SpatRaster of residential CO2 emissions from the ACES
 #'  inventory as loaded in \code{\link{CH4_inventory_build}} based on
 #'  \code{Use_ACES} and \code{Source_ACES}.
-#'@param aces_com SpatRaster of commercial CO2 emissions from the ACES
-#'  inventory as loaded in \code{\link{CH4_inventory_build}} based on
-#'  \code{Use_ACES} and \code{Source_ACES}.
+#'@param aces_com SpatRaster of commercial CO2 emissions from the ACES inventory
+#'  as loaded in \code{\link{CH4_inventory_build}} based on \code{Use_ACES} and
+#'  \code{Source_ACES}.
 #'@param vu_res SpatRaster of residential CO2 emissions from the Vulcan v4.0
 #'  inventory as loaded in \code{\link{CH4_inventory_build}} based on
 #'  \code{Use_Vulcan} and \code{Source_Vulcan}.
 #'@param vu_com SpatRaster of commercial CO2 emissions from the Vulcan v4.0
 #'  inventory as loaded in \code{\link{CH4_inventory_build}} based on
 #'  \code{Use_Vulcan} and \code{Source_Vulcan}.
-#'@param natural_gas_pipeline_emission_factors Data.frame.  Pulled from \code{\link{M3T_config}}.
-#'@param natural_gas_res_post_meter_emission_factor Numeric.  Pulled from \code{\link{M3T_config}}.
-#'@param natural_gas_com_post_meter_emission_factor Numeric.  Pulled from \code{\link{M3T_config}}.
-#'@param NG_distribution_by_domain Logical.  Pulled from \code{\link{M3T_config}}.
-#'@param NG_distribution_by_state Logical.  Pulled from \code{\link{M3T_config}}.
+#'@param natural_gas_pipeline_emission_factors Data.frame.  Pulled from
+#'  \code{\link{M3T_config}}.
+#'@param natural_gas_res_post_meter_emission_factor Numeric.  Pulled from
+#'  \code{\link{M3T_config}}.
+#'@param natural_gas_com_post_meter_emission_factor Numeric.  Pulled from
+#'  \code{\link{M3T_config}}.
+#'@param NG_distribution_by_domain Logical.  Pulled from
+#'  \code{\link{M3T_config}}.
+#'@param NG_distribution_by_state Logical.  Pulled from
+#'  \code{\link{M3T_config}}.
 #'@param NG_distribution_by_LDC Logical.  Pulled from \code{\link{M3T_config}}.
 #'@param GHGI_services Data.frame.  Pulled from \code{\link{M3T_config}}.
 #'@param GHGI_meters Data.frame.  Pulled from \code{\link{M3T_config}}.
@@ -206,10 +210,8 @@
 #'  \code{\link{CH4_inventory_build}} using
 #'  \code{Source_GHGRP_subpartW_emissions} provided in \code{\link{M3T_config}}.
 #'@param verbose Logical indicating whether to save additional output.  This
-#'  includes plots of the gridded methane emissions for each
-#'  fuel-sector-inventory-variation combination as well as 2 summed plots for
-#'  each inventory-variation combination - one for wood and one for all other
-#'  sectors.
+#'  includes plots of the gridded methane emissions for each subsector as well
+#'  as sector total emissions.
 #'@returns Nothing is returned from the function, but the main outputs are up to
 #'  63 netcdf files of the methane emissions from natural gas distribution. They
 #'  are titled as "NG_dist_type_sector_variation_inventory.nc" where type is
@@ -221,12 +223,13 @@
 #'@references \href{https://doi.org/10.1029/2020JD032974}{Vulcan}
 #'@references \href{https://doi.org/10.1002/2017JD027359}{ACES}
 #'@seealso [CH4_inventory_build()] Calculates methane inventory using settings
-#'provided in config.
+#'  provided in config.
 #'
-#'[M3T_config] Generates the config function with user-editable settings used
-#'throughout processing.
+#'  [M3T_config] Generates the config function with user-editable settings used
+#'  throughout processing.
 #'
-#'[Inventory_based_disaggregation()] Disaggregates data to pixels using a sectoral CO2 inventory.
+#'  [Inventory_based_disaggregation()] Disaggregates data to pixels using a
+#'  sectoral CO2 inventory.
 #'@keywords internal
 
 Natural_Gas_Distribution <- function(domain,

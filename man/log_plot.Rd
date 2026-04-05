@@ -51,10 +51,10 @@ Census Tigerlines} files for visualization.}
 Census Cartographic Boundary} files for visualization.}
 }
 \value{
-This function returns nothing, but does produce a plot with the
-gridded methane data colored on a log scale with NA values set to black. All
-axes are clearly labeled and state, county, and, if relevant, focus city
-boundaries are overlaid in greys and white.
+This function returns nothing, but does save a plot with the gridded
+methane data colored on a log scale with NA values set to black. All axes
+are clearly labeled and state and county outlines are overlaid in grey and
+white.
 }
 \description{
 This is a simple helper function for ease of use.  It runs

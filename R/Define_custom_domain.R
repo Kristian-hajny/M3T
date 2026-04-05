@@ -1,6 +1,9 @@
 #'@title Interactively define the domain for 'CH4_inventory_build'
 #'
-#'@description This function uses the terra package to interactively build a
+#'@description \code{define_custom_domain} is an internal function that we
+#'  strongly recommend users do not use directly, instead using
+#'  \code{\link{CH4_inventory_build}} and \code{\link{M3T_config}} which call
+#'  this function. This function uses the terra package to interactively build a
 #'  domain area using a state map of the continental US.
 #'
 #'@details The polygon is saved for potential reuse and reference.  Be aware

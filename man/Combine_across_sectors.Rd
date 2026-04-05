@@ -48,16 +48,22 @@ scale}
 }
 \value{
 Nothing is returned from the function, but the main outputs are many
-netcdf files of the methane emissions across all sectors.  Given the large
-number of possible files and variations, they are titled
-"Combined_inventory_combination_#.nc" with # increasing numerically.  A csv
-titled "Combined_inventory_key.csv" is also saved that details what
-variations were used for each sector for each inventory.
+netcdf files of the methane emissions across all sectors.  If all
+combinations are run, given the large number of possible files and
+variations, they are titled "Combined_inventory_combination_#.nc" with #
+increasing numerically.  A csv titled "Combined_inventory_key.csv" is also
+saved that details what variations were used for each sector for each
+inventory.
 }
 \description{
-\code{Combine_across_sectors} writes a netcdf for every unique
-combination of sectoral emissions estimates.  Optionally writes additional
-netcdf with the thermogenic and nonthermogenic sectors separately.
+\code{Combine_across_sectors} is an internal function that we
+strongly recommend users do not use directly, instead using
+\code{\link{CH4_inventory_build}} and \code{\link{M3T_config}} which call
+this function. \code{Combine_across_sectors} writes a netcdf for
+combinations of sectoral emissions estimates.  Can be set to write only the
+min, mean, and max across variations and/or every possible combination.  Can
+also be set to write equivalent netcdfs with the thermogenic and
+nonthermogenic sectors separately.
 }
 \details{
 This function considers every possible output across all sectors and
@@ -66,13 +72,13 @@ it creates a table of every possible unique combination of sectors.  If many
 options have been enabled, this can be over 1,000 combinations, so caution
 is warranted, though processing is generally fast and file sizes small -
 this will depend strongly on the domain size. Additionally, if the config
-option is set, three inventories will be created for each unique combination
-instead:
+option is set, thermogenic and non-thermogenic variations will also be
+saved:
 \itemize{
 \item One that is the total across all sectors
 \item One that is the total across only thermogenic sources
 \itemize{
-\item stationary combustion of wood
+\item stationary combustion of fossil fuels
 \item natural gas distribution
 \item natural gas transmission
 \item Gridded EPA mobile combustion
@@ -93,7 +99,7 @@ instead:
 \item One that is the total across only non-thermogenic sources
 \itemize{
 \item landfills
-\item stationary combustion of fossil fuels
+\item stationary combustion of wood
 \item wastewater
 \item wetlands
 \item Gridded EPA composting

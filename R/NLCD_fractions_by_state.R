@@ -1,42 +1,45 @@
 #'@title Process the National Land Cover Database for `Wastewater` function
 #'
-#'@description `NLCD_fractions_by_state` writes 1 netcdf file per state within the
-#'  domain as well as a csv.  These netcdf files have the 30 m National Land
-#'  Cover Database Developed, Open Space and Developed, Low Intensity land cover
-#'  types for each state.  The csv provides the total area covered by these two
-#'  land cover types for each state separately.  This information is used in
-#'  `Wastewater` to map septic emissions.
+#'@description \code{NLCD_fractions_by_state} is an internal function that we
+#'  strongly recommend users do not use directly, instead using
+#'  \code{\link{CH4_inventory_build}} and \code{\link{M3T_config}} which call
+#'  this function. \code{NLCD_fractions_by_state} writes 1 tif file for the
+#'  domain as well as a csv with state-level data.  The tif file has the 30 m
+#'  National Land Cover Database Developed, Open Space and Developed, Low
+#'  Intensity land cover types for each state.  The csv provides the total area
+#'  covered by these two land cover types for each state separately.  This
+#'  information is used in \code{\link{Wastewater}} to map septic emissions.
 #'
 #'@details This function first crops the 30 m
 #'  \href{https://www.sciencebase.gov/catalog/item/655ceb8ad34ee4b6e05cc51a}{National
 #'  Land Cover Database} to the states within the domain.  Then the data is
 #'  subset to create a SpatRaster that is 1 for Developed, Open Space or
 #'  Developed, Low Intensity land cover and 0 for all other land cover types.
-#'  This is then split into separate SpatRasters for each state and the total
-#'  area of these two land cover types for each state is calculated.  The data
-#'  is then reprojected to the domain's projection. Finally these SpatRasters
-#'  are saved for use in the \code{\link{Wastewater}} function. The total area
-#'  of the two land cover types for each state, including data outside the
-#'  domain if relevant, is saved as a csv.
+#'  The data is then reprojected to the domain's projection and saved for use in
+#'  the \code{\link{Wastewater}} function. This is also split into separate
+#'  SpatRasters for each state so the total area of these two land cover types
+#'  for each state can be calculated.  The total area of the two land cover
+#'  types for each state, including data outside the domain, if any, is saved as
+#'  a csv.
 #'
 #'@inheritParams Municipal_solid_waste
 #'
 #'@param Source_wastewater_NLCD Character.  Pulled from
 #'  \code{\link{M3T_config}}.
-#'@returns Nothing is returned from the function, but the main outputs are 1
-#'  netcdf file per state in the domain and a csv.  The netcdf files are titled
-#'  as "X_NLCD_suburban.nc" where X is the state abbreviation (e.g., MD, DE).
-#'  Each file contains a SpatRaster with the fractional coverage of the
-#'  developed open space + developed low intensity for the state on the same
-#'  grid as the input domain. The csv is titled "NLCD_state_total_areas.csv" and
-#'  provides the total area of each land cover type in each state.
+#'@returns Nothing is returned from the function, but the main outputs are 1 tif
+#'  file for the domain and a csv.  The tif file is titled as
+#'  "combined_wastewater_NLCD.tif". The file contains a SpatRaster with the
+#'  fractional coverage of the developed open space + developed low intensity
+#'  for the state on the same grid as the input domain. The csv is titled
+#'  "NLCD_state_total_areas.csv" and provides the total area of each land cover
+#'  type in each state.
 #'@seealso [CH4_inventory_build()] Calculates methane inventory using settings
-#'provided in config.
+#'  provided in config.
 #'
-#'[M3T_config] Generates the config function with user-editable settings used
-#'throughout processing.
+#'  [M3T_config] Generates the config function with user-editable settings used
+#'  throughout processing.
 #'
-#'[Wastewater()] Calculates methane emissions for the wastewater sector.
+#'  [Wastewater()] Calculates methane emissions for the wastewater sector.
 #'@keywords internal
 
 NLCD_fractions_by_state <- function(input_directory,

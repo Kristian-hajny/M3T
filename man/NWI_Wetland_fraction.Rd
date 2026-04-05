@@ -38,7 +38,10 @@ state.  They are titled "state abbreviation _ wetland type
 abbreviation.tiff".
 }
 \description{
-\code{NWI_Wetland_fraction} writes multiple tiff files of the
+\code{NWI_Wetland_fraction} is an internal function that we
+strongly recommend users do not use directly, instead using
+\code{\link{CH4_inventory_build}} and \code{\link{M3T_config}} which call
+this function. \code{NWI_Wetland_fraction} writes multiple tiff files of the
 fractional wetland cover in each pixel.  There is one file for each state -
 wetland type combination.
 }

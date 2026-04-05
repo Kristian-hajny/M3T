@@ -31,16 +31,13 @@ input data.  Automatically defined in \code{\link{CH4_inventory_build}} from
 the input \code{run_directory}.}
 
 \item{GHGI_transmission_compressors}{Character or data.frame.  Pulled from
-config file. Either GHGI to indicate the GHGI file should be used to pull
-emissions and activity data or a data frame providing the needed values.}
+\code{\link{M3T_config}}.}
 
 \item{GHGI_Pipeline}{Character or data.frame.  Pulled from
-config file. Either GHGI to indicate the GHGI file should be used to pull
-emissions and activity data or a data frame providing the needed values.}
+\code{\link{M3T_config}}.}
 
-\item{Source_HIFLD_compressor_file}{Character providing the full filepath to the
-HIFLD compressor data.  As this file is now deprecated and no replacement
-has been created, it currently must be provided as part of the package.}
+\item{Source_HIFLD_compressor_file}{Character.  Pulled from
+\code{\link{M3T_config}}.}
 
 \item{domain}{SpatVector polygon outlining the desired output area as created
 in \code{\link{CH4_inventory_build}}.}
@@ -50,8 +47,8 @@ the desired resolution and coordinate reference system as created in
 \code{\link{CH4_inventory_build}}.}
 
 \item{GHGRP_facility_data}{Data.frame with the GHGRP location data for all
-years and states.  See
-https://www.epa.gov/enviro/envirofacts-data-service-api}
+years and states as prepared in \code{\link{CH4_inventory_build}} using the
+\code{Source_GHGRP_facility_data} provided in \code{\link{M3T_config}}.}
 
 \item{GHGRP_combustion_emissions}{Data.frame with the GHGRP combustion
 emissions data for all years and states as prepared in
@@ -73,10 +70,8 @@ closest available will be used if unavailable with a user update.}
 (EPA) Greenhouse Gas Reporting Program (GHGRP) data}.}
 
 \item{verbose}{Logical indicating whether to save additional output.  This
-includes plots of the gridded methane emissions for each
-fuel-sector-inventory-variation combination as well as 2 summed plots for
-each inventory-variation combination - one for wood and one for all other
-sectors.}
+includes separate plots of the gridded methane emissions for pipelines and
+compressors.}
 
 \item{plot_directory}{Character providing the full filepath to save figures.
 Only relevant if verbose = TRUE.}
@@ -95,17 +90,14 @@ netcdf files of the methane emissions from natural gas transmission.  They
 are titled "NG_trans_compressors.nc" and "NG_trans_pipes.nc" where
 NG=natural gas and trans=transmission.   The first file is for transmission
 compressor emissions and the second is for transmission pipeline emissions.
-
-2 csv files are also optionally saved.  These are "NG_trans_compressors.csv"
-and "NG_trans_compressors_all.csv".  The simpler csv includes only the name,
-location, and assigned emissions for compressors within the domain that were
-pulled from the GHGRP  The _all files include all variables that were in the
-corresponding input file for the same compressors.
 }
 \description{
-\code{Natural_Gas_Transmission} writes 2 netcdf files of gridded methane emissions
-from natural gas transmission, as well as optional visuals and 2 optional
-csv files.
+\code{Natural_Gas_Transmission} is an internal function that we
+strongly recommend users do not use directly, instead using
+\code{\link{CH4_inventory_build}} and \code{\link{M3T_config}} which call
+this function. \code{Natural_Gas_Transmission} writes 2 netcdf files of
+gridded methane emissions from natural gas transmission, as well as optional
+visuals.
 }
 \details{
 This function calculates and grids methane emissions from natural gas
@@ -113,8 +105,6 @@ transmission systems. It uses the Homeland Infrastructure Foundation-Level
 Data (HIFLD), Environmental Protection Agency's (EPA) Greenhouse Gas
 Inventory (GHGI), EPA Greenhouse Gas Reporting Program (GHGRP) and Energy
 Information Administration (EIA) Energy Atlas data.
-
-The necessary GHGRP, GHGI, and EIA data will be automatically downloaded.
 
 For pipelines the GHGI data includes the emissions and activity data for
 pipeline leaks, meter and regulating stations, and venting.  An emission
@@ -127,16 +117,14 @@ compressor station fugitive emissions, dehydrator vents, flaring, engines,
 turbines, generators, pneumatic devices, and venting.  For generators they
 are split into engine and turbine emissions so the ratio between
 transmission/storage emissions for engines and turbines are applied to the
-generator values to get the transmission component of generator emissions.
-An national average emission rate in mols of methane per station per second
-can then be calculated.  This emission rate is then assigned to all HIFLD
+generator values to get the transmission component of generator emissions. A
+national average emission rate in mols of methane per station per second can
+then be calculated.  This emission rate is then assigned to all HIFLD
 compressors.  GHGRP data is then used to overwrite this default emission
 rate.  Note most compressor stations do not report their emissions to the
-GHGRP, so only a subset will be overwritten using GHGRP data.  The GHGRP
-compressor emissions are scaled so that the average emissions within the
-domain are equal to the national average calculated from the GHGI.  As there
-is not a common identifier between the GHGRP and HIFLD datasets, the nearest
-facility is considered the matching facility.
+GHGRP, so only a subset will be overwritten using GHGRP data.  As there is
+not a common identifier between the GHGRP and HIFLD datasets, the data has
+been manually aligned.
 
 The GHGRP includes only facilities that emit at least 25,000 metric tons of
 carbon dioxide equivalent while the GHGI is intended to capture all national
@@ -160,7 +148,7 @@ Estimating CH4, CO2, and N2O Emissions from Natural Gas Systems".  The excel
 file has multiple sheets, each of which has a separate layout.  The GHGRP is
 available at \url{https://ghgdata.epa.gov/ghgp/main.do}, and the EIA data is
 available at
-\url{https://atlas.eia.gov/datasets/eia::natural-gas-interstate-and-intrastate-pipelines/about}.
+\url{https://hub.arcgis.com/datasets/fedmaps::natural-gas-interstate-and-intrastate-pipelines/about}.
 }
 \seealso{
 \code{\link[=CH4_inventory_build]{CH4_inventory_build()}} Calculates methane inventory using settings

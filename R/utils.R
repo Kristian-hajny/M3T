@@ -12,7 +12,7 @@
 # f <- system.file("ex/elev.tif", package = "terra")
 # r <- rast(f)
 # fname <- paste0(tempfile(), ".nc")
-# rr <- writeCDF(r, fname,
+# rr <- writeCDF_no_newline(r, fname,
 #   overwrite = TRUE, varname = "alt",
 #   longname = "elevation in m above sea level", unit = "m"
 # )
@@ -45,23 +45,13 @@ writeCDF_no_newline <- function(input_raster,...) {
 #' @keywords internal
 
 
-
-#@examples
-# data_URL <- "https://www2.census.gov/geo/tiger/TIGER2022/STATE/2022/tl_2022_us_state20.zip"
-# out_file <- tempfile(fileext = ".zip")
-# Trycatch_downloader(
-#   URL = data_URL, output_location = out_file, method = "save",
-#   error_message = paste("Census tigerlines could not be downloaded using link:", data_URL)
-# )
-
-
 # Based on https://stackoverflow.com/a/60880960
 Trycatch_downloader <- function(URL, output_location = NULL, method, error_message = "") {
   counter <- 0
   
   # user update - as some downloads can take a while
   cat("Attempting to download", URL, "at", format(Sys.time(), "%H:%M:%S"), "   ...")
-
+  
   repeat{
     counter <- counter + 1
     if (counter > 1) {
@@ -83,7 +73,7 @@ Trycatch_downloader <- function(URL, output_location = NULL, method, error_messa
       } else if (method == "vect") {
         terra::vect(URL)
       },
-
+      
       # download failed, try again with 2 second delay
       warning = function(w) {
         Sys.sleep(2)
@@ -94,10 +84,10 @@ Trycatch_downloader <- function(URL, output_location = NULL, method, error_messa
         NA
       }
     )
-
+    
     # blank out the "attempting to download" line from the console
     cat("\r", rep(" ", 1000), "\r")
-
+    
     # return the data for method = vect or json
     if (!all(is.na(info)) | length(info) > 1) {
       if (method != "save") {
@@ -105,7 +95,7 @@ Trycatch_downloader <- function(URL, output_location = NULL, method, error_messa
       }
       break
     }
-
+    
     # download failed repeatedly, stop function
     if (counter >= 5) {
       stop(error_message)
@@ -126,15 +116,6 @@ Trycatch_downloader <- function(URL, output_location = NULL, method, error_messa
 #'   lower case and remove any data for a ghg besides methane.
 #' @returns input with changes described as in Details
 #' @keywords internal
-
-
-# @examples
-# GHGRP_combustion <- data.frame("facility_id"=c(1,2,3,3),
-#                                "facility_name"=c("ONE","TWO","THREE","FOUR"),
-#                                "ghg_gas_name"=c(rep("METHANE",3),"CARBON DIOXIDE"),
-#                                "ghg_quantity"=c(rep(100,3),500),
-#                                "reporting_year"=rep(2015,4))
-# make_consistent(GHGRP_combustion)
 
 
 make_consistent <- function(input){

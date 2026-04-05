@@ -1,31 +1,34 @@
 #'@title Disaggregate emissions to the pixel scale using ACES or Vulcan CO2
 #'  inventories
 #'
-#'@description This is a function utilized by `stationary_combustion` and
-#'  `NG_distribution`.  It distributes emissions from a larger scale (state or
-#'  county) to the pixel scale using gridded CO2 emissions.
+#'@description \code{Inventory_based_disaggregation} is an internal function
+#'  that we strongly recommend users do not use directly, instead using
+#'  \code{\link{CH4_inventory_build}} and \code{\link{M3T_config}} which call
+#'  this function. This is a function utilized by
+#'  \code{\link{Stationary_combustion}} and
+#'  \code{\link{Natural_Gas_Distribution}}.  It distributes emissions from a
+#'  larger scale (state or county) to the pixel scale using gridded CO2
+#'  emissions.
 #'
-#'@details This function is intended to be used by `stationary_combustion` and
-#'  `NG_distribution`.  For each pixel it takes the ratio of CO2 from that pixel
-#'  to the total CO2 for the state/county it is in as input.  This is combined
-#'  with the state/county total CH4 emissions (also input) to disaggregate the
-#'  emissions to the pixel-scale.  If there are no emissions for the
-#'  state/county then the entire area is assigned an equal fraction of
+#'@details This function is intended to be used by
+#'  \code{\link{Stationary_combustion}} and
+#'  \code{\link{Natural_Gas_Distribution}}. For each pixel it takes the ratio of
+#'  CO2 from that pixel to the total CO2 for the state/county it is in as input.
+#'  This is combined with the state/county total CH4 emissions (also input) to
+#'  disaggregate the emissions to the pixel-scale.  If there are no emissions
+#'  for the state/county then the entire area is assigned an equal fraction of
 #'  emissions.  This is done using sectoral (residential, commercial,
 #'  industrial, electric) CO2 inventories.
 #'
 #'  ACES is available at \url{https://doi.org/10.3334/ORNLDAAC/1943} and Vulcan
-#'  is available at \url{https://doi.org/10.3334/ORNLDAAC/1741}.
+#'  is available at \url{https://doi.org/10.5281/zenodo.15446748}.
 #'
 #'  See references \href{https://doi.org/10.1029/2020JD032974}{Vulcan} and
 #'  \href{https://doi.org/10.1002/2017JD027359}{ACES}
 #'@param input_inventory SpatRaster.  Either a Vulcan or ACES sectoral
 #'  inventory.  ACES is available at \url{https://doi.org/10.3334/ORNLDAAC/1943}
-#'  and Vulcan is available at \url{https://doi.org/10.3334/ORNLDAAC/1741}.
-#'  Annual mean files should be used for Vulcan.  The hourly ACES file should be
-#'  averaged across hours to create an annual mean inventory. There is a
-#'  function to do this as well, though it is quite time consuming given the
-#'  amount of data that needs to be downloaded.
+#'  and Vulcan is available at \url{https://doi.org/10.5281/zenodo.15446748}.
+#'  Annual mean files should be used for Vulcan.
 #'@param totals Character vector.  Various subsectors to run through the
 #'  disaggregation process.
 #'@param agg_level Character.  The scale of the data before disaggregation,
@@ -38,18 +41,16 @@
 #'  each pixel contained within the state/county.  This allows for better
 #'  accounting for pixels that are on the borders of states/counties.
 #'@param out_envir Environment.  Where to assign output data.  Should be the
-#'  environment of `stationary_combustion` or `Natural_Gas_Distribution` as the output
-#'  will be used and exported there.
+#'  environment of \code{stationary_combustion} or
+#'  \code{Natural_Gas_Distribution} as the output will be used and exported
+#'  there.
 #'@returns Nothing is returned.  The disaggregated methane data is assigned to
 #'  the specified out_envir.  This will be a SpatRaster list with one for each
 #'  of the totals.
-#'@author Joe Pitt, \email{madeup@@wisc.edu}
-#'@author Kris Hajny, \email{blank@@fake.edu}
-#'@author Israel Lopez-Coto, \email{test@@test.edu}
 #'@references \href{https://doi.org/10.1029/2020JD032974}{Vulcan}
 #'@references \href{https://doi.org/10.1002/2017JD027359}{ACES}
-#'@seealso [Natural_Gas_Distribution()] Calculates methane emissions for the natural gas
-#'  distribution sector.
+#'@seealso [Natural_Gas_Distribution()] Calculates methane emissions for the
+#'  natural gas distribution sector.
 #'
 #'  [Stationary_combustion()] Calculates methane emissions for the stationary
 #'  combustion sector.

@@ -1,7 +1,7 @@
 #'@title Prepare input data for a logarithmic plot
 #'
-#'@description This is a simple helper function for ease of use.  It just takes
-#'  the log10 of the data and sets infinite values to NA.
+#'@description This is a simple helper function for ease of use.  It takes the
+#'  log10 of the data and sets infinite values to NA.
 #'
 #'@details This function is intended to be used when verbose = TRUE for
 #'  \code{\link{CH4_inventory_build}}.  It is called by log_plot to help build
@@ -51,10 +51,10 @@ prep_plot_data <- function(input){
 #'@param State_CB SpatVector.
 #'  \href{https://www.census.gov/geographies/mapping-files/tme-series/geo/cartographic-boundary.html}{US
 #'  Census Cartographic Boundary} files for visualization.
-#'@returns This function returns nothing, but does produce a plot with the
-#'  gridded methane data colored on a log scale with NA values set to black. All
-#'  axes are clearly labeled and state, county, and, if relevant, focus city
-#'  boundaries are overlaid in greys and white.
+#'@returns This function returns nothing, but does save a plot with the gridded
+#'  methane data colored on a log scale with NA values set to black. All axes
+#'  are clearly labeled and state and county outlines are overlaid in grey and
+#'  white.
 #'@inherit Municipal_solid_waste seealso
 #'@seealso
 #'
@@ -203,11 +203,11 @@ log_plot <- function(input,title,zlim_min=NULL,zlim_max=NULL,
 #'  ones, e.g., if wanting to hold the colorscale constant across multiple
 #'  similar sectors/subsectors.
 #'@inheritParams log_plot
-#'@returns This function returns nothing, but does produce a plot with the
-#'  gridded methane data colored with NA values set to black. All axes are
-#'  clearly labeled and state and county, boundaries are overlaid.
+#'@returns This function returns nothing, but does save a plot with the gridded
+#'  methane data colored with NA values set to black. All axes are clearly
+#'  labeled and state and county outlines are overlaid in grey and white.
 #'@inherit Municipal_solid_waste seealso
-#'@seealso 
+#'@seealso
 #'
 #'[log_plot()] plots the data in simple log-scale visuals.
 #'@export

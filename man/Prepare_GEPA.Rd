@@ -50,9 +50,9 @@ in \code{\link{CH4_inventory_build}}.}
 the desired resolution and coordinate reference system as created in
 \code{\link{CH4_inventory_build}}.}
 
-\item{verbose}{Logical indicating whether to save visuals.  They include 2
-plots of the gridded methane emissions, 1 for the GEPA sectors used in M3T,
-1 for all GEPA sectors on the same colorscale as the other.}
+\item{verbose}{Logical indicating whether to save visuals.  They include plots
+for each of the GEPA sectors used in M3T, 1 for the sum across sectors used,
+and 1 for all GEPA sectors on the same colorscale as the other.}
 }
 \value{
 Nothing is returned from the function, but the main outputs are 3
@@ -62,19 +62,19 @@ are titled "GEPA_thermo.nc" for gridded EPA thermogenic,
 industrial landfills.
 }
 \description{
-\code{Prepare_GEPA} writes 3 netcdf files of gridded methane emissions
-\itemize{
-\item 1 for thermogenic sectors, 1 for industrial landfills, and 1 for
+\code{Prepare_GEPA} is an internal function that we strongly
+recommend users do not use directly, instead using
+\code{\link{CH4_inventory_build}} and \code{\link{M3T_config}} which call
+this function. \code{Prepare_GEPA} writes 3 netcdf files of gridded methane
+emissions - 1 for thermogenic sectors, 1 for industrial landfills, and 1 for
 non-thermogenic sources.
 }
-}
 \details{
-This function downloads the most appropriate year of gridded methane
-data at 0.1 deg by 0.1 deg from Maasakkers et al. and pulls sectors that
-have not been calculated in other scripts.  They are projected to the domain
-grid and combined into thermogenic and non-thermogenic groups, with the
-exception of industrial landfills which are saved separately.  For
-thermogenic this includes
+This function uses the gridded methane data at 0.1 deg by 0.1 deg
+from Maasakkers et al. and pulls sectors that have not been calculated in
+other scripts.  They are projected to the domain grid and combined into
+thermogenic and non-thermogenic groups, with the exception of industrial
+landfills which are saved separately.  For thermogenic this includes
 \itemize{
 \item mobile combustion
 \item Coal (abandoned, surface, and underground)
@@ -92,8 +92,7 @@ And for non-thermogenic this includes
 \item Field Burning
 }
 
-The data is available at \url{https://doi.org/10.5281/zenodo.8367082}.  The
-closest year will be automatically downloaded.
+The data is available at \url{https://doi.org/10.5281/zenodo.8367082}.
 
 See reference \href{https://doi.org/10.1021/acs.est.3c05138}{Maasakkers et
 al.}

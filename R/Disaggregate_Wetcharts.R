@@ -1,16 +1,18 @@
 #'@title Create model-averaged downscaled Wetcharts wetland methane maps
 #'
-#'@description `Disaggregate_Wetcharts` writes 1 monthly netcdf file of gridded
-#'  wetland methane emissions per model subset set in the config and per land
-#'  classification dataset used for the downscaling.  Includes optional visuals
-#'  as well.
+#'@description \code{Disaggregate_Wetcharts} is an internal function that we
+#'  strongly recommend users do not use directly, instead using
+#'  \code{\link{CH4_inventory_build}} and \code{\link{M3T_config}} which call
+#'  this function. \code{Disaggregate_Wetcharts} writes 1 monthly netcdf file of
+#'  gridded wetland methane emissions per model subset set in the config and per
+#'  land classification dataset used for the downscaling.  Includes optional
+#'  visuals as well.
 #'
 #'@details This function takes the Wetcharts model ensemble and land cover data
 #'  to downscale the wetland emissions from 0.5 deg x 0.5 deg to 0.1 deg x 0.1
 #'  deg.  The data is also cropped to the domain, converted to the proper units,
 #'  and averaged across wetcharts models using the user-defined subset(s).  The
-#'  National Land Cover Database (NLCD) and/or the North American Land Change
-#'  Monitoring System (NALCMS) can be used for the land cover data.
+#'  National Land Cover Database (NLCD) is used for the land cover data.
 #'
 #'  The 30 m x 30 m land classification data is aggregated to 0.1 deg x 0.1 deg
 #'  and used to calculate the fraction of each 0.5 deg x 0.5 deg pixel's total
@@ -26,13 +28,9 @@
 #'  changing the area of pixels. There is a separate file for each model subset
 #'  and each land cover dataset used.
 #'
-#'  The appropriate year of Wetcharts v1.3.1 will be automatically downloaded.
-#'
-#'  Wetcharts is available at \url{https://doi.org/10.3334/ORNLDAAC/2346}, the
-#'  NLCD is available at
-#'  \url{https://www.mrlc.gov/data?f%5B0%5D=category%3ALand%20Cover&f%5B1%5D=region%3Aconus},
-#'  and the NALCMS is available at
-#'  \url{http://www.cec.org/north-american-land-change-monitoring-system/}.
+#'  Wetcharts is available at \url{https://doi.org/10.3334/ORNLDAAC/2346}, and
+#'  the NLCD is available at
+#'  \url{https://www.mrlc.gov/data?f%5B0%5D=category%3ALand%20Cover&f%5B1%5D=region%3Aconus}.
 #'@inheritParams Municipal_solid_waste
 #'
 #'@param verbose Logical indicating whether to save additional output.  This
@@ -43,10 +41,9 @@
 #'@param Wetcharts_model_subset List of numeric vectors.  Pulled from
 #'  \code{\link{M3T_config}}.
 #'@returns Nothing is returned from the function, but the main outputs are
-#'  netcdf files of the methane emissions from wetlands with 1 file per land
-#'  cover used and per model subset.  They are titled
-#'  "Wetcharts_NLCD_Downscaled_subset_#.nc" where # is just a numeric to
-#'  identify which model subset, in case multiple were set.
+#'  netcdf files of the methane emissions from wetlands with 1 file per model
+#'  subset.  They are titled "Wetcharts_NLCD_Downscaled_subset_#.nc" where # is
+#'  just a numeric to identify which model subset, in case multiple were set.
 #'
 #'  If verbose is set to TRUE, then multiple figures are also saved.  Log scale
 #'  plots with consistent axes are saved for each model subset used.  They are

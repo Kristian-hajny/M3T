@@ -48,11 +48,14 @@ processed data as created in \code{\link{CH4_inventory_build}}}
 
 \item{Wastewater_use_DMR}{Logical.  Pulled from \code{\link{M3T_config}}.}
 
-\item{Wastewater_Municipal_Method_Moore_EF}{Logical.  Pulled from \code{\link{M3T_config}}.}
+\item{Wastewater_Municipal_Method_Moore_EF}{Logical.  Pulled from
+\code{\link{M3T_config}}.}
 
-\item{Wastewater_Municipal_Method_GHGI}{Logical.  Pulled from \code{\link{M3T_config}}.}
+\item{Wastewater_Municipal_Method_GHGI}{Logical.  Pulled from
+\code{\link{M3T_config}}.}
 
-\item{Wastewater_national_septic}{Logical.  Pulled from \code{\link{M3T_config}}.}
+\item{Wastewater_national_septic}{Logical.  Pulled from
+\code{\link{M3T_config}}.}
 
 \item{Wastewater_state_septic}{Logical.  Pulled from \code{\link{M3T_config}}.}
 
@@ -67,20 +70,24 @@ the desired resolution and coordinate reference system as created in
 years and states as prepared in \code{\link{CH4_inventory_build}} using the
 \code{Source_GHGRP_facility_data} provided in \code{\link{M3T_config}}.}
 
-\item{Source_GHGRP_wastewater}{Character.  Pulled from \code{\link{M3T_config}}.}
+\item{Source_GHGRP_wastewater}{Character.  Pulled from
+\code{\link{M3T_config}}.}
 
 \item{Source_CWNS}{Character.  Pulled from \code{\link{M3T_config}}.}
 
 \item{Source_DMR}{Character.  Pulled from \code{\link{M3T_config}}.}
 
-\item{Source_State_population_data}{Character.  Pulled from \code{\link{M3T_config}}.}
+\item{Source_State_population_data}{Character.  Pulled from
+\code{\link{M3T_config}}.}
 
 \item{inventory_year}{Numeric indicating the desired year of data to use.  The
 closest available will be used if unavailable with a user update.}
 
-\item{National_wastewater_info}{Data.frame.  Pulled from \code{\link{M3T_config}}.}
+\item{National_wastewater_info}{Data.frame.  Pulled from
+\code{\link{M3T_config}}.}
 
-\item{Wastewater_reported_State_info}{Data.frame.  Pulled from \code{\link{M3T_config}}.}
+\item{Wastewater_reported_State_info}{Data.frame.  Pulled from
+\code{\link{M3T_config}}.}
 
 \item{GHGI_wastewater_data}{Data.frame.  Pulled from \code{\link{M3T_config}}.}
 
@@ -88,7 +95,8 @@ closest available will be used if unavailable with a user update.}
 \href{https://www.epa.gov/ghgreporting}{Environmental Protection Agency
 (EPA) Greenhouse Gas Reporting Program (GHGRP) data}.}
 
-\item{Total_national_open_or_low_int_area}{Numeric.  Pulled from \code{\link{M3T_config}}.}
+\item{Total_national_open_or_low_int_area}{Numeric.  Pulled from
+\code{\link{M3T_config}}.}
 
 \item{state_name_list}{Character vector listing all states within the desired
 domain as created in \code{\link{CH4_inventory_build}}.}
@@ -106,15 +114,13 @@ Census Cartographic Boundary} files for visualization. Only relevant if
 \code{verbose} = TRUE.}
 
 \item{verbose}{Logical indicating whether to save additional output.  This
-includes up to 11 csv files including summarized and detailed information
-for all municipal wastewater treatment plants within the domain and
-industrial wastewater plants.  It also includes up to 5 plots of the gridded
-methane emissions.  Up to 2 for municipal wastewater treatment facilities,
-up to 2 for septic, and 1 for industrial wastewater treatment facilities}
+includes up to 5 plots of the gridded methane emissions.  Up to 2 for
+municipal wastewater treatment facilities, up to 2 for septic, and 1 for
+industrial wastewater treatment facilities}
 }
 \value{
 Nothing is returned from the function, but the main outputs are up to
-7 netcdf files of the methane emissions from wastewater.  They are titled
+14 netcdf files of the methane emissions from wastewater.  They are titled
 "Wastewater_ind.nc" for industrial wastewater,
 "Wastewater_X_Y_dom_central.nc" for municipal wastewater,
 "Wastewater_dom_septic_Z.nc" for septic emissions.  X is the input data used
@@ -124,40 +130,30 @@ with flow or Moore for applying the moore et al. log-linear relationship
 between flow and emissions, and Z is the approach used for septic emissions
 \itemize{
 \item bystate or national.
+The 8 possible combinations are named similarly as
+"Wastewater_sector_total_X_Y_Z.nc".
 }
-
-The csv "WWTP_septic_method_comparison.csv" is also saved and provides the
-population, septic fraction, method (scaled or reported) total emissions,
-total area, emissions per area, and the ratio between the methane emissions
-calculated using the bystate and national approach for each state
-separately.
-
-If verbose is set to TRUE, then "WWTP_industrial.csv",
-"WWTP_industrial_all.csv", "WWTP_X_Y_municipal.csv", and
-"WWTP_X_Y_municipal_all.csv" are also saved.  The simpler csvs include only
-the name, location, and assigned emissions for facilities within the domain
-that were pulled from the corresponding input file.  The _all files include
-all variables that were in the corresponding input file for the same
-facilities.
 }
 \description{
-\code{Wastewater} writes up to 7 netcdf files of gridded methane
-emissions - 1 - 4  for municipal wastewater treatment facilities, 1 for
-industrial wastewater treatment facilities, and 1 - 2 for septic systems.
-Also writes up to 11 csvs, up to 8 for municipal facilities, 2 for
-industrial facilities, and 1 for septic systems with all csvs being
-optional.
+\code{Wastewater} is an internal function that we strongly
+recommend users do not use directly, instead using
+\code{\link{CH4_inventory_build}} and \code{\link{M3T_config}} which call
+this function. \code{Wastewater} writes up to 15 netcdf files of gridded
+methane emissions - 1 - 4  for municipal wastewater treatment facilities, 1
+for industrial wastewater treatment facilities, 1 - 2 for septic systems,
+and then up to 8 possible combinations across these.
 }
 \details{
 This function calculates and grids methane emissions from wastewater
 treatment and septic systems. It takes the total flow through municipal
 facilities to either distribute national total emissions proportionally or
-to calculate emissions using a log-linear relationship from the scientific
-literature.  For industrial facilities, the Environmental Protection
-Agency's (EPA) Greenhouse Gas Reporting Program (GHGRP) data is used. Lastly
-septic emissions are mapped to developed, open space and developed, low
-intensity land cover regions.  The emissions total is taken as either
-national septic emissions or state-specific values as available.
+to calculate emissions using a log-log linear relationship from the
+scientific literature.  For industrial facilities, the Environmental
+Protection Agency's (EPA) Greenhouse Gas Reporting Program (GHGRP) data is
+used. Lastly septic emissions are mapped to "developed, open space" and
+"developed, low intensity" land cover.  The emissions are either
+disaggregated from national septic emissions or estimated using
+state-specific values as available.
 
 For municipal wastewater treatment facilities there are a few variations.
 Input data can be set to either the Environmental Protection Agency's (EPA)
@@ -171,35 +167,38 @@ CWNS is produced infrequently while DMR data is regularly updated, though
 the facilities and their data can differ between these products.  Facility
 locations and total effluent flow is used from these files.  The calculation
 method can then either be set to disaggregate the EPA Greenhouse Gas
-Inventory (GHGI) national total emissions to these facilities, scaled by
-flow, or calculate emissions for each facility using a log-linear
+Inventory (GHGI) national total emissions to these facilities, using flow as
+a proxy, or calculate emissions for each facility using a log-log linear
 relationship between flow and emissions (log10(CH4 emissions in g/s) =
-1.2*log10(flow in m3/s)+1) as determined by Moore et al.  Moore et al.
-measured emission rates at 63 wastewater treatment facilities to develop
+1.28*log10(flow in m3/s) + 0.93) based on Moore et al.  Moore et al.
+measured emission rates at 96 wastewater treatment facilities to develop
 this relationship, which suggests nearly 2x the emissions as the GHGI using
-DMR flow rates as of 2023 when their paper was written.  Note the authors
-actually used emission factors with organic loading rather than this
-log-linear relationship to scale emissions.
+DMR flow rates as of 2023.  Note the authors' first paper discussed this
+relatinoship and was updated using the complete dataset from a followup
+paper.
 
 GHGRP data is used for any and all industrial wastewater treatment
-facilities.  The necessary GHGRP data will be automatically downloaded.
+facilities.
 
-For septic emissions the output from \code{NLCD_open_and_low_int} is used.  This
-provides the fractional coverage of the 2 landcover types (developed, open
-space and developed, low intensity) for the domain, separated by state.
-Their are 2 approaches to calculate methane emissions from these.
+For septic emissions the output from \code{\link{NLCD_fractions_by_state}}
+is used. This provides the fractional coverage of the 2 landcover types
+(developed, open space and developed, low intensity) for each state in the
+domain as well as gridded data for the whole domain. Their are 2 approaches
+to calculate methane emissions from these.
 
-Option 1 - we know that as of 2016 the national total landcover of these 2
-landcover types was 352,032 km2 according to Homer et al.  As such, we can
-convert the fraction of each pixel that is one of these landcover types to
-the area of these landcover types in each pixel relative to the national
-total.  This ratio can be combined with national total septic emissions to
-get gridded septic emissions.
+National option - The total landcover of these types across the continental
+US is calculated using the NLCD combined with estimates using the limited AK
+NLCD data available.  We use this national total land area in km2 and the
+GHGI national total septic emissions in mol/s to calculate an emission
+factor in mol/s/km2.  This emission factor can be combined with the gridded
+land cover data to get gridded septic emissions.  Note this ignores any of
+this land cover in other US territory outside of the continental US like
+Guam, Hawaii, or American Somoa.
 
-Option 2 - we can instead take state-reported total emissions rather than
-using national emissions.  Some states report the fraction of people in the
-state using septic systems to the American Housing Survey in the Plumbing,
-Water, and Sewage Disposal survey, available here
+State option - we can instead take state-reported data rather than using
+national  Some states report the fraction of people in the state using
+septic systems to the American Housing Survey in the Plumbing, Water, and
+Sewage Disposal survey, available here
 \url{https://www.census.gov/programs-surveys/ahs/data/interactive/ahstablecreator.html?s_areas=00000&s_year=2021&s_tablename=TABLE1&s_bygroup1=1&s_bygroup2=1&s_filtergroup1=1&s_filtergroup2=1}.
 Note this data is reported every other year, not annually. For states that
 don't, the 1990 census data on septic fraction is available here
@@ -208,8 +207,9 @@ this will be scaled using the change in the national septic fraction from
 1990 (from census) to the desired year (from the housing survey).  This new
 fraction can be combined with up to date population data available from the
 census
-\url{https://www.census.gov/data/tables/time-series/demo/popest/2020s-state-total.html}
-and the GHGI_septic_EF (g CH4 per person per day) to get emissions.
+\url{https://www.census.gov/data/tables/time-series/demo/popest/2020s-state-total.html},
+the total amount of this land cover in the state, and the GHGI septic EF (g
+CH4 per person per day) to get emissions.
 
 The GHGRP includes only facilities that emit at least 25,000 metric tons of
 carbon dioxide equivalent while the GHGI is intended to capture all national
@@ -219,11 +219,14 @@ updated approximately in sync with the GHGRP.  Census data comes out
 annually and is generally 1 year behind.  All three datasets are annual. The
 GHGRP is at the facility scale while the GHGI is national totals.  Census
 data can be obtained at many different scales, but is used here at the state
-at national scale.
+and national scale.
 
 The GHGI is available at
 \url{https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks}
-The GHGRP is available at \url{https://www.epa.gov/ghgreporting}
+The GHGRP is available at \url{https://www.epa.gov/ghgreporting} The Annual
+NLCD is available at \url{https://doi.org/10.5066/P94UXNTS} The 2011 AK NLCD
+is available at \url{https://doi.org/10.5066/P97S2IID} The 2016 AK NLCD is
+available at \url{https://doi.org/10.5066/P96HHBIE}
 
 See references \href{https://doi.org/10.1016/j.isprsjprs.2020.02.019}{Homer et
 al.} and \href{https://doi.org/10.1021/acs.est.2c05373}{Moore et al.}
@@ -238,8 +241,8 @@ al.}
 \code{\link[=CH4_inventory_build]{CH4_inventory_build()}} Calculates methane inventory using settings
 provided in config.
 
-\code{\link[=NLCD_fractions_by_state]{NLCD_fractions_by_state()}} Calculates the fraction of low intensity urban land
-cover in each pixel.
+\code{\link[=NLCD_fractions_by_state]{NLCD_fractions_by_state()}} Calculates the fraction of low intensity urban
+land cover in each pixel.
 
 \link{M3T_config} Generates the config function with user-editable settings used
 throughout processing.

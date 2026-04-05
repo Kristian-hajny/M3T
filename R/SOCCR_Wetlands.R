@@ -1,15 +1,19 @@
 #'@title Create SOCCR based wetland methane maps
 #'
-#'@description `SOCCR_Wetlands` writes up to 3 netcdf files of gridded wetland
-#'  methane emissions, 1 for SOCCR1, 1 for SOCCR2, and 1 for freshwater.
-#'  Includes optional visuals as well.
+#'@description \code{SOCCR_Wetlands} is an internal function that we strongly
+#'  recommend users do not use directly, instead using
+#'  \code{\link{CH4_inventory_build}} and \code{\link{M3T_config}} which call
+#'  this function. \code{SOCCR_Wetlands} writes up to 6 netcdf files of gridded
+#'  wetland methane emissions, 1 for SOCCR1, 1 for SOCCR2, and 1 for freshwater.
+#'  Then writes another 3 netcdf files of combined freshwater and wetland
+#'  emissions using SOCCR1, 2, or Wetcharts.  Includes optional visuals as well.
 #'
-#'@details This function takes the output of `NWI_Wetland_fraction`, which is
-#'  per pixel fractional coverage of wetlands separated by wetland type, and
-#'  applies emission factors to convert coverage to methane emissions.  It is
-#'  simply applying SOCCR1 or SOCCR2 average emissions from wetlands to the NWI
-#'  activity data.  Additionally, freshwater emissions can be calculated using
-#'  emissions from Rosentreter et al.
+#'@details This function takes the output of \code{\link{NWI_Wetland_fraction}},
+#'  which is per pixel fractional coverage of wetlands separated by wetland
+#'  type, and applies emission factors to convert coverage to methane emissions.
+#'  It is simply applying SOCCR1 or SOCCR2 average emissions from wetlands to
+#'  the NWI activity data.  Additionally, freshwater emissions are calculated
+#'  using emission factors from Rosentreter et al.
 #'
 #'  SOCCR1 values are based on the arithmetic averages of Table F5, SOCC2 values
 #'  are based on the arithmetic averages of Tables 13B.8 to 13B.11 for PFO and
@@ -38,10 +42,12 @@
 #'@param Source_Watershed_file Character.  Pulled from \code{\link{M3T_config}}.
 #'
 #'@returns Nothing is returned from the function, but the main outputs are up to
-#'  3 netcdcf files of the methane emissions from wetlands with 1 file for
+#'  6 netcdcf files of the methane emissions from wetlands with 1 file for
 #'  SOCCR1 based emissions, 1 file for SOCCR2 based emissions, and a file for
 #'  lakes and rivers.  They are titled "SOCCR1.nc", "SOCCR2.nc", and
-#'  "Freshwater.nc".
+#'  "Freshwater.nc".  Three files with combined wetland and freshwater emissions
+#'  are also saved as "Wetland_sector_total_X.nc" with X being SOCCR1, SOCCR2,
+#'  or Wetcharts, which can include additional wetcharts model subsets.
 #'
 #'  If verbose is set to TRUE, then multiple figures are also saved.  Log scale
 #'  plots with consistent axes are saved for the 2 SOCCR emissions and
@@ -53,7 +59,7 @@
 #'@seealso [CH4_inventory_build()] Calculates methane inventory using settings
 #'  provided in config.
 #'
-#'  [M3T_config] Generates the config function with user-editable settings used
+#'  [M3T_config] Describes the config with user-editable settings used
 #'  throughout processing.
 #'
 #'  [Disaggregate_Wetcharts()] Calculates methane emissions for the wetland

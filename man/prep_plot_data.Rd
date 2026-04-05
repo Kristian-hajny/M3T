@@ -15,8 +15,8 @@ The log-scaled input data is returned, after removing infinite
 values.
 }
 \description{
-This is a simple helper function for ease of use.  It just takes
-the log10 of the data and sets infinite values to NA.
+This is a simple helper function for ease of use.  It takes the
+log10 of the data and sets infinite values to NA.
 }
 \details{
 This function is intended to be used when verbose = TRUE for

@@ -1,7 +1,10 @@
 #'@title Create gridded wetland coverage maps using National Wetlands Inventory
 #'  data
 #'
-#'@description `NWI_Wetland_fraction` writes multiple tiff files of the
+#'@description \code{NWI_Wetland_fraction} is an internal function that we
+#'  strongly recommend users do not use directly, instead using
+#'  \code{\link{CH4_inventory_build}} and \code{\link{M3T_config}} which call
+#'  this function. \code{NWI_Wetland_fraction} writes multiple tiff files of the
 #'  fractional wetland cover in each pixel.  There is one file for each state -
 #'  wetland type combination.
 #'
