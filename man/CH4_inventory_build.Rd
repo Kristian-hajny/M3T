@@ -11,7 +11,9 @@ CH4_inventory_build(
   domain,
   domain_res = NULL,
   domain_crs = "epsg:4326",
-  verbose = FALSE
+  verbose = FALSE,
+  Zenodo_folder =
+    "G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Manuscript/All inventory data/Prepared inventory data/M3T_Zenodo_data/Processed/"
 )
 }
 \arguments{
@@ -60,6 +62,9 @@ inventories for the continental US. Many crs can be seen at
 
 \item{verbose}{Logical indicating whether to save sector and subsector
 visuals.}
+
+\item{Zenodo_folder}{Character.  TTemporary variable to provide a filepath to
+the data that will later be uploaded and automatically pulled from a zenodo.}
 }
 \value{
 Nothing is returned from the function, but there will be frequent user
@@ -82,19 +87,12 @@ the needed data.
 }
 \examples{
 \dontshow{if (interactive() && curl::has_internet()) withAutoprint(\{ # examplesIf}
-CH4_inventory_build(run_directory=tempdir(),
-                    inventory_year=2019,
-                    domain="RI",
-                    domain_res=1,
-                    domain_crs="epsg:4326",
-                    verbose=F)
-                    
-CH4_inventory_build(run_directory=tempdir(),
-                    inventory_year=2019,
-                    domain = as.data.frame(cbind(c(-75,-72),c(39,42))),
-                    domain_res=1,
-                    domain_crs="epsg:4326",
-                    verbose=F)
+ CH4_inventory_build(run_directory=tempdir(), inventory_year=2019,
+ domain="RI", domain_res=1, domain_crs="epsg:4326", verbose=F)
+
+ CH4_inventory_build(run_directory=tempdir(), inventory_year=2019, domain =
+ as.data.frame(cbind(c(-75,-72),c(39,42))), domain_res=1,
+ domain_crs="epsg:4326", verbose=F)
 \dontshow{\}) # examplesIf}
 }
 \seealso{

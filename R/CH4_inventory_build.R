@@ -48,6 +48,8 @@
 #'  \href{https://spatialreference.org/}{spatialreference.org}.
 #'@param run_directory Character providing the full filepath to load/save input
 #'  and output data.  Subfolders will be created.
+#'@param Zenodo_folder Character.  TTemporary variable to provide a filepath to
+#'  the data that will later be uploaded and automatically pulled from a zenodo.
 #'@param inventory_year Numeric indicating the desired year of data to use.  The
 #'  closest available will be used if unavailable with a user update.
 #'@param verbose Logical indicating whether to save sector and subsector
@@ -57,19 +59,12 @@
 #'  various sectors.
 #'@export
 #'@examplesIf interactive() && curl::has_internet()
-#' CH4_inventory_build(run_directory=tempdir(),
-#'                     inventory_year=2019,
-#'                     domain="RI",
-#'                     domain_res=1,
-#'                     domain_crs="epsg:4326",
-#'                     verbose=F)
-#'                     
-#' CH4_inventory_build(run_directory=tempdir(),
-#'                     inventory_year=2019,
-#'                     domain = as.data.frame(cbind(c(-75,-72),c(39,42))),
-#'                     domain_res=1,
-#'                     domain_crs="epsg:4326",
-#'                     verbose=F)
+#'  CH4_inventory_build(run_directory=tempdir(), inventory_year=2019,
+#'  domain="RI", domain_res=1, domain_crs="epsg:4326", verbose=F)
+#'
+#'  CH4_inventory_build(run_directory=tempdir(), inventory_year=2019, domain =
+#'  as.data.frame(cbind(c(-75,-72),c(39,42))), domain_res=1,
+#'  domain_crs="epsg:4326", verbose=F)
 #'@seealso [M3T_config] Generates the config function with user-editable
 #'  settings used throughout processing.
 
