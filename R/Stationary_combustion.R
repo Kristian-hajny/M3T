@@ -96,7 +96,6 @@
 #'  \code{\link{M3T_config}}.
 #'@param stationary_combustion_emission_factors Data frame.  Pulled from
 #'  \code{\link{M3T_config}}.
-#'@param EIA_API_key Character.  Pulled from \code{\link{M3T_config}}.
 #'@returns Nothing is returned from the function, but the main outputs are up to
 #'  56 netcdf files of the methane emissions from stationary combustion.  They
 #'  are titled as "stat_comb_sector_fuel_variation_inventory.nc" where sector is
@@ -145,7 +144,6 @@ Stationary_combustion <- function(input_directory,
                                   stationary_combustion_emission_factors,
                                   Source_EIA_SEDS_data,
                                   Source_NEI_data,
-                                  EIA_API_key,
                                   plot_directory,
                                   State_CB){
   

@@ -31,7 +31,6 @@ Stationary_combustion(
   stationary_combustion_emission_factors,
   Source_EIA_SEDS_data,
   Source_NEI_data,
-  EIA_API_key,
   plot_directory,
   State_CB
 )
@@ -119,8 +118,6 @@ on \code{Use_Vulcan} and \code{Source_Vulcan}.}
 \item{Source_EIA_SEDS_data}{Character.  Pulled from \code{\link{M3T_config}}.}
 
 \item{Source_NEI_data}{Character.  Pulled from \code{\link{M3T_config}}.}
-
-\item{EIA_API_key}{Character.  Pulled from \code{\link{M3T_config}}.}
 
 \item{plot_directory}{Character. \strong{Optional}. Provides the full filepath
 to save figures. Only relevant if \code{verbose} = TRUE.}
