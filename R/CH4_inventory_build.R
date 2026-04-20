@@ -1321,7 +1321,6 @@ CH4_inventory_build <- function(run_directory,
     #this if is outside the function as the entire function is to process
     #wetcharts and the processed version is pulled in M3T
     if(M3T_config$Source_wastewater_NLCD!="M3T"){
-      #UPDATE TO ZENODO
       NLCD_fractions_by_state(input_directory=input_directory,
                               Source_wastewater_NLCD=M3T_config$Source_wastewater_NLCD,
                               domain=domain,

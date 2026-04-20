@@ -120,7 +120,7 @@ NWI_Wetland_fraction <- function(input_directory,
                          file.path(NWI_output_directory,paste0(state_name_list[i],'_',input_name,'.tif')),
                          overwrite=T)
       
-      invisible(rm(output_rast,input,invalid_polygons,validated_input,valid_polygons))
+      invisible(suppressWarnings(rm(output_rast,input,invalid_polygons,validated_input,valid_polygons)))
       gc()
     }
   }

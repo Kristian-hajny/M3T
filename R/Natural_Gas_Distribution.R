@@ -584,7 +584,7 @@ Natural_Gas_Distribution <- function(domain,
     #the domain
     if(any(GHGRP_csv$state!=GHGRP_csv$operating_state)){
       update_ordered <- GHGRP_csv[order(GHGRP_csv$facility_name),]
-      cat(paste(update_ordered$facility_name[update_ordered$state!=update_ordered$operating_state],"    rewritten from",update_ordered$state_name[update_ordered$state!=update_ordered$operating_state],"    to",update_ordered$operating_state_name[update_ordered$state!=update_ordered$operating_state]),"\n")
+      cat(paste(update_ordered$facility_name[update_ordered$state!=update_ordered$operating_state],"    rewritten from",update_ordered$state_name[update_ordered$state!=update_ordered$operating_state],"    to",update_ordered$operating_state_name[update_ordered$state!=update_ordered$operating_state],"\n"))
       rm(update_ordered)
     }
     ################################################################################
