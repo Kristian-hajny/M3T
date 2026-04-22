@@ -164,16 +164,15 @@ SOCCR_Wetlands <- function(input_directory,
   if(M3T_config$Source_NWI=="M3T"){
     ################################################################################
     #load in and process the Wetland_fraction_r1 output to convert from wetland
-    #coverage to wetland emissions with source != M3T
+    #coverage to wetland emissions with source == M3T
     
     NWI_files <- list.files(file.path(input_directory,"processed_NWI_data"),".tif",full.names = T)
     
-    #just in case this is a rerun with more output here than the states being run
-    #now
+    #subset to only the relevant states
     NWI_files <- NWI_files[sapply(strsplit(basename(NWI_files),"_"),"[[",1) %in% state_name_list]
     
     NWI_data <- terra::rast(NWI_files)
-    NWI_names <- names(NWI_data)
+    NWI_filetypes <- names(NWI_data)
     
     #if CONUS or custom with a very large domain - reprojecting domain can be
     #problematic
@@ -185,12 +184,14 @@ SOCCR_Wetlands <- function(input_directory,
     domain_res <- terra::res(terra::project(domain_template,terra::crs(NWI_data)))
     terra::crs(domain_trans) <- terra::crs(NWI_data)
     
-    
-    
+    #filter out any wetland types that we don't have within the domain
+    SOCCR_wetland_types <- SOCCR_wetland_types[SOCCR_wetland_types %in% NWI_filetypes]
+    Freshwater_wetland_types <- Freshwater_wetland_types[Freshwater_wetland_types %in% NWI_filetypes]
+
     #process separately for each type (different EFs)
     if(Use_SOCCR1 | Use_SOCCR2){
       #load in the first files to build the output
-      subset_data <- NWI_data[[grep(SOCCR_wetland_types[1],NWI_names)]]
+      subset_data <- NWI_data[[grep(SOCCR_wetland_types[1],NWI_filetypes)]]
 
       #given NWI extends somewhat beyond state bounds, there is overlap.  So max
       #should combine them akin to sum, but without double counting.
@@ -232,7 +233,7 @@ SOCCR_Wetlands <- function(input_directory,
       #repeat for all remaining states, now adding to all frac and combining as
       #new layers of soccr1_flux and soccr2_flux
       for(i in 2:length(SOCCR_wetland_types)){
-        subset_data <- NWI_data[[grep(SOCCR_wetland_types[i],NWI_names)]]
+        subset_data <- NWI_data[[grep(SOCCR_wetland_types[i],NWI_filetypes)]]
         subset_data <- max(subset_data)
         names(subset_data) <- SOCCR_wetland_types[i]
 
@@ -264,7 +265,7 @@ SOCCR_Wetlands <- function(input_directory,
     }
     
     #repeat the process for freshwater
-    subset_data <- NWI_data[[grep(Freshwater_wetland_types[1],NWI_names)]]
+    subset_data <- NWI_data[[grep(Freshwater_wetland_types[1],NWI_filetypes)]]
     subset_data <- max(subset_data)
     names(subset_data) <- Freshwater_wetland_types[1]
     #reproject to domain crs - partial coverage considered later
@@ -282,7 +283,7 @@ SOCCR_Wetlands <- function(input_directory,
     #repeat for all remaining states, now adding to all frac and combining as
     #new layers of soccr1_flux and soccr2_flux
     for(i in 2:length(Freshwater_wetland_types)){
-      subset_data <- NWI_data[[grep(Freshwater_wetland_types[i],NWI_names)]]
+      subset_data <- NWI_data[[grep(Freshwater_wetland_types[i],NWI_filetypes)]]
       subset_data <- max(subset_data)
       names(subset_data) <- SOCCR_wetland_types[i]
       
@@ -306,10 +307,8 @@ SOCCR_Wetlands <- function(input_directory,
     
     NWI_files <- list.files(paste0(Wetland_output_directory,"/processed_NWI_data/"),".tif",full.names = T)
     
-    #just in case this is a rerun with more output here than the states being run
-    #now
+    #subset to only the relevant states
     NWI_files <- NWI_files[sapply(strsplit(basename(NWI_files),"_"),"[[",1) %in% state_name_list]
-    
     
     NWI_filetypes <- sapply(strsplit(basename(gsub(".tif","",(NWI_files))),"_"),"[[",2)
     
