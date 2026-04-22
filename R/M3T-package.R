@@ -3,6 +3,8 @@
 
 ## usethis namespace: start
 #' @importFrom curl has_internet
+#' @importFrom rlang env_unbind
+#' @importFrom rlang env_coalesce
 ## usethis namespace: end
 NULL
 
