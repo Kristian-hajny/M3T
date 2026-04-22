@@ -38,6 +38,7 @@
 #'  A separate TIFF file is saved for each state - wetland type combination.
 #'  These are used in further processing.
 #'@inheritParams Municipal_solid_waste
+#'@param Source_NWI Logical.  Pulled from \code{\link{M3T_config}}.
 #'
 #'@returns Nothing is returned from the function, but the main outputs are TIFF
 #'  files of the fractional wetland coverage per pixel for each wetland type and
@@ -56,10 +57,11 @@
 
 NWI_Wetland_fraction <- function(input_directory,
                                  output_directory,
+                                 Source_NWI,
                                  domain,
                                  domain_template,
                                  state_name_list){
-
+  
   starttime <- Sys.time()
   cat("Starting wetland sector: NWI_Wetland_fraction\n")
   
@@ -77,6 +79,10 @@ NWI_Wetland_fraction <- function(input_directory,
   NWI_input_directory <- file.path(input_directory,"NWI")
   dir.create(NWI_input_directory,showWarnings = F)
   
+  if(Source_NWI!="download"){
+    invisible(file.copy(list.files(Source_NWI,full.names = T),
+                        NWI_input_directory,overwrite=T,recursive=T))
+  }
   ################################################################################
   #Create a function that will reproject to the proper CRS and then rasterize,
   #and account for invalid polygons if they exist
@@ -129,8 +135,7 @@ NWI_Wetland_fraction <- function(input_directory,
   
   #first check which have already been downloaded if any (note AZ is special).
   input_directory_data <- list.files(NWI_input_directory)
-  Downloaded_NWI_files <- paste0(state_name_list,"_Wetlands_Geopackage.gpkg") %in% input_directory_data
-  Downloaded_NWI_files[state_name_list=="AZ"] <- "AZ_geodatabase_wetlands" %in% input_directory_data
+  Downloaded_NWI_files <- sapply(state_name_list,FUN=function(x){any(grepl(paste0(x,"_*"),input_directory_data))})
   
   #check those that have already been processed
   Processed_NWI_files <- list.files(NWI_output_directory,pattern=".tif")
@@ -139,7 +144,8 @@ NWI_Wetland_fraction <- function(input_directory,
     cat("Starting processing for",state_name_list[i],"at",format(Sys.time(),"%H:%M"),"\n")
     
     ################################################################################
-    #Quick check for speed on restarting partial runs
+    #Quick check for speed on restarting partial runs.  The default for M3T is
+    #saved in input instead, so is a non-factor.
     if(state_name_list[i] %in% sapply(strsplit(Processed_NWI_files[grepl("PNF.tif",Processed_NWI_files)],"_"),"[[",1)){
       cat(state_name_list[i],"already processed, skipping\n\n")
       next
@@ -152,54 +158,51 @@ NWI_Wetland_fraction <- function(input_directory,
     }else{
       NWI_filename <- paste0(state_name_list[i],"_geopackage_wetlands.zip")
     }
-    
+
     ################################################################################
+    #get the NWI data
+    
     #download any not already downloaded
-    if(!Downloaded_NWI_files[i]){
-      data_URL <- paste0(NWI_url,NWI_filename)
-      NWI_full_filename <- file.path(NWI_input_directory,NWI_filename)
-      
-      # Wetlands inventory has a shapefile for each state - download them, retry
-      # if failed (e.g., intermittent internet)
-      Trycatch_downloader(URL=data_URL,
-                          output_location=NWI_full_filename,
-                          method="save",
-                          error_message=paste0("\nFailed to download National Wetland Inventory data using url: ",data_URL))
-      
-      #unzip the downloaded file and delete the zip file
-      utils::unzip(NWI_full_filename,
-                   exdir=NWI_input_directory)
-      unlink(NWI_full_filename, recursive=TRUE)
-      
-      #in some cases, the file name in the zip differs.  Force it to match
-      #expected.
-      if(state_name_list[i]=="AZ"){
-        new_file <- list.files(NWI_input_directory,full.names = T)[grep("AZ",list.files(NWI_input_directory,full.names = T))]
-        file.rename(new_file,file.path(NWI_input_directory,"AZ_geodatabase_wetlands.gdb"))
-      }else{
-        output_state <- sapply(strsplit(list.files(NWI_input_directory),"_"),"[[",1)
-        new_file <- list.files(NWI_input_directory,full.names = T)[output_state==state_name_list[i]]
-        file.rename(new_file,file.path(NWI_input_directory,paste0(state_name_list[i],"_Wetlands_Geopackage.gpkg")))
-      }
+    if(Source_NWI=="download" & !Downloaded_NWI_files[i]){
+        data_URL <- paste0(NWI_url,NWI_filename)
+        NWI_full_filename <- file.path(NWI_input_directory,NWI_filename)
+        
+        # Wetlands inventory has a shapefile for each state - download them, retry
+        # if failed (e.g., intermittent internet)
+        Trycatch_downloader(URL=data_URL,
+                            output_location=NWI_full_filename,
+                            method="save",
+                            error_message=paste0("\nFailed to download National Wetland Inventory data using url: ",data_URL))
+        
+        #unzip the downloaded file and delete the zip file
+        utils::unzip(NWI_full_filename,
+                     exdir=NWI_input_directory)
+        unlink(NWI_full_filename, recursive=TRUE)
+        
+        #in some cases, the file name in the zip differs.  Force it to match
+        #expected.
+        if(state_name_list[i]=="AZ"){
+          new_file <- list.files(NWI_input_directory,full.names = T)[grep("AZ",list.files(NWI_input_directory,full.names = T))]
+          file.rename(new_file,file.path(NWI_input_directory,"AZ_geodatabase_wetlands.gdb"))
+        }else{
+          output_state <- sapply(strsplit(list.files(NWI_input_directory),"_"),"[[",1)
+          new_file <- list.files(NWI_input_directory,full.names = T)[output_state==state_name_list[i]]
+          file.rename(new_file,file.path(NWI_input_directory,paste0(state_name_list[i],"_Wetlands_Geopackage.gpkg")))
+        }
     }
     
-    #The filename switches here from the .zip to the unzipped filename
-    if(state_name_list[i]=="AZ"){
-      NWI_full_filename <- file.path(NWI_input_directory,"AZ_geodatabase_wetlands.gdb")
-      wetlands <- terra::vect(NWI_full_filename,layer="AZ_wetlands")
-      wetlands <- wetlands[,"ATTRIBUTE"]
-    }else{
-      NWI_full_filename <- file.path(NWI_input_directory,paste0(state_name_list[i],"_Wetlands_Geopackage.gpkg"))
-      
-      #load and subset to just the "attribute" variable that provides the wetland
-      #type and subtype (we won't need other variables).
-      wetlands <- terra::vect(NWI_full_filename,layer=paste0(state_name_list[i],"_Wetlands"))
-      wetlands <- wetlands[,"ATTRIBUTE"]
-    }
-    
-    cat("Finished loading and combining all wetland files at",format(Sys.time(),"%H:%M"),"\n")
     ################################################################################
     #split them into the relevant parts and rasterize/save them
+    
+    #The filename switches here from the .zip to the unzipped filename
+    NWI_full_filename <- list.files(NWI_input_directory,pattern=paste0(state_name_list[i],"_*"),full.names = T)
+    
+    #load and subset to just the "attribute" variable that provides the wetland
+    #type and subtype (we won't need other variables).
+    wetlands <- terra::vect(NWI_full_filename,layer=paste0(state_name_list[i],"_Wetlands"))
+    wetlands <- wetlands[,"ATTRIBUTE"]
+    
+    cat("Finished loading and combining all wetland files at",format(Sys.time(),"%H:%M"),"\n")
     
     #reproject and create a template for output, slightly larger than the
     #wetland shapefile to avoid losing any data
