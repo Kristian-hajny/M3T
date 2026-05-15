@@ -137,6 +137,7 @@ M3T_config$Base_timeout <- 60*20
     M3T_config$Source_EIA_NG_file = "M3T"
     M3T_config$Source_PHMSA_file = "M3T"
     M3T_config$Source_GHGRP_LDC = "M3T"
+    M3T_config$Source_byLDC_file = ""
   }
   
   #Emission factors, and similar
@@ -262,7 +263,7 @@ M3T_config$Base_timeout <- 60*20
     M3T_config$Wastewater_use_DMR <- TRUE
     
     #Downscaling GHGI estimate or use Moore et al. published EF
-    M3T_config$Wastewater_Municipal_Method_Moore_EF <- TRUE
+    M3T_config$Wastewater_Municipal_Method_Moore <- TRUE
     M3T_config$Wastewater_Municipal_Method_GHGI <- FALSE
     
     #National septic fraction or state level septic fraction data
