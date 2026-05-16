@@ -10,6 +10,7 @@
 \item{LATITUDE}{Facility location coordinates}
 \item{LONGITUDE}{Facility location coordinates}
 \item{EXIST_MUNICIPAL}{Annual flow of municipal wastewater through a facility in millions of gallons per day}
+\item{FACILITY_NAME}{Name of facility}
 }
 }
 \source{

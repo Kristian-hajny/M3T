@@ -12,8 +12,8 @@ CH4_inventory_build(
   domain_res = NULL,
   domain_crs = "epsg:4326",
   verbose = FALSE,
-  Zenodo_folder =
-    "G:/My Drive/Shepson Group Drive/Kris/Philly Inventory/Manuscript/All inventory data/Prepared inventory data/M3T_Zenodo_data/Processed/"
+  Zenodo_folder = "",
+  Zenodo_record = "17328718"
 )
 }
 \arguments{
@@ -47,8 +47,8 @@ Links to previous census urban areas are on the same page.  A list with
 state fips codes is available
 \href{https://www.census.gov/library/reference/code-lists/ansi.html}{here}.}
 
-\item{domain_res}{Numeric providing the resolution for the domain.  Can be
-length 1 for equal x and y resolution or length 2 (x, y).}
+\item{domain_res}{Numeric providing the resolution for the domain.
+Can be length 1 for equal x and y resolution or length 2 (x, y).}
 
 \item{domain_crs}{Character providing the projection of the domain in
 \href{https://proj.org/en/stable/operations/projections/index.html}{PROJ
@@ -58,13 +58,20 @@ used crs include "epsg:4326" for lat/long and "+proj=lcc +lat_0=40
 +lon_0=-97 +lat_1=33 +lat_2=45 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs"
 for a m grid in the lambert conformal conical projection used by some CO2
 inventories for the continental US. Many crs can be seen at
-\href{https://spatialreference.org/}{spatialreference.org}.}
+\href{https://spatialreference.org/}{spatialreference.org}. Default is
+lat/long.}
 
 \item{verbose}{Logical indicating whether to save sector and subsector
 visuals.}
 
-\item{Zenodo_folder}{Character.  Temporary variable to provide a filepath to
-the data that will later be uploaded and automatically pulled from a zenodo.}
+\item{Zenodo_folder}{Optional Character.  Filepath to the data that would
+otherwise be pulled from Zenodo.  Necessary if the user wants to run without
+internet.}
+
+\item{Zenodo_record}{Optional Character.  Zenodo record number for the
+companion Zenodo, which can be seen at the end of the URL (e.g.,
+https://zenodo.org/records/17328718).  Used to choose a version of Zenodo
+data.  Default will be the most recent version.}
 }
 \value{
 Nothing is returned from the function, but there will be frequent user
@@ -80,7 +87,8 @@ the config file and inputs.
 This function will call multiple internal functions and use
 \code{\link{M3T_config}} to create gridded methane inventories. Internet
 access is required so that the necessary datasets can be downloaded either
-directly from the source or from a companion Zenodo contiaining
+directly from the source or from a
+\href{https://doi.org/10.5281/zenodo.17328718}{Companion Zenodo} containing
 pre-processed data unless all "Source_" variables in
 \code{\link{M3T_config}} are set to filepaths that point to local copies of
 the needed data.
@@ -107,8 +115,8 @@ M3T_get_config("natural_gas_res_post_meter_emission_factor")
 M3T_set_config(natural_gas_res_post_meter_emission_factor = 4e-10)
 
 #run M3T for Rhode Island and Connecticut at 1 degree resolution for 2019 in 
-#a temporary folder with current config settings and Zenodo_data in a folder 
-#with that name on the desktop.
+#a temporary folder with current config settings. The Zenodo_data folder 
+#on the desktop contains the files in the Companion Zenodo.
 CH4_inventory_build(run_directory=tempdir(),
                    inventory_year=2019,
                    domain=c("CT","RI"),
@@ -117,28 +125,26 @@ CH4_inventory_build(run_directory=tempdir(),
                    verbose=F,
                    Zenodo_folder="~/../Desktop/Zenodo_data/")
 
-#run M3T for a defined box in the northeastern US at 1 degree resolution for
-#2019 in a temporary folder with current config settings and Zenodo_data in 
-#a folder with that name on the desktop.
+#run M3T for a defined box in the northeastern US at 1 degree resolution for 
+# 2016 in a temporary folder with current config settings. Uses a specific
+#version of the Companion Zenodo and will include visuals for each sector.
 CH4_inventory_build(run_directory=tempdir(), 
-                   inventory_year=2019, 
+                   inventory_year=2016, 
                    domain = as.data.frame(cbind(c(-75,-72),c(39,42))), 
                    domain_res=1,
                    domain_crs="epsg:4326", 
-                   verbose=F,
-                   Zenodo_folder="~/../Desktop/Zenodo_data/")
+                   verbose=T,
+                   Zenodo_record="17328718")
 
-#run M3T for the entire continental US at 1 degree resolution for
-#2019 in a temporary folder with current config settings and Zenodo_data in 
-#a folder with that name on the desktop.  Larger domains will take much longer 
-#to run.
+#run M3T for the entire continental US at 1 degree resolution for 2019 in a
+#temporary folder with current config settings.  Larger domains will take much
+#longer to run.
 CH4_inventory_build(run_directory=tempdir(), 
                    inventory_year=2019, 
                    domain = "CONUS", 
                    domain_res=1,
                    domain_crs="epsg:4326", 
-                   verbose=F,
-                   Zenodo_folder="~/../Desktop/Zenodo_data/")
+                   verbose=F)
 \dontshow{\}) # examplesIf}
 }
 \seealso{

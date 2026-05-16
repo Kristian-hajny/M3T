@@ -14,10 +14,11 @@ accessor functions: \code{\link{M3T_get_config}} and
 The options are described by sector to simplify navigating.  All
 relevant datasets have a Source_X option that can generally be set to "M3T"
 to rely on preprocessed data built into the package or its
-\href{https://zenodo.org/}{companion Zenodo}, "download" to have the package
-download the data from the source, or a filepath pointing to a local copy of
-the properly formatted data file.  As datasets can move, change format, etc.
-over time, the download option may fail over time.
+\href{https://doi.org/10.5281/zenodo.17328718}{Companion Zenodo}, "download"
+to have the package download the data from the source, or a filepath
+pointing to a local copy of the properly formatted data file.  As datasets
+can move, change format, etc. over time, the download option may fail over
+time.
 
 \bold{Across Sectors}
 \itemize{
@@ -39,7 +40,7 @@ Accessing Datasets
 \item{\bold{Source_GHGRP_combustion} - character stating "M3T", "download", or a filepath pointing to the needed file. Data on facility combustion emissions (subpart C) from the \href{https://enviro.epa.gov/envirofacts/metadata/table/ghg/c_subpart_level_information}{EPA Greenhouse Gas Reporting Program's Envirofacts API}. Used for the landfill and natural gas transmission sectors as these sources report to subpart C. Default "M3T".}
 \item{\bold{Source_GHGRP_NG} - character stating "M3T", "download", or a filepath pointing to the needed file. Data on petroleum and natural gas system facility-level emissions (subpart W) from the \href{https://enviro.epa.gov/envirofacts/metadata/table/ghg/w_subpart_level_information}{EPA Greenhouse Gas Reporting Program's Envirofacts API}. Used for the natural gas distribution and natural gas transmission sectors as these sources report to subpart W. Default "M3T".}
 \item{\bold{Source_GHGI} - character stating "M3T", "download", or a filepath pointing to a directory with the needed files. The main text and annex tables from the \href{https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks-1990-2022}{EPA Greenhouse Gas Inventory}. Optionally used for the landfill, natural gas distribution, natural gas transmission, and stationary combustion sectors to get the national activity and emission factor data used. Default "M3T".}
-\item{\bold{Source_ACES} - character stating "M3T" or a filepath pointing to a directory with the needed files.  \bold{Cannot} be set to "download" as there is no simple way to automatically download these files, they are hundreds of gigabytes, and annualizing them is considerably time consuming. Annual rasters of the industrial, residential, electric production, and commercial sectors from the \href{https://doi.org/10.3334/ORNLDAAC/1943}{ACES v2.0 CO2 inventory}. Optionally used to disaggregate stationary combustion and natural gas distribution methane emissions. Code to convert the hourly data to annual is available on the \href{https://zenodo.org/}{companion Zenodo}. Default "M3T".}
+\item{\bold{Source_ACES} - character stating "M3T" or a filepath pointing to a directory with the needed files.  \bold{Cannot} be set to "download" as there is no simple way to automatically download these files, they are hundreds of gigabytes, and annualizing them is considerably time consuming. Annual rasters of the industrial, residential, electric production, and commercial sectors from the \href{https://doi.org/10.3334/ORNLDAAC/1943}{ACES v2.0 CO2 inventory}. Optionally used to disaggregate stationary combustion and natural gas distribution methane emissions. Code to convert the hourly data to annual is available on the \href{https://doi.org/10.5281/zenodo.17328718}{companion Zenodo}. Default "M3T".}
 \item{\bold{Source_Vulcan} - character stating "download" or a filepath pointing to a directory with the needed files.  \bold{Cannot} be set to "M3T" as there is no version saved within the package - it relies on publicly available versions of the data so there is no need. Annual rasters of the industrial, residential, electric production, and commercial sectors from the \href{https://doi.org/10.5281/zenodo.15446748}{Vulcan v4.0 CO2 inventory}. Optionally used to disaggregate stationary combustion and natural gas distribution methane emissions. Default "download".}
 }
 }
@@ -83,7 +84,7 @@ Method Variations
 Disaggregate emissions from a local distribution company (LDC), state, or
 domain total to pixels. By LDC requires use of a function that requires
 manual editing and comparison available in the
-\href{https://zenodo.org/}{companion Zenodo}.
+\href{https://doi.org/10.5281/zenodo.17328718}{companion Zenodo}.
 \item{\bold{NG_distribution_by_LDC} - logical. Default FALSE.}
 \item{\bold{NG_distribution_by_state} - logical. Default TRUE.}
 \item{\bold{NG_distribution_by_domain} - logical. Default FALSE.}
@@ -94,6 +95,7 @@ Accessing Datasets
 \item{\bold{Source_EIA_NG_file} - character stating "M3T", or a filepath pointing to the needed file. \bold{Cannot} be set to "download" as there is no simple way to automatically download these files. \href{https://www.eia.gov/naturalgas/ngqs/#?report=RP4&year1=2020&year2=2020&company=Name}{EIA Form 176} - the Annual Report of Natural and supplemental Gas Supply and Disposition that includes sold natural gas volume by company and customer type. Can be downloaded as an xlsx file using a button in the topright on the webpage. Default "M3T".}
 \item{\bold{Source_PHMSA_file} - character stating "M3T", or a filepath pointing to the needed file. \bold{Cannot} be set to "download" as there is no simple way to automatically download these files. The \href{https://www.phmsa.dot.gov/data-and-statistics/pipeline/gas-distribution-gas-gathering-gas-transmission-hazardous-liquids}{Pipeline and Hazardous Material Safety Administration (PHMSA)} Gas Distribution Annual Data that includes miles of pipe by company and type. Default "M3T".}
 \item{\bold{Source_GHGRP_LDC} - character stating "M3T", "download", or a filepath pointing to a directory with the needed file. The EPA GHGRP table \href{https://enviro.epa.gov/envirofacts/metadata/table/ghg/w_local_dist_companies_details}{Envirofacts local distribution companies details} if before 2015 or \href{https://enviro.epa.gov/envirofacts/metadata/table/ghg/ef_w_equip_leaks_ngdist_leaks}{Envirofacts natural gas distribution leaks} and \href{https://enviro.epa.gov/envirofacts/metadata/table/ghg/ef_w_equip_leaks_pop_count}{Envirofacts population counts} otherwise that include the number of metering and regulating (MR) stations and transmission-distribution transfer (TD) stations for each GHGRP reporting company. Default "M3T".}
+\item{\bold{Source_byLDC_file} - character providing a filepath pointing to the shapefile created by the NG_distribution_byLDC_prep.R script in the companion Zenodo. Unused unless NG_distribution_by_LDC is set to TRUE.  Default "".}
 }
 
 Emission Factors and similar
@@ -161,7 +163,7 @@ available from the Environmental Protection Agency's (EPA)
 Monitoring Reports (DMR)}.
 \item{\bold{Wastewater_use_CWNS} - logical. Rely on the CWNS wastewater flow data. The CWNS is typically reported every 4 years though the 2 most recent reports that are handled by this code are 2012 and 2022. Default FALSE.}
 \item{\bold{Wastewater_use_DMR} - logical. Rely on the DMR wastewater flow data. Default TRUE.}
-\item{\bold{Wastewater_Municipal_Method_Moore_EF} - logical. Use the measured emission factor from \href{https://doi.org/10.1038/s44221-025-00490-z}{Moore et al., 2025} to convert flow rate to emission rate. They measured 96 facilities (~10\% of total US flow) and showed scaling their emission factors nationally results in more than double the emissions estimated by the GHGI. Default TRUE.}
+\item{\bold{Wastewater_Municipal_Method_Moore} - logical. Use the log-log linear relationship from \href{https://doi.org/10.1038/s44221-025-00490-z}{Moore et al., 2025} and \href{https://doi.org/10.1021/acs.est.2c05373}{Moore et al., 2023} to convert flow rate to emission rate. They measured 96 facilities (~10\% of total US flow) and showed scaling their relationship nationally results in more than double the emissions estimated by the GHGI. Default TRUE.}
 \item{\bold{Wastewater_Municipal_Method_GHGI} - logical. Use the Environmental Protection Agency's (EPA) \href{https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks-1990-2022}{Greenhouse Gas Inventory (GHGI)} estimate of national municipal wastewater emissions. These are scaled to individual facilities based on flow. Default FALSE.}
 \item{\bold{Wastewater_national_septic} - logical. Rely on the GHGI and a national estimate of land cover used in this work to distribute septic emissions (impervious surface <50\%). Default TRUE.}
 \item{\bold{Wastewater_state_septic} - logical. Rely on the state level septic fraction, national level septic fraction, population, and a per capita septic emission factor. State septic data is uses if available within 1 year of the inventory year (biannually reported), but 1990 state data is scaled using the change in national septic fraction during the same timeframe otherwise as this is the last year with data for all states. Default FALSE.}
@@ -236,7 +238,7 @@ Emission Factors and similar
 
 Accessing Datasets
 \itemize{
-\item{\bold{Source_GEPA} - character stating "download", or a filepath pointing to the needed file. \bold{Cannot} be set to "M3T" as there is no version saved within the package - it relies on publicly available versions of the data so there is no need. The \href{https://zenodo.org/records/8367082}{gridded Environmental Protection Agency (GEPA) anthropogenic methane inventory} .nc file. Default "download".}
+\item{\bold{Source_GEPA} - character stating "download", or a filepath pointing to the needed file. \bold{Cannot} be set to "M3T" as there is no version saved within the package - it relies on publicly available versions of the data so there is no need. The \href{https://doi.org/10.5281/zenodo.8367082}{gridded Environmental Protection Agency (GEPA) anthropogenic methane inventory} .nc file. Default "download".}
 }
 }
 

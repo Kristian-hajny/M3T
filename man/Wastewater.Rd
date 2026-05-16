@@ -10,7 +10,7 @@ Wastewater(
   output_directory,
   Wastewater_use_CWNS,
   Wastewater_use_DMR,
-  Wastewater_Municipal_Method_Moore_EF,
+  Wastewater_Municipal_Method_Moore,
   Wastewater_Municipal_Method_GHGI,
   Wastewater_national_septic,
   Wastewater_state_septic,
@@ -48,7 +48,7 @@ processed data as created in \code{\link{CH4_inventory_build}}}
 
 \item{Wastewater_use_DMR}{Logical.  Pulled from \code{\link{M3T_config}}.}
 
-\item{Wastewater_Municipal_Method_Moore_EF}{Logical.  Pulled from
+\item{Wastewater_Municipal_Method_Moore}{Logical.  Pulled from
 \code{\link{M3T_config}}.}
 
 \item{Wastewater_Municipal_Method_GHGI}{Logical.  Pulled from

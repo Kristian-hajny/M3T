@@ -11,6 +11,7 @@
 \item{LONGITUDE}{Facility location coordinates}
 \item{EXIST_MUNICIPAL}{Annual flow of municipal wastewater through a facility in millions of gallons per day}
 \item{HORIZONTAL_COORDINATE_DATUM}{Information regarding the mapping used in the coordinates}
+\item{FACILITY_NAME}{Name of facility}
 }
 }
 \source{

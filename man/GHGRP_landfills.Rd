@@ -13,8 +13,8 @@ Reporting Program (GHGRP)}
 \item{facility_name}{Name of facility}
 \item{ghg_name}{greenhouse gas name - filtered to all methane}
 \item{ghg_quantity}{emissions of methane in metric tons of methane per year}
-\item{HH_modeled}{emissions of methane in metric tons of methane per year as estimated using a first order decay model (method HH-6), required for all reporting landfills}
-\item{HH_collection_efficiency}{emissions of methane in metric tons of methane per year as estimated using a back calculation with the amount of landfill gas captured and an estimated collection efficiency (method HH-8), required for all reporting landfills with a gas collection system}
+\item{generation_first_HH6}{emissions of methane in metric tons of methane per year as estimated using a first order decay model (method HH-6), required for all reporting landfills}
+\item{collection_first_HH8}{emissions of methane in metric tons of methane per year as estimated using a back calculation with the amount of landfill gas captured and an estimated collection efficiency (method HH-8), required for all reporting landfills with a gas collection system}
 }
 }
 \source{

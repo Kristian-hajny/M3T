@@ -26,6 +26,7 @@ Natural_Gas_Distribution(
   NG_distribution_by_LDC,
   NG_distribution_by_state,
   NG_distribution_by_domain,
+  Source_byLDC_file,
   natural_gas_pipeline_emission_factors,
   natural_gas_res_post_meter_emission_factor,
   natural_gas_com_post_meter_emission_factor,
@@ -99,6 +100,8 @@ natural gas systems emissions data for all years and states as prepared in
 
 \item{NG_distribution_by_domain}{Logical.  Pulled from
 \code{\link{M3T_config}}.}
+
+\item{Source_byLDC_file}{Logical.  Pulled from \code{\link{M3T_config}}.}
 
 \item{natural_gas_pipeline_emission_factors}{Data.frame.  Pulled from
 \code{\link{M3T_config}}.}

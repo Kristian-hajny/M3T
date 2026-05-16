@@ -19,6 +19,7 @@ SOCCR_Wetlands(
   County_Tigerlines,
   State_CB,
   Source_Watershed_file,
+  Source_NWI,
   Use_Wetcharts,
   Wetcharts_model_subset
 )
@@ -64,6 +65,8 @@ Census Cartographic Boundary} files for visualization. Only relevant if
 \code{verbose} = TRUE.}
 
 \item{Source_Watershed_file}{Character.  Pulled from \code{\link{M3T_config}}.}
+
+\item{Source_NWI}{Logical.  Pulled from \code{\link{M3T_config}}.}
 
 \item{Use_Wetcharts}{Logical.  Pulled from \code{\link{M3T_config}}.}
 }

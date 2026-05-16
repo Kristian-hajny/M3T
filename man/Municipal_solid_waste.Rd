@@ -100,7 +100,9 @@ emissions from municipal landfills. The main files are titled
 "MSW_GHGRP_collection_first.nc", and "MSW_LMOP.nc". The sector total
 netcdf files are titled "Landfill_sector_total_GHGRP_reported.nc",
 "Landfill_sector_total_GHGRP_generation_first.nc", and
-"Landfill_sector_total_GHGRP_collection_first.nc".
+"Landfill_sector_total_GHGRP_collection_first.nc". 2 csv's are also saved
+with the filtered, processed input data titled "GHGRP_MSW_Landfills.csv"
+and "LMOP_MSW_Landfills.csv".
 }
 \description{
 \code{Municipal_solid_waste} is an internal function that we
@@ -108,7 +110,8 @@ strongly recommend users do not use directly, instead using
 \code{\link{CH4_inventory_build}} and \code{\link{M3T_config}} which call
 this function. \code{Municipal_solid_waste} writes up to 4 main netcdf files
 and 3 sector total netcdf files of gridded methane emissions from municipal
-landfills, as well as optional visuals
+landfills, as well as optional visuals and 2 csv's with the data that is
+gridded
 }
 \details{
 This function calculates and grids methane emissions from municipal
