@@ -135,7 +135,6 @@ Natural_Gas_Transmission <- function(input_directory,
   HIFLD_compressor_file <- file.path(input_directory,"HIFLD_Natural_Gas_Compressor_Stations_updated.xlsx")
   
   if(Source_HIFLD_compressor_file=="M3T"){
-    #UPDATE TO ZENODO
     compressors_HIFLD <- M3T::HIFLD_NG_data
   }else{
     invisible(file.copy(Source_HIFLD_compressor_file,HIFLD_compressor_file,overwrite = T))

@@ -171,7 +171,6 @@ Stationary_combustion <- function(input_directory,
   SEDS_filename <- file.path(input_directory,"EIA","SEDS.txt")
 
   if(Source_EIA_SEDS_data=="M3T"){
-    #UPDATE TO ZENODO
     EIA_raw_data <- M3T::EIA_SEDS
   }else{
     if(Source_EIA_SEDS_data=="download"){
