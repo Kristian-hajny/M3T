@@ -32,24 +32,6 @@
 
 
 
-#' States that neighbor each state
-#'
-#' A logical matrix of which states are neighbors within CONUS
-#'
-#' Processed data from the Census tigerlines
-#'
-#' @format `Neighboring_states` A data frame with 49 rows and 49 columns.  Each
-#'   row and column is a state abbreviation, a true means the states neighbor
-#'   one another (e.g., WA neighbors only ID and OR).
-#' @source
-#' <https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html>
-'Neighboring_states'
-
-
-
-
-
-
 #' 2012 Clean Watershed Needs Survey (CWNS) data on waste water treatment plants
 #'
 #' A subset of data from the 2012 CWNS
@@ -64,6 +46,7 @@
 #'   \item{LONGITUDE}{Facility location coordinates}
 #'   \item{EXIST_MUNICIPAL}{Annual flow of municipal wastewater through a facility in millions of gallons per day}
 #'   \item{HORIZONTAL_COORDINATE_DATUM}{Information regarding the mapping used in the coordinates}
+#'   \item{FACILITY_NAME}{Name of facility}
 #' }
 #' @source
 #'   <https://www.epa.gov/cwns/clean-watersheds-needs-survey-cwns-2012-report-and-data>
@@ -87,6 +70,7 @@
 #'   \item{LATITUDE}{Facility location coordinates}
 #'   \item{LONGITUDE}{Facility location coordinates}
 #'   \item{EXIST_MUNICIPAL}{Annual flow of municipal wastewater through a facility in millions of gallons per day}
+#'   \item{FACILITY_NAME}{Name of facility}
 #' }
 #' @source
 #'   <https://www.epa.gov/cwns/clean-watersheds-needs-survey-cwns-2022-report-and-data>
@@ -324,8 +308,8 @@
 #'   \item{facility_name}{Name of facility}
 #'   \item{ghg_name}{greenhouse gas name - filtered to all methane}
 #'   \item{ghg_quantity}{emissions of methane in metric tons of methane per year}
-#'   \item{HH_modeled}{emissions of methane in metric tons of methane per year as estimated using a first order decay model (method HH-6), required for all reporting landfills}
-#'   \item{HH_collection_efficiency}{emissions of methane in metric tons of methane per year as estimated using a back calculation with the amount of landfill gas captured and an estimated collection efficiency (method HH-8), required for all reporting landfills with a gas collection system}
+#'   \item{generation_first_HH6}{emissions of methane in metric tons of methane per year as estimated using a first order decay model (method HH-6), required for all reporting landfills}
+#'   \item{collection_first_HH8}{emissions of methane in metric tons of methane per year as estimated using a back calculation with the amount of landfill gas captured and an estimated collection efficiency (method HH-8), required for all reporting landfills with a gas collection system}
 #' }
 #' @source
 #' <https://enviro.epa.gov/envirofacts/metadata/table/ghg/hh_subpart_level_information>
@@ -430,6 +414,24 @@
 #' @source
 #' <https://www.epa.gov/air-emissions-inventories/national-emissions-inventory-nei>
 'NEI_all_years'
+
+
+
+
+
+
+#' States that neighbor each state
+#'
+#' A logical matrix of which states are neighbors within CONUS
+#'
+#' Processed data from the Census tigerlines
+#'
+#' @format `Neighboring_states` A data frame with 49 rows and 49 columns.  Each
+#'   row and column is a state abbreviation, a true means the states neighbor
+#'   one another (e.g., WA neighbors only ID and OR).
+#' @source
+#' <https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html>
+'Neighboring_states'
 
 
 

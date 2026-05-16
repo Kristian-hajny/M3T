@@ -24,10 +24,10 @@ Facilities <- Facilities[Facilities$CWNS_ID %in% Flow$CWNS_ID,]
 #then subsetting columns)
 CWNS_2022 <- Location
 CWNS_2022$EXIST_MUNICIPAL <- Flow$CURRENT_DESIGN_FLOW[match(CWNS_2022$CWNS_ID,Flow$CWNS_ID)]
-CWNS_2022$facility_name <- Facilities$FACILITY_NAME[match(CWNS_2022$CWNS_ID,Facilities$CWNS_ID)]
+CWNS_2022$FACILITY_NAME <- Facilities$FACILITY_NAME[match(CWNS_2022$CWNS_ID,Facilities$CWNS_ID)]
 
 #filter to only the columns relevant for this work
-CWNS_2022 <- CWNS_2022[,c("LATITUDE","LONGITUDE","EXIST_MUNICIPAL")]
+CWNS_2022 <- CWNS_2022[,c("LATITUDE","LONGITUDE","EXIST_MUNICIPAL","FACILITY_NAME")]
 CWNS_2022 <- na.omit(CWNS_2022)
 ################################################################################
 #save output

@@ -13,7 +13,7 @@ CWNS_2012 <- readxl::read_xlsx(file.path(input_directory,"2012_CWNS.xlsx"))
 CWNS_2012[CWNS_2012$FACILITY_ID=="1172804","LONGITUDE"] <- gsub("E","W",CWNS_2012[CWNS_2012$FACILITY_ID=="1172804","LONGITUDE"])
 
 #subset to the relevant columns and convert to df to save space
-CWNS_2012 <- CWNS_2012[,c("LATITUDE","LONGITUDE","EXIST_MUNICIPAL","HORIZONTAL_COORDINATE_DATUM")]
+CWNS_2012 <- CWNS_2012[,c("LATITUDE","LONGITUDE","EXIST_MUNICIPAL","HORIZONTAL_COORDINATE_DATUM","FACILITY_NAME")]
 CWNS_2012 <- as.data.frame(CWNS_2012)
 
 #some have no location or activity data - remove them

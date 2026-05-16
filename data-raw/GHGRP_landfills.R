@@ -49,7 +49,7 @@ ghgrp_landfill_only_emissions <- make_consistent(ghgrp_landfill_only_emissions)
 GHGRP_landfills <- merge(ghgrp_landfill_only_emissions,
                          ghgrp_landfill_detail_emissions[,c("facility_id","reporting_year","equation_hh6_result","equation_hh8_result")],
                          by.x=c("facility_id","year"),by.y=c("facility_id","reporting_year"),all.x=T)
-colnames(GHGRP_landfills) <- gsub("equation_hh6_result","HH_modeled",colnames(GHGRP_landfills))
-colnames(GHGRP_landfills) <- gsub("equation_hh8_result","HH_collection_efficiency",colnames(GHGRP_landfills))
+colnames(GHGRP_landfills) <- gsub("equation_hh6_result","generation_first_HH6",colnames(GHGRP_landfills))
+colnames(GHGRP_landfills) <- gsub("equation_hh8_result","collection_first_HH8",colnames(GHGRP_landfills))
 
 usethis::use_data(GHGRP_landfills, overwrite = TRUE)
