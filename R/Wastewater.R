@@ -392,83 +392,99 @@ Wastewater <- function(input_directory,
   CWNS_csv <- data.frame()
   DMR_csv <- data.frame()
   
-  for(A in which(sources=="CWNS")){
-    #grab the coordinates and filter/reorganize to only needed variables
-    temp <- get(csv_options[A])
-    temp_latlong <- terra::crds(terra::project(temp,"epsg:4326"))
-    colnames(temp_latlong) <- c("longitude","latitude")
-    temp_csv <- as.data.frame(cbind(temp,temp_latlong))
-    temp_csv <- temp_csv[,c("FACILITY_NAME","EXIST_MUNICIPAL","emiss","longitude","latitude")]
-    
-    #store emissions in a properly named column and rename columns
-    if(methods[A]=="Moore"){
-      colnames(temp_csv) <- c("Facility_name","Million_gallons_per_day_flow",
-                              "Moore_Emissions_mol_per_s","longitude","latitude")
-      temp_csv$GHGI_emissions_mol_per_s <- NA
-    }else{
-      colnames(temp_csv) <- c("Facility_name","Million_gallons_per_day_flow",
-                              "GHGI_emissions_mol_per_s","longitude","latitude")
-      temp_csv$Moore_Emissions_mol_per_s <- NA
-    }
-    
-    #reorder
-    temp_csv <- temp_csv[,c("Facility_name","Million_gallons_per_day_flow",
-                            "GHGI_emissions_mol_per_s","Moore_Emissions_mol_per_s",
-                            "longitude","latitude")]
-    
-    #add source
-    temp_csv$Source <- gsub("CWNS","Clean Watershed Needs Survey",sources[A])
-    
-    #update the column if both methods are being used instead of adding new rows
-    if(nrow(CWNS_csv)>0){
-      CWNS_csv$Moore_Emissions_mol_per_s <- temp_csv$Moore_Emissions_mol_per_s
-    }else{
-      CWNS_csv <- rbind(CWNS_csv,temp_csv)
+  #remove any that are empty
+  for(A in length(csv_options):1){
+    if(nrow(get(csv_options[A]))==0){
+      csv_options <- csv_options[-A]
     }
   }
   
-  
-  #equivalent for DMR
-  for(A in which(sources=="DMR")){
-    temp <- get(csv_options[A])
-    temp_latlong <- terra::crds(terra::project(temp,"epsg:4326"))
-    colnames(temp_latlong) <- c("longitude","latitude")
-    temp_csv <- as.data.frame(cbind(temp,temp_latlong))
-    temp_csv <- temp_csv[,c("Facility_Name","Average_Daily_Flow__MGD_","emiss","longitude","latitude")]
-    
-    if(methods[A]=="Moore"){
-      colnames(temp_csv) <- c("Facility_name","Million_gallons_per_day_flow",
-                              "Moore_Emissions_mol_per_s","longitude","latitude")
-      temp_csv$GHGI_emissions_mol_per_s <- NA
-    }else{
-      colnames(temp_csv) <- c("Facility_name","Million_gallons_per_day_flow",
-                              "GHGI_emissions_mol_per_s","longitude","latitude")
-      temp_csv$Moore_Emissions_mol_per_s <- NA
+  if(length(csv_options)!=0){
+    for(A in which(sources=="CWNS")){
+      #grab the coordinates and filter/reorganize to only needed variables
+      temp <- get(csv_options[A])
+      temp_latlong <- terra::crds(terra::project(temp,"epsg:4326"))
+      colnames(temp_latlong) <- c("longitude","latitude")
+      temp_csv <- as.data.frame(cbind(temp,temp_latlong))
+      temp_csv <- temp_csv[,c("FACILITY_NAME","EXIST_MUNICIPAL","emiss","longitude","latitude")]
+      
+      #store emissions in a properly named column and rename columns
+      if(methods[A]=="Moore"){
+        colnames(temp_csv) <- c("Facility_name","Million_gallons_per_day_flow",
+                                "Moore_Emissions_mol_per_s","longitude","latitude")
+        temp_csv$GHGI_emissions_mol_per_s <- NA
+      }else{
+        colnames(temp_csv) <- c("Facility_name","Million_gallons_per_day_flow",
+                                "GHGI_emissions_mol_per_s","longitude","latitude")
+        temp_csv$Moore_Emissions_mol_per_s <- NA
+      }
+      
+      #reorder
+      temp_csv <- temp_csv[,c("Facility_name","Million_gallons_per_day_flow",
+                              "GHGI_emissions_mol_per_s","Moore_Emissions_mol_per_s",
+                              "longitude","latitude")]
+      
+      #add source
+      temp_csv$Source <- gsub("CWNS","Clean Watershed Needs Survey",sources[A])
+      
+      #update the column if both methods are being used instead of adding new rows
+      if(nrow(CWNS_csv)>0){
+        CWNS_csv$Moore_Emissions_mol_per_s <- temp_csv$Moore_Emissions_mol_per_s
+      }else{
+        CWNS_csv <- rbind(CWNS_csv,temp_csv)
+      }
     }
     
-    temp_csv <- temp_csv[,c("Facility_name","Million_gallons_per_day_flow",
-                            "GHGI_emissions_mol_per_s","Moore_Emissions_mol_per_s",
-                            "longitude","latitude")]
     
-    temp_csv$Source <- gsub("DMR","Discharge Monitoring Reports",sources[A])
-    
-    if(nrow(DMR_csv)>0){
-      DMR_csv$Moore_Emissions_mol_per_s <- temp_csv$Moore_Emissions_mol_per_s
-    }else{
-      DMR_csv <- rbind(DMR_csv,temp_csv)
+    #equivalent for DMR
+    for(A in which(sources=="DMR")){
+      temp <- get(csv_options[A])
+      temp_latlong <- terra::crds(terra::project(temp,"epsg:4326"))
+      colnames(temp_latlong) <- c("longitude","latitude")
+      temp_csv <- as.data.frame(cbind(temp,temp_latlong))
+      temp_csv <- temp_csv[,c("Facility_Name","Average_Daily_Flow__MGD_","emiss","longitude","latitude")]
+      
+      if(methods[A]=="Moore"){
+        colnames(temp_csv) <- c("Facility_name","Million_gallons_per_day_flow",
+                                "Moore_Emissions_mol_per_s","longitude","latitude")
+        temp_csv$GHGI_emissions_mol_per_s <- NA
+      }else{
+        colnames(temp_csv) <- c("Facility_name","Million_gallons_per_day_flow",
+                                "GHGI_emissions_mol_per_s","longitude","latitude")
+        temp_csv$Moore_Emissions_mol_per_s <- NA
+      }
+      
+      temp_csv <- temp_csv[,c("Facility_name","Million_gallons_per_day_flow",
+                              "GHGI_emissions_mol_per_s","Moore_Emissions_mol_per_s",
+                              "longitude","latitude")]
+      
+      temp_csv$Source <- gsub("DMR","Discharge Monitoring Reports",sources[A])
+      
+      if(nrow(DMR_csv)>0){
+        DMR_csv$Moore_Emissions_mol_per_s <- temp_csv$Moore_Emissions_mol_per_s
+      }else{
+        DMR_csv <- rbind(DMR_csv,temp_csv)
+      }
     }
-  }
-  
-  #combine the 2 and sort by name
-  out_csv <- rbind(CWNS_csv,DMR_csv)
-  out_csv <- out_csv[order(out_csv$Facility_name),]
-  
-  #Remove the column if empty
-  if(!Wastewater_Municipal_Method_Moore){
-    out_csv$Moore_Emissions_mol_per_s=NULL
-  }
-  if(!Wastewater_Municipal_Method_GHGI){
-    out_csv$GHGI_emissions_mol_per_s=NULL
+    
+    #combine the 2 and sort by name
+    out_csv <- rbind(CWNS_csv,DMR_csv)
+    out_csv <- out_csv[order(out_csv$Facility_name),]
+    
+    #Remove the column if empty
+    if(!Wastewater_Municipal_Method_Moore){
+      out_csv$Moore_Emissions_mol_per_s=NULL
+    }
+    if(!Wastewater_Municipal_Method_GHGI){
+      out_csv$GHGI_emissions_mol_per_s=NULL
+    }
+    
+  #if there is no data within the domain, create a blank csv
+  }else{
+    out_csv <- data.frame(matrix(nrow=0,ncol=6))
+    colnames(out_csv) <- c("Facility_name","Million_gallons_per_day_flow",
+                           "GHGI_emissions_mol_per_s","Moore_Emissions_mol_per_s",
+                           "longitude","latitude")
   }
   
   utils::write.csv(out_csv,file.path(Wastewater_output_directory,"Municipal_watewater_treatment.csv"),
@@ -782,15 +798,25 @@ Wastewater <- function(input_directory,
   colnames(ghgrp_latlong) <- c("longitude","latitude")
   csv_data <- as.data.frame(cbind(ghgrp_crop,ghgrp_latlong))
   
-  csv_data <- csv_data[,c("facility_id","facility_name.x","state","emiss",
-                          "longitude","latitude")]
-  
-  colnames(csv_data) <- c("GHGRP_ID","facility_name",
-                          "state",
-                          "Emissions_mol_per_s",
-                          "longitude","latitude")
-  
-  csv_data <- csv_data[order(csv_data$facility_name),]
+  if(nrow(csv_data)!=0){
+    csv_data <- csv_data[,c("facility_id","facility_name.x","state","emiss",
+                            "longitude","latitude")]
+    
+    colnames(csv_data) <- c("GHGRP_ID","facility_name",
+                            "state",
+                            "Emissions_mol_per_s",
+                            "longitude","latitude")
+    
+    csv_data <- csv_data[order(csv_data$facility_name),]
+    
+  #if there is no data within the domain, create a blank csv
+  }else{
+    csv_data <- data.frame(matrix(nrow=0,ncol=6))
+    colnames(csv_data) <- c("GHGRP_ID","facility_name",
+                            "state",
+                            "Emissions_mol_per_s",
+                            "longitude","latitude")
+  }
   
   utils::write.csv(csv_data,file.path(Wastewater_output_directory,"GHGRP_industrial_watewater_treatment.csv"),
                    row.names = F)
