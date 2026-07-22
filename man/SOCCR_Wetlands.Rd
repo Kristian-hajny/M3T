@@ -60,7 +60,7 @@ separately for SOCCR1, SOCCR2, and freshwater.}
 Census Tigerlines} files for visualization. Only relevant if \code{verbose} = TRUE.}
 
 \item{State_CB}{SpatVector. \strong{Optional}.
-\href{https://www.census.gov/geographies/mapping-files/tme-series/geo/cartographic-boundary.html}{US
+\href{https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html}{US
 Census Cartographic Boundary} files for visualization. Only relevant if
 \code{verbose} = TRUE.}
 
@@ -110,18 +110,16 @@ regionally separated data.  The lake flux was chosen as McDonald et al. show
 that large lakes (>1 km2) constitute 71\\% of the total lake area in CONUS
 (rising to 90\\% if including the Great Lakes).
 
-SOCCR1 is available at
-\url{https://www.carboncyclescience.us/state-carbon-cycle-report-soccr} and
-SOCCR2 is available at \url{https://carbon2018.globalchange.gov/}.
+SOCCR1 and SOCCR 2 are available at
+\url{https://www.carboncyclescience.us/state-carbon-cycle-report-soccr}.
 
-See references \href{https://doi.org/10.4319/lo.2012.57.2.0597}{McDonald et
-al.} and \href{https://doi.org/10.1038/s41561-021-00715-2}{Rosentreter et al.}
+See references McDonald et al. at \doi{doi:10.4319/lo.2012.57.2.0597} and
+Rosentreter et al. at \doi{doi:10.1038/s41561-021-00715-2}
 }
 \references{
-\href{https://doi.org/10.4319/lo.2012.57.2.0597}{McDonald et al.}
+McDonald et al.; \doi{doi:10.4319/lo.2012.57.2.0597}
 
-\href{https://doi.org/10.1038/s41561-021-00715-2}{Rosentreter et
-al.}
+Rosentreter et al.; \doi{doi:10.1038/s41561-021-00715-2}
 }
 \seealso{
 \code{\link[=CH4_inventory_build]{CH4_inventory_build()}} Calculates methane inventory using settings

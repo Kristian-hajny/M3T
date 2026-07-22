@@ -49,7 +49,7 @@ prep_plot_data <- function(input){
 #'  \href{https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html}{US
 #'  Census Tigerlines} files for visualization.
 #'@param State_CB SpatVector.
-#'  \href{https://www.census.gov/geographies/mapping-files/tme-series/geo/cartographic-boundary.html}{US
+#'  \href{https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html}{US
 #'  Census Cartographic Boundary} files for visualization.
 #'@returns This function returns nothing, but does save a plot with the gridded
 #'  methane data colored on a log scale with NA values set to black. All axes

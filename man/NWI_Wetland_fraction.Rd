@@ -74,7 +74,7 @@ this function can be time consuming.
 
 The NWI is a biannually updated dataset including the extent and type of
 wetlands across the United States.  It is available at
-\url{https://www.fws.gov/program/national-wetlands-inventory/wetlands-data.}
+\url{https://www.fws.gov/program/national-wetlands-inventory/wetlands-data}
 
 A separate TIFF file is saved for each state - wetland type combination.
 These are used in further processing.

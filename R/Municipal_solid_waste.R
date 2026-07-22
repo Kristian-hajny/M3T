@@ -78,7 +78,7 @@
 #'  \href{https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html}{US
 #'  Census Tigerlines} files for visualization. Only relevant if \code{verbose} = TRUE.
 #'@param State_CB SpatVector. \strong{Optional}.
-#'  \href{https://www.census.gov/geographies/mapping-files/tme-series/geo/cartographic-boundary.html}{US
+#'  \href{https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html}{US
 #'  Census Cartographic Boundary} files for visualization. Only relevant if
 #'  \code{verbose} = TRUE.
 #'@returns Nothing is returned from the function, but the main outputs are up to

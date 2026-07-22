@@ -156,20 +156,19 @@
 #'  for 2024 there is a link to the file in Section 3.6: "Methodology for
 #'  Estimating CH4, CO2, and N2O Emissions from Natural Gas Systems".  The excel
 #'  file has multiple sheets, each of which has a separate layout.  The HIFLD
-#'  dataset is available at \url{https://doi.org/10.3886/E240245V1} EIA form 176
+#'  dataset is available at \doi{doi:10.3886/E240245V1} EIA form 176
 #'  is available at
 #'  \url{https://www.eia.gov/naturalgas/ngqs/#?report=RP4&year1=2020&year2=2020&company=Name}
 #'  and can be downloaded as an excel file.  The PHMSA Gas Distribution Annual
 #'  Data can be download at
 #'  \url{https://www.phmsa.dot.gov/data-and-statistics/pipeline/gas-distribution-gas-gathering-gas-transmission-hazardous-liquids}
 #'  as a zip file with an excel file for each year. ACES is available at
-#'  \url{https://doi.org/10.3334/ORNLDAAC/1943} and Vulcan is available at
-#'  \url{https://doi.org/10.5281/zenodo.15446748}.
+#'  \doi{doi:10.3334/ORNLDAAC/1943} and Vulcan is available at
+#'  \doi{doi:10.5281/zenodo.15446748}.
 #'
-#'  See references \href{https://doi.org/10.1021/acs.est.0c00437}{Weller et
-#'  al.}, \href{https://doi.org/10.1021/acs.est.8b03217}{Fischer et al.},
-#'  \href{https://doi.org/10.1029/2020JD032974}{Vulcan} and,
-#'  \href{https://doi.org/10.1002/2017JD027359}{ACES}
+#'  See references Weller et al. at \doi{doi:10.1021/acs.est.0c00437}, Fischer
+#'  et al. at \doi{doi:10.1021/acs.est.8b03217}, Vulcan at
+#'  \doi{doi:10.1029/2020JD032974} and, ACES at \doi{doi:10.1002/2017JD027359}
 #'
 #'@inheritParams Municipal_solid_waste
 #'
@@ -219,10 +218,10 @@
 #'  upset, serv (services), post_meter, MnR (metering and regulating stations),
 #'  and mains; sector is abbreviated as res (residential) or com (commercial);
 #'  variation is byLDC, bystate, or bydomain; and inventory is ACES or Vulcan.
-#'@references \href{https://doi.org/10.1021/acs.est.0c00437}{Weller et al.}
-#'@references \href{https://doi.org/10.1021/acs.est.8b03217}{Fischer et al.}
-#'@references \href{https://doi.org/10.1029/2020JD032974}{Vulcan}
-#'@references \href{https://doi.org/10.1002/2017JD027359}{ACES}
+#'@references Weller et al.; \doi{doi:10.1021/acs.est.0c00437}
+#'@references Fischer et al.; \doi{doi:10.1021/acs.est.8b03217}
+#'@references Vulcan; \doi{doi:10.1029/2020JD032974}
+#'@references ACES; \doi{doi:10.1002/2017JD027359}
 #'@seealso [CH4_inventory_build()] Calculates methane inventory using settings
 #'  provided in config.
 #'

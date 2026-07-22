@@ -20,14 +20,14 @@
 #'  emissions.  This is done using sectoral (residential, commercial,
 #'  industrial, electric) CO2 inventories.
 #'
-#'  ACES is available at \url{https://doi.org/10.3334/ORNLDAAC/1943} and Vulcan
-#'  is available at \url{https://doi.org/10.5281/zenodo.15446748}.
+#'  ACES is available at \doi{doi:10.3334/ORNLDAAC/1943} and Vulcan
+#'  is available at \doi{doi:10.5281/zenodo.15446748}.
 #'
-#'  See references \href{https://doi.org/10.1029/2020JD032974}{Vulcan} and
-#'  \href{https://doi.org/10.1002/2017JD027359}{ACES}
+#'  See references Vulcan at \doi{doi:10.1029/2020JD032974} and
+#'  ACES at \doi{doi:10.1002/2017JD027359}
 #'@param input_inventory SpatRaster.  Either a Vulcan or ACES sectoral
-#'  inventory.  ACES is available at \url{https://doi.org/10.3334/ORNLDAAC/1943}
-#'  and Vulcan is available at \url{https://doi.org/10.5281/zenodo.15446748}.
+#'  inventory.  ACES is available at \doi{doi:10.3334/ORNLDAAC/1943}
+#'  and Vulcan is available at \doi{doi:10.5281/zenodo.15446748}.
 #'  Annual mean files should be used for Vulcan.
 #'@param totals Character vector.  Various subsectors to run through the
 #'  disaggregation process.
@@ -47,8 +47,8 @@
 #'@returns Nothing is returned.  The disaggregated methane data is assigned to
 #'  the specified out_envir.  This will be a SpatRaster list with one for each
 #'  of the totals.
-#'@references \href{https://doi.org/10.1029/2020JD032974}{Vulcan}
-#'@references \href{https://doi.org/10.1002/2017JD027359}{ACES}
+#'@references Vulcan; \doi{doi:10.1029/2020JD032974}
+#'@references ACES; \doi{doi:10.1002/2017JD027359}
 #'@seealso [Natural_Gas_Distribution()] Calculates methane emissions for the
 #'  natural gas distribution sector.
 #'

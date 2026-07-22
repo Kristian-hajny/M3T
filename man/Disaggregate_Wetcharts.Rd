@@ -50,7 +50,7 @@ closest available will be used if unavailable with a user update.}
 Census Tigerlines} files for visualization. Only relevant if \code{verbose} = TRUE.}
 
 \item{State_CB}{SpatVector. \strong{Optional}.
-\href{https://www.census.gov/geographies/mapping-files/tme-series/geo/cartographic-boundary.html}{US
+\href{https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html}{US
 Census Cartographic Boundary} files for visualization. Only relevant if
 \code{verbose} = TRUE.}
 
@@ -102,7 +102,7 @@ back to fluxes as fluxes are per area and this must be considered when
 changing the area of pixels. There is a separate file for each model subset
 and each land cover dataset used.
 
-Wetcharts is available at \url{https://doi.org/10.3334/ORNLDAAC/2346}, and
+Wetcharts is available at \doi{doi:10.3334/ORNLDAAC/2346}, and
 the NLCD is available at
 \url{https://www.mrlc.gov/data?f\%5B0\%5D=category\%3ALand\%20Cover&f\%5B1\%5D=region\%3Aconus}.
 }

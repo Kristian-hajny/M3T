@@ -11,7 +11,7 @@ editor_options:
 
 <!-- badges: start -->
 
-[![R-CMD-check](https://github.com/Kristian-hajny/methane_inventory/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Kristian-hajny/methane_inventory/actions/workflows/R-CMD-check.yaml)
+[![R-CMD-check](https://github.com/Kristian-hajny/M3T/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Kristian-hajny/M3T/actions/workflows/R-CMD-check.yaml)
 
 <!-- badges: end -->
 
@@ -97,7 +97,7 @@ CH4_inventory_build() function.
     Zenodo_data folder on the desktop contains the files in the
     Companion Zenodo.
 
-``` R
+``` r
 CH4_inventory_build(run_directory=tempdir(),
                     inventory_year=2019,
                     domain=c("CT","RI"),
@@ -112,7 +112,7 @@ CH4_inventory_build(run_directory=tempdir(),
     settings. Uses a specific version of the Companion Zenodo and will
     include visuals for each sector.
 
-``` R
+``` r
 CH4_inventory_build(run_directory=tempdir(),
                     inventory_year=2016,
                     domain = as.data.frame(cbind(c(-75,-72),c(39,42))),
@@ -126,7 +126,7 @@ CH4_inventory_build(run_directory=tempdir(),
     2019 in a temporary folder with current config settings. Larger
     domains will take much longer to run.
 
-``` R
+``` r
 CH4_inventory_build(run_directory=tempdir(),
                     inventory_year=2019,
                     domain = "CONUS",
@@ -233,10 +233,8 @@ Sectors and methods
         inventory (NWI) data to calculate emissions.
 
         -   The [State Of the Carbon Cycle Report version
-            1](https://www.carboncyclescience.us/state-carbon-cycle-report-soccr)
-            and [State of the Carbon Cycle Report version
-            2](https://carbon2018.globalchange.gov/) are publicly
-            available
+            1 and 2](https://www.carboncyclescience.us/state-carbon-cycle-report-soccr)
+            are publicly available
 
     -   Use_Wetcharts - TRUE/FALSE option to use the WetCHARTs modeled
         wetland emissions disaggregated from 0.5 degrees to 0.1 degrees

@@ -47,7 +47,7 @@ in \code{\link{CH4_inventory_build}}.}
 Census Tigerlines} files for visualization.}
 
 \item{State_CB}{SpatVector.
-\href{https://www.census.gov/geographies/mapping-files/tme-series/geo/cartographic-boundary.html}{US
+\href{https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html}{US
 Census Cartographic Boundary} files for visualization.}
 }
 \value{

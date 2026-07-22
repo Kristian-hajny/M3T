@@ -13,12 +13,11 @@ accessor functions: \code{\link{M3T_get_config}} and
 \details{
 The options are described by sector to simplify navigating.  All
 relevant datasets have a Source_X option that can generally be set to "M3T"
-to rely on preprocessed data built into the package or its
-\href{https://doi.org/10.5281/zenodo.17328718}{Companion Zenodo}, "download"
-to have the package download the data from the source, or a filepath
-pointing to a local copy of the properly formatted data file.  As datasets
-can move, change format, etc. over time, the download option may fail over
-time.
+to rely on preprocessed data built into the package or its companion Zenodo
+at \doi{doi:10.5281/zenodo.17328718}, "download" to have the package
+download the data from the source, or a filepath pointing to a local copy of
+the properly formatted data file.  As datasets can move, change format, etc.
+over time, the download option may fail over time.
 
 \bold{Across Sectors}
 \itemize{
@@ -28,8 +27,8 @@ time.
 
 Method Variations
 \itemize{
-\item{\bold{Use_ACES} - logical stating whether the \href{https://doi.org/10.3334/ORNLDAAC/1943}{ACES CO2 inventory} should be used to disaggregate the stationary combustion and natural gas distribution emissions. Default FALSE.}
-\item{\bold{Use_Vulcan} - logical stating whether the \href{https://doi.org/10.5281/zenodo.15446748}{Vulcan CO2 inventory} should be used to disaggregate the stationary combustion and natural gas distribution emissions. Default TRUE.}
+\item{\bold{Use_ACES} - logical stating whether the ACES CO2 inventory at \doi{doi:10.3334/ORNLDAAC/1943} should be used to disaggregate the stationary combustion and natural gas distribution emissions. Default FALSE.}
+\item{\bold{Use_Vulcan} - logical stating whether the Vulcan CO2 inventory at \doi{doi:10.5281/zenodo.15446748} should be used to disaggregate the stationary combustion and natural gas distribution emissions. Default TRUE.}
 }
 
 Accessing Datasets
@@ -40,8 +39,8 @@ Accessing Datasets
 \item{\bold{Source_GHGRP_combustion} - character stating "M3T", "download", or a filepath pointing to the needed file. Data on facility combustion emissions (subpart C) from the \href{https://enviro.epa.gov/envirofacts/metadata/table/ghg/c_subpart_level_information}{EPA Greenhouse Gas Reporting Program's Envirofacts API}. Used for the landfill and natural gas transmission sectors as these sources report to subpart C. Default "M3T".}
 \item{\bold{Source_GHGRP_NG} - character stating "M3T", "download", or a filepath pointing to the needed file. Data on petroleum and natural gas system facility-level emissions (subpart W) from the \href{https://enviro.epa.gov/envirofacts/metadata/table/ghg/w_subpart_level_information}{EPA Greenhouse Gas Reporting Program's Envirofacts API}. Used for the natural gas distribution and natural gas transmission sectors as these sources report to subpart W. Default "M3T".}
 \item{\bold{Source_GHGI} - character stating "M3T", "download", or a filepath pointing to a directory with the needed files. The main text and annex tables from the \href{https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks-1990-2022}{EPA Greenhouse Gas Inventory}. Optionally used for the landfill, natural gas distribution, natural gas transmission, and stationary combustion sectors to get the national activity and emission factor data used. Default "M3T".}
-\item{\bold{Source_ACES} - character stating "M3T" or a filepath pointing to a directory with the needed files.  \bold{Cannot} be set to "download" as there is no simple way to automatically download these files, they are hundreds of gigabytes, and annualizing them is considerably time consuming. Annual rasters of the industrial, residential, electric production, and commercial sectors from the \href{https://doi.org/10.3334/ORNLDAAC/1943}{ACES v2.0 CO2 inventory}. Optionally used to disaggregate stationary combustion and natural gas distribution methane emissions. Code to convert the hourly data to annual is available on the \href{https://doi.org/10.5281/zenodo.17328718}{companion Zenodo}. Default "M3T".}
-\item{\bold{Source_Vulcan} - character stating "download" or a filepath pointing to a directory with the needed files.  \bold{Cannot} be set to "M3T" as there is no version saved within the package - it relies on publicly available versions of the data so there is no need. Annual rasters of the industrial, residential, electric production, and commercial sectors from the \href{https://doi.org/10.5281/zenodo.15446748}{Vulcan v4.0 CO2 inventory}. Optionally used to disaggregate stationary combustion and natural gas distribution methane emissions. Default "download".}
+\item{\bold{Source_ACES} - character stating "M3T" or a filepath pointing to a directory with the needed files.  \bold{Cannot} be set to "download" as there is no simple way to automatically download these files, they are hundreds of gigabytes, and annualizing them is considerably time consuming. Annual rasters of the industrial, residential, electric production, and commercial sectors from the ACES v2.0 CO2 inventory at \doi{doi:10.3334/ORNLDAAC/1943}. Optionally used to disaggregate stationary combustion and natural gas distribution methane emissions. Code to convert the hourly data to annual is available on the companion Zenodo at \doi{doi:10.5281/zenodo.17328718}. Default "M3T".}
+\item{\bold{Source_Vulcan} - character stating "download" or a filepath pointing to a directory with the needed files.  \bold{Cannot} be set to "M3T" as there is no version saved within the package - it relies on publicly available versions of the data so there is no need. Annual rasters of the industrial, residential, electric production, and commercial sectors from the Vulcan v4.0 CO2 inventory at \doi{doi:10.5281/zenodo.15446748}. Optionally used to disaggregate stationary combustion and natural gas distribution methane emissions. Default "download".}
 }
 }
 
@@ -83,8 +82,8 @@ Method Variations
 \itemize{
 Disaggregate emissions from a local distribution company (LDC), state, or
 domain total to pixels. By LDC requires use of a function that requires
-manual editing and comparison available in the
-\href{https://doi.org/10.5281/zenodo.17328718}{companion Zenodo}.
+manual editing and comparison available in the companion Zenodo at
+\doi{doi:10.5281/zenodo.17328718}.
 \item{\bold{NG_distribution_by_LDC} - logical. Default FALSE.}
 \item{\bold{NG_distribution_by_state} - logical. Default TRUE.}
 \item{\bold{NG_distribution_by_domain} - logical. Default FALSE.}
@@ -100,8 +99,8 @@ Accessing Datasets
 
 Emission Factors and similar
 \itemize{
-\item{\bold{natural_gas_pipeline_emission_factors} - data.frame with columns "Leaks_per_mile" and "Avg_emissions_mol_per_s" and named rows "Bare_Steel", "Cast_Iron", "Coated_steel", and "Plastic". Default uses \href{https://doi.org/10.1021/acs.est.0c00437}{Weller et al. 2020}.}
-\item{\bold{natural_gas_res_post_meter_emission_factor} - numeric providing the whole-house residential post-meter emission factor in mol/s. Default uses \href{https://doi.org/10.1021/acs.est.8b03217}{Fischer et al. 2018} who reported 0.5\% of residential consumption with 401 Giga cubic feet ~= 7850 giga grams of natural gas consumed per year. This is used as a conversion factor from cubic feet to grams.}
+\item{\bold{natural_gas_pipeline_emission_factors} - data.frame with columns "Leaks_per_mile" and "Avg_emissions_mol_per_s" and named rows "Bare_Steel", "Cast_Iron", "Coated_steel", and "Plastic". Default uses Weller et al. 2020 at \doi{doi:10.1021/acs.est.0c00437}.}
+\item{\bold{natural_gas_res_post_meter_emission_factor} - numeric providing the whole-house residential post-meter emission factor in mol/s. Default uses Fischer et al. 2018 at \doi{doi:10.1021/acs.est.8b03217} who reported 0.5\% of residential consumption with 401 Giga cubic feet ~= 7850 giga grams of natural gas consumed per year. This is used as a conversion factor from cubic feet to grams.}
 \item{\bold{natural_gas_com_post_meter_emission_factor} - numeric providing the whole-building commercial post-meter emission factor in mol/s. Default is 0 as we are unaware of any published estimates.}
 \item{\bold{GHGI_MnR} - data.frame with columns "Type", "EF", and "Total_stations" with data for metering and regulating (MR) stations or "GHGI" to indicate this data should be pulled automatically from GHGI files. Emission factors (EF) should be in kg/activity and type should include "M&R >30", "M&R 100-300", "M&R <100", "Reg >300", "R-Vault >300", "Reg 100-300", R-Vault 100-300", "Reg 40-100", "R-Vault 40-100", and "Reg <40" where the number refers to the operating pressure. Default is "GHGI", which pulls this information from the \href{https://www.epa.gov/ghgemissions/natural-gas-and-petroleum-systems-ghg-inventory-additional-information-1990-2022-ghg}{EPA Greenhouse Gas Inventory annex files}.}
 \item{\bold{GHGI_maintenance} - data.frame with columns "Type" and "EF" with data for maintenance events or "GHGI" to indicate this data should be pulled automatically from GHGI files. Emission factors (EF) should be in kg/activity and type should include "Pressure Releief Valve Releases", "Pipeline Blowdown", and "Mishaps (Dig-ins)". Default is "GHGI", which pulls this information from the \href{https://www.epa.gov/ghgemissions/natural-gas-and-petroleum-systems-ghg-inventory-additional-information-1990-2022-ghg}{EPA Greenhouse Gas Inventory annex files}.}
@@ -146,7 +145,7 @@ Accessing Datasets
 
 Emission Factors and similar
 \itemize{
-\item{\bold{stationary_combustion_emission_factors} - data.frame with columns "com_coal", "ind_coal", "elec_coal", "res_petr", "com_petr", "ind_petr", "elec_petr", "com_gas", "ind_gas", "elec_gas", "res_wood", "com_wood", "ind_wood", and "elec_wood". Each column should list the emission factor in g/Giga Joule for the economic sector - fuel combination. Res = residential, com = commercial, ind = industrial, elec = electric, and petr = petroleum. Res_coal is 0 in the US and res_gas is handled separately. Default is \href{https://www.ipcc-nggip.iges.or.jp/public/2006gl/vol2.html}{Intergovernmental Panel on Climate Change (IPCC)} 2006 volume 2, energy tables 2.2 through 2.5, except the natural gas electric sector which comes from \href{https://doi.org/10.1021/acs.est.9b01875}{Hajny et al., 2019}.}
+\item{\bold{stationary_combustion_emission_factors} - data.frame with columns "com_coal", "ind_coal", "elec_coal", "res_petr", "com_petr", "ind_petr", "elec_petr", "com_gas", "ind_gas", "elec_gas", "res_wood", "com_wood", "ind_wood", and "elec_wood". Each column should list the emission factor in g/Giga Joule for the economic sector - fuel combination. Res = residential, com = commercial, ind = industrial, elec = electric, and petr = petroleum. Res_coal is 0 in the US and res_gas is handled separately. Default is \href{https://www.ipcc-nggip.iges.or.jp/public/2006gl/vol2.html}{Intergovernmental Panel on Climate Change (IPCC)} 2006 volume 2, energy tables 2.2 through 2.5, except the natural gas electric sector which comes from Hajny et al., 2019 at \doi{doi:10.1021/acs.est.9b01875}.}
 }
 }
 
@@ -163,7 +162,7 @@ available from the Environmental Protection Agency's (EPA)
 Monitoring Reports (DMR)}.
 \item{\bold{Wastewater_use_CWNS} - logical. Rely on the CWNS wastewater flow data. The CWNS is typically reported every 4 years though the 2 most recent reports that are handled by this code are 2012 and 2022. Default FALSE.}
 \item{\bold{Wastewater_use_DMR} - logical. Rely on the DMR wastewater flow data. Default TRUE.}
-\item{\bold{Wastewater_Municipal_Method_Moore} - logical. Use the log-log linear relationship from \href{https://doi.org/10.1038/s44221-025-00490-z}{Moore et al., 2025} and \href{https://doi.org/10.1021/acs.est.2c05373}{Moore et al., 2023} to convert flow rate to emission rate. They measured 96 facilities (~10\% of total US flow) and showed scaling their relationship nationally results in more than double the emissions estimated by the GHGI. Default TRUE.}
+\item{\bold{Wastewater_Municipal_Method_Moore} - logical. Use the log-log linear relationship from Moore et al., 2025 at \doi{doi:10.1038/s44221-025-00490-z} and Moore et al., 2023 at \doi{doi:10.1021/acs.est.2c05373} to convert flow rate to emission rate. They measured 96 facilities (~10\% of total US flow) and showed scaling their relationship nationally results in more than double the emissions estimated by the GHGI. Default TRUE.}
 \item{\bold{Wastewater_Municipal_Method_GHGI} - logical. Use the Environmental Protection Agency's (EPA) \href{https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks-1990-2022}{Greenhouse Gas Inventory (GHGI)} estimate of national municipal wastewater emissions. These are scaled to individual facilities based on flow. Default FALSE.}
 \item{\bold{Wastewater_national_septic} - logical. Rely on the GHGI and a national estimate of land cover used in this work to distribute septic emissions (impervious surface <50\%). Default TRUE.}
 \item{\bold{Wastewater_state_septic} - logical. Rely on the state level septic fraction, national level septic fraction, population, and a per capita septic emission factor. State septic data is uses if available within 1 year of the inventory year (biannually reported), but 1990 state data is scaled using the change in national septic fraction during the same timeframe otherwise as this is the last year with data for all states. Default FALSE.}
@@ -171,7 +170,7 @@ Monitoring Reports (DMR)}.
 
 Accessing Datasets
 \itemize{
-\item{\bold{Source_wastewater_NLCD} - character stating "M3T" or a filepath pointing to the needed file. \bold{Cannot} be set to "download" as there is no simple way to automatically download these files. The \href{https://doi.org/10.5066/P94UXNTS}{National Land Cover Database (NLCD)} is high resolution (30 m) land cover data used to distribute septic emissions. Default "M3T", which is already processed NLCD data, to speed analyses.}
+\item{\bold{Source_wastewater_NLCD} - character stating "M3T" or a filepath pointing to the needed file. \bold{Cannot} be set to "download" as there is no simple way to automatically download these files. The National Land Cover Database (NLCD) at \doi{doi:10.5066/P94UXNTS} is high resolution (30 m) land cover data used to distribute septic emissions. Default "M3T", which is already processed NLCD data, to speed analyses.}
 \item{\bold{Source_CWNS} - character stating "M3T" or a filepath pointing to the needed file. \bold{Cannot} be set to "download" as there is no simple way to automatically download these files. The 2022 CWNS can be downloaded as a folder of csvs and the filepath should point to this folder. The 2012 CWNS can be downloaded as an access database.  To convert this to a useable excel file:
 \enumerate{
 \item{Open mdb file in Microsoft Access}
@@ -206,29 +205,29 @@ Method Variations
 Methodology for Wetland and freshwater methane emissions.  State Of the
 Carbon Cycle Report (SOCCR) emission factors combined with the
 \href{https://www.fws.gov/program/national-wetlands-inventory}{U.S. Fish and
-Wildlife Service's National Wetland Inventory (NWI)}, or the
-\href{https://doi.org/10.3334/ORNLDAAC/2346}{WetCHARTs model} as published in
-\href{https://doi.org/10.5194/gmd-10-2141-2017}{Bloom et al., 2017}
-disaggregated from 0.5 deg to 0.1 deg using the
-\href{https://doi.org/10.5066/P94UXNTS}{National Land Cover Database (NLCD)}.
+Wildlife Service's National Wetland Inventory (NWI)}, or the WetCHARTs model at
+\doi{doi:10.3334/ORNLDAAC/2346} as published in Bloom et al., 2017 at
+\doi{doi:10.5194/gmd-10-2141-2017}
+disaggregated from 0.5 deg to 0.1 deg using the National Land Cover Database (NLCD) at
+\doi{doi:10.5066/P94UXNTS}.
 NWI data is used for freshwater regardless.
 \item{\bold{Use_SOCCR1} - logical. Default FALSE.}
 \item{\bold{Use_SOCCR2} - logical. Default FALSE.}
 \item{\bold{Use_Wetcharts} - logical. Default TRUE.}
-\item{\bold{Wetcharts_model_subset} - list of numeric vectors providing the models within WetCHARTs to average across. A single entry or multiple can be used. \href{https://doi.org/10.1029/2021AV000408}{Ma et al., 2021} ranked model performance as compared to a GOSAT satellite-based inversion and some subsequent works subset to the 9 highest performing models \code{c(1913,1914,1923,1924,1933,1934,2913,2914,2924)}, though \href{https://doi.org/10.5194/acp-24-5069-2024}{Nesser et al., 2024} further subset these to only the 7 \code{c(1913,1914,1924,1933,1934,2914,2924)} as 2 showed overestimation in North America compared to GOSAT in \href{https://doi.org/10.5194/acp-22-395-2022}{Lu et al., 2022}. Wetcharts models are defined with digit 1 = global scale factor (1=124.5 Tg/yr, 2=166 Tg/yr, 3=207.5 Tg/yr), digit 2 = heterotrophic respiration model (1-8=MsTMIP models, 9=CARDAMOM), 3 = temperature dependence (CH4:C q10 value of 1 - 3), and 4 = extent parameterization (1=SWAMPS+GLWD, 2=SWAMPS+GLOBCOVER, 3=PREC+GLWD, 4=PREC+GLOBCOVER) as described in the user guide on the main download page. Default is all models \code{c(1913,1914,1923,1924,1933,1934,2913,2914,2923,2924,2933,2934,3913,3914,3923,3924,3933,3934)}.}
+\item{\bold{Wetcharts_model_subset} - list of numeric vectors providing the models within WetCHARTs to average across. A single entry or multiple can be used. Ma et al., 2021 at \doi{doi:10.1029/2021AV000408} ranked model performance as compared to a GOSAT satellite-based inversion and some subsequent works subset to the 9 highest performing models \code{c(1913,1914,1923,1924,1933,1934,2913,2914,2924)}, though Nesser et al., 2024 at \doi{doi:10.5194/acp-24-5069-2024} further subset these to only the 7 \code{c(1913,1914,1924,1933,1934,2914,2924)} as 2 showed overestimation in North America compared to GOSAT in Lu et al., 2022 at \doi{doi:10.5194/acp-22-395-2022}. Wetcharts models are defined with digit 1 = global scale factor (1=124.5 Tg/yr, 2=166 Tg/yr, 3=207.5 Tg/yr), digit 2 = heterotrophic respiration model (1-8=MsTMIP models, 9=CARDAMOM), 3 = temperature dependence (CH4:C q10 value of 1 - 3), and 4 = extent parameterization (1=SWAMPS+GLWD, 2=SWAMPS+GLOBCOVER, 3=PREC+GLWD, 4=PREC+GLOBCOVER) as described in the user guide on the main download page. Default is all models \code{c(1913,1914,1923,1924,1933,1934,2913,2914,2923,2924,2933,2934,3913,3914,3923,3924,3933,3934)}.}
 }
 
 Accessing Datasets
 \itemize{
-\item{\bold{Source_wetland_NLCD} - character stating "M3T" or a filepath pointing to the needed file. \bold{Cannot} be set to "download" as there is no simple way to automatically download these files. The \href{https://doi.org/10.5066/P94UXNTS}{National Land Cover Database (NLCD)} is high resolution (30 m) land cover data used to distribute septic emissions. Default "M3T", which is actually the WetCHARTs data disaggregated using the NLCD, to speed analyses.}
-\item{\bold{Source_Watershed_file} - character stating "M3T", "download", or a filepath pointing to the needed file. A shapefile from \href{http://www.cec.org/north-american-environmental-atlas/watersheds/}{the Commission for Environmental Cooperation's (CEC) North American Environmental Atlas} that outlines the watersheds in North America. Only relevant if using SOCCR2 as it has different emission factors for different watersheds. Default "M3T".}
+\item{\bold{Source_wetland_NLCD} - character stating "M3T" or a filepath pointing to the needed file. \bold{Cannot} be set to "download" as there is no simple way to automatically download these files. The National Land Cover Database (NLCD) at \doi{doi:10.5066/P94UXNTS} is high resolution (30 m) land cover data used to distribute septic emissions. Default "M3T", which is actually the WetCHARTs data disaggregated using the NLCD, to speed analyses.}
+\item{\bold{Source_Watershed_file} - character stating "M3T", "download", or a filepath pointing to the needed file. A shapefile from \href{https://www.cec.org/north-american-environmental-atlas/watersheds/}{the Commission for Environmental Cooperation's (CEC) North American Environmental Atlas} that outlines the watersheds in North America. Only relevant if using SOCCR2 as it has different emission factors for different watersheds. Default "M3T".}
 \item{\bold{Source_wetcharts} - character stating a filepath pointing to the needed file. \bold{Cannot} be set to "download" as the data has recently moved and cannot be automatically accessed easily yet or "M3T" as the data is used as is. Only needed if Source_wetland_NLCD is not "M3T" and Use_Wetcharts is TRUE. Default empty as Source_wetland_NLCD is "M3T" by default.}
 \item{\bold{Source_NWI} - character stating "M3T", "download", or a filepath pointing to the needed directory. Should be a directory including state shapefiles outlining different wetland and inland water types by the \href{https://www.fws.gov/program/national-wetlands-inventory}{U.S. Fish and Wildlife Service's National Wetland Inventory (NWI)} in geopackage format (except MN which is a geodatabase). Default is "M3T" which uses 1 km x 1 km processed files for speed.}
 }
 
 Emission Factors and similar
 \itemize{
-\item{\bold{Wetland_EFs} - data.frame with columns "E2_Atlantic", "M2_Atlantic", "E2_Gulf", "M2_Gulf", "E2_Pacific", "M2_Pacific", "E2_Hudson", "M2_Hudson", "PFO", "PNF", "L1", "L2", "R1", "R2", "R3", and "R4" with rownames "SOCCR" and "SOCCR2" if running both. If running only SOCCR, different values for each watershed are not needed (i.e., a single "E2" and "M2" column will suffice). Emission factors in g CH4 / m2 / year. E2, M2, PFO, and PNF are only needed if use_SOCCR or use_SOCCR2 are TRUE. Default is the arithmetic average of Table F5 for \href{https://www.carboncyclescience.us/state-carbon-cycle-report-soccr}{SOCCR} and Tables 13B.8 to 13B.11 as well as 15A.2, limiting values to only those with salinity >=0.5 for \href{https://carbon2018.globalchange.gov/}{SOCCR2}. The average across watersheds is used for those without data in SOCCR2. For freshwater (L and R categories) the default is the median river flux and the median flux from the largest lake class (>1 km) from \href{https://doi.org/10.1038/s41561-021-00715-2}{Rosentreter et al., 2021} as \href{https://doi.org/10.4319/lo.2012.57.2.0597}{McDonald et al., 2012} showed large lakes > 1km2 represent 71\% of total lake area in the continental US. These are in extended data table 1.}
+\item{\bold{Wetland_EFs} - data.frame with columns "E2_Atlantic", "M2_Atlantic", "E2_Gulf", "M2_Gulf", "E2_Pacific", "M2_Pacific", "E2_Hudson", "M2_Hudson", "PFO", "PNF", "L1", "L2", "R1", "R2", "R3", and "R4" with rownames "SOCCR" and "SOCCR2" if running both. If running only SOCCR, different values for each watershed are not needed (i.e., a single "E2" and "M2" column will suffice). Emission factors in g CH4 / m2 / year. E2, M2, PFO, and PNF are only needed if use_SOCCR or use_SOCCR2 are TRUE. Default is the arithmetic average of Table F5 for \href{https://www.carboncyclescience.us/state-carbon-cycle-report-soccr}{SOCCR} and Tables 13B.8 to 13B.11 as well as 15A.2, limiting values to only those with salinity >=0.5 for \href{https://www.carboncyclescience.us/state-carbon-cycle-report-soccr}{SOCCR2}. The average across watersheds is used for those without data in SOCCR2. For freshwater (L and R categories) the default is the median river flux and the median flux from the largest lake class (>1 km) from Rosentreter et al., 2021 at \doi{doi:10.1038/s41561-021-00715-2} as McDonald et al., 2012 at \doi{doi:10.4319/lo.2012.57.2.0597} showed large lakes > 1km2 represent 71\% of total lake area in the continental US. These are in extended data table 1.}
 }
 }
 
@@ -238,7 +237,7 @@ Emission Factors and similar
 
 Accessing Datasets
 \itemize{
-\item{\bold{Source_GEPA} - character stating "download", or a filepath pointing to the needed file. \bold{Cannot} be set to "M3T" as there is no version saved within the package - it relies on publicly available versions of the data so there is no need. The \href{https://doi.org/10.5281/zenodo.8367082}{gridded Environmental Protection Agency (GEPA) anthropogenic methane inventory} .nc file. Default "download".}
+\item{\bold{Source_GEPA} - character stating "download", or a filepath pointing to the needed file. \bold{Cannot} be set to "M3T" as there is no version saved within the package - it relies on publicly available versions of the data so there is no need. The gridded Environmental Protection Agency (GEPA) anthropogenic methane inventory at \doi{doi:10.5281/zenodo.8367082} .nc file. Default "download".}
 }
 }
 

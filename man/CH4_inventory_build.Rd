@@ -87,11 +87,10 @@ the config file and inputs.
 This function will call multiple internal functions and use
 \code{\link{M3T_config}} to create gridded methane inventories. Internet
 access is required so that the necessary datasets can be downloaded either
-directly from the source or from a
-\href{https://doi.org/10.5281/zenodo.17328718}{Companion Zenodo} containing
-pre-processed data unless all "Source_" variables in
-\code{\link{M3T_config}} are set to filepaths that point to local copies of
-the needed data.
+directly from the source or from a companion Zenodo at
+\doi{doi:10.5281/zenodo.17328718} containing pre-processed data unless all
+"Source_" variables in \code{\link{M3T_config}} are set to filepaths that
+point to local copies of the needed data.
 }
 \examples{
 \dontshow{if (interactive() && curl::has_internet()) withAutoprint(\{ # examplesIf}

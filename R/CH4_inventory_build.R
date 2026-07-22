@@ -8,11 +8,10 @@
 #'@details This function will call multiple internal functions and use
 #'  \code{\link{M3T_config}} to create gridded methane inventories. Internet
 #'  access is required so that the necessary datasets can be downloaded either
-#'  directly from the source or from a
-#'  \href{https://doi.org/10.5281/zenodo.17328718}{Companion Zenodo} containing
-#'  pre-processed data unless all "Source_" variables in
-#'  \code{\link{M3T_config}} are set to filepaths that point to local copies of
-#'  the needed data.
+#'  directly from the source or from a companion Zenodo at
+#'  \doi{doi:10.5281/zenodo.17328718} containing pre-processed data unless all
+#'  "Source_" variables in \code{\link{M3T_config}} are set to filepaths that
+#'  point to local copies of the needed data.
 #'@param domain data.frame or character.  If data.frame, provides the corner
 #'  coordinates of the desired region to process.  The first column would be x
 #'  values, the second column y values, and the first row would be the minima,

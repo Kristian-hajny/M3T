@@ -24,12 +24,11 @@
 #'  that large lakes (>1 km2) constitute 71\% of the total lake area in CONUS
 #'  (rising to 90\% if including the Great Lakes).
 #'
-#'  SOCCR1 is available at
-#'  \url{https://www.carboncyclescience.us/state-carbon-cycle-report-soccr} and
-#'  SOCCR2 is available at \url{https://carbon2018.globalchange.gov/}.
+#'  SOCCR1 and SOCCR 2 are available at
+#'  \url{https://www.carboncyclescience.us/state-carbon-cycle-report-soccr}.
 #'
-#'  See references \href{https://doi.org/10.4319/lo.2012.57.2.0597}{McDonald et
-#'  al.} and \href{https://doi.org/10.1038/s41561-021-00715-2}{Rosentreter et al.}
+#'  See references McDonald et al. at \doi{doi:10.4319/lo.2012.57.2.0597} and
+#'  Rosentreter et al. at \doi{doi:10.1038/s41561-021-00715-2}
 #'@inheritParams Municipal_solid_waste
 #'
 #'@param verbose Logical indicating whether to save additional output.  This
@@ -54,9 +53,8 @@
 #'  plots with consistent axes are saved for the 2 SOCCR emissions and
 #'  freshwater emissions.  They are saved as "SOCCR1.png", "SOCCR2.png", and
 #'  "Freshwater.png".
-#'@references \href{https://doi.org/10.4319/lo.2012.57.2.0597}{McDonald et al.}
-#'@references \href{https://doi.org/10.1038/s41561-021-00715-2}{Rosentreter et
-#'  al.}
+#'@references McDonald et al.; \doi{doi:10.4319/lo.2012.57.2.0597}
+#'@references Rosentreter et al.; \doi{doi:10.1038/s41561-021-00715-2}
 #'@seealso [CH4_inventory_build()] Calculates methane inventory using settings
 #'  provided in config.
 #'

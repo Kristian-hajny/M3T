@@ -5,7 +5,7 @@
 
 <!-- badges: start -->
 
-[![R-CMD-check](https://github.com/Kristian-hajny/methane_inventory/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Kristian-hajny/methane_inventory/actions/workflows/R-CMD-check.yaml)
+[![R-CMD-check](https://github.com/Kristian-hajny/M3T/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Kristian-hajny/M3T/actions/workflows/R-CMD-check.yaml)
 
 <!-- badges: end -->
 
@@ -225,10 +225,9 @@ Sectors and methods
       carbon cycle (SOCCR) emission factors and national wetland
       inventory (NWI) data to calculate emissions.
 
-      - The [State Of the Carbon Cycle Report version
-        1](https://www.carboncyclescience.us/state-carbon-cycle-report-soccr)
-        and [State of the Carbon Cycle Report version
-        2](https://carbon2018.globalchange.gov/) are publicly available
+      - The [State Of the Carbon Cycle Report version 1 and
+        2](https://www.carboncyclescience.us/state-carbon-cycle-report-soccr)
+        are publicly available
 
     - Use_Wetcharts - TRUE/FALSE option to use the WetCHARTs modeled
       wetland emissions disaggregated from 0.5 degrees to 0.1 degrees

@@ -109,7 +109,7 @@ Census Tigerlines} files for visualization. Only relevant if \code{verbose} = TR
 to save figures. Only relevant if \code{verbose} = TRUE.}
 
 \item{State_CB}{SpatVector. \strong{Optional}.
-\href{https://www.census.gov/geographies/mapping-files/tme-series/geo/cartographic-boundary.html}{US
+\href{https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html}{US
 Census Cartographic Boundary} files for visualization. Only relevant if
 \code{verbose} = TRUE.}
 
@@ -224,18 +224,17 @@ and national scale.
 The GHGI is available at
 \url{https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks}
 The GHGRP is available at \url{https://www.epa.gov/ghgreporting} The Annual
-NLCD is available at \url{https://doi.org/10.5066/P94UXNTS} The 2011 AK NLCD
-is available at \url{https://doi.org/10.5066/P97S2IID} The 2016 AK NLCD is
-available at \url{https://doi.org/10.5066/P96HHBIE}
+NLCD is available at \doi{doi:10.5066/P94UXNTS} The 2011 AK NLCD
+is available at \doi{doi:10.5066/P97S2IID} The 2016 AK NLCD is
+available at \doi{doi:10.5066/P96HHBIE}
 
-See references \href{https://doi.org/10.1016/j.isprsjprs.2020.02.019}{Homer et
-al.} and \href{https://doi.org/10.1021/acs.est.2c05373}{Moore et al.}
+See references Homer et al. at \doi{doi:10.1016/j.isprsjprs.2020.02.019} and
+Moore et al. at \doi{doi:10.1021/acs.est.2c05373}.
 }
 \references{
-\href{https://doi.org/10.1016/j.isprsjprs.2020.02.019}{Homer et
-al.}
+Homer et al.; \doi{doi:10.1016/j.isprsjprs.2020.02.019}
 
-\href{https://doi.org/10.1021/acs.est.2c05373}{Moore et al.}
+Moore et al.; \doi{doi:10.1021/acs.est.2c05373}
 }
 \seealso{
 \code{\link[=CH4_inventory_build]{CH4_inventory_build()}} Calculates methane inventory using settings

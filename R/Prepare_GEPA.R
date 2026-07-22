@@ -30,10 +30,9 @@
 #'   \item Field Burning
 #'   }
 #'
-#'  The data is available at \url{https://doi.org/10.5281/zenodo.8367082}.
+#'  The data is available at \doi{doi:10.5281/zenodo.8367082}.
 #'
-#'  See reference \href{https://doi.org/10.1021/acs.est.3c05138}{Maasakkers et
-#'  al.}
+#'  See reference Maasakkers et al. at \doi{doi:10.1021/acs.est.3c05138}
 #'@inheritParams Municipal_solid_waste
 #'
 #'@param Source_GEPA Character.  Pulled from \code{\link{M3T_config}}.
@@ -45,7 +44,7 @@
 #'  are titled "GEPA_thermo.nc" for gridded EPA thermogenic,
 #'  "GEPA_non_thermo.nc" for non-thermogenic, "GEPA_ind_landfill.nc" for
 #'  industrial landfills.
-#'@references \href{https://doi.org/10.1021/acs.est.3c05138}{Maasakkers et al.}
+#'@references Maasakkers et al.; \doi{doi:10.1021/acs.est.3c05138}
 #'@inherit Municipal_solid_waste seealso
 #'@keywords internal
 

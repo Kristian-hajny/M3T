@@ -80,7 +80,7 @@ Only relevant if verbose = TRUE.}
 shapefile downloaded in Main.}
 
 \item{State_CB}{SpatVector. \strong{Optional}.
-\href{https://www.census.gov/geographies/mapping-files/tme-series/geo/cartographic-boundary.html}{US
+\href{https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html}{US
 Census Cartographic Boundary} files for visualization. Only relevant if
 \code{verbose} = TRUE.}
 }

@@ -28,7 +28,7 @@
 #'  changing the area of pixels. There is a separate file for each model subset
 #'  and each land cover dataset used.
 #'
-#'  Wetcharts is available at \url{https://doi.org/10.3334/ORNLDAAC/2346}, and
+#'  Wetcharts is available at \doi{doi:10.3334/ORNLDAAC/2346}, and
 #'  the NLCD is available at
 #'  \url{https://www.mrlc.gov/data?f%5B0%5D=category%3ALand%20Cover&f%5B1%5D=region%3Aconus}.
 #'@inheritParams Municipal_solid_waste

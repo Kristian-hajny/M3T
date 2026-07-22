@@ -11,6 +11,7 @@ The Modular Methane Mapping Tool (M3T) uses a user defined mix of a variety of l
 \seealso{
 Useful links:
 \itemize{
+  \item \url{https://github.com/Kristian-hajny/M3T}
   \item Report bugs at \url{https://github.com/Kristian-hajny/M3T/issues}
 }
 

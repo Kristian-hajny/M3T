@@ -89,12 +89,12 @@
 #'  The GHGI is available at
 #'  \url{https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks}
 #'  The GHGRP is available at \url{https://www.epa.gov/ghgreporting} The Annual
-#'  NLCD is available at \url{https://doi.org/10.5066/P94UXNTS} The 2011 AK NLCD
-#'  is available at \url{https://doi.org/10.5066/P97S2IID} The 2016 AK NLCD is
-#'  available at \url{https://doi.org/10.5066/P96HHBIE}
+#'  NLCD is available at \doi{doi:10.5066/P94UXNTS} The 2011 AK NLCD
+#'  is available at \doi{doi:10.5066/P97S2IID} The 2016 AK NLCD is
+#'  available at \doi{doi:10.5066/P96HHBIE}
 #'
-#'  See references \href{https://doi.org/10.1016/j.isprsjprs.2020.02.019}{Homer et
-#'  al.} and \href{https://doi.org/10.1021/acs.est.2c05373}{Moore et al.}
+#'  See references Homer et al. at \doi{doi:10.1016/j.isprsjprs.2020.02.019} and
+#'  Moore et al. at \doi{doi:10.1021/acs.est.2c05373}.
 #'
 #'@inheritParams Municipal_solid_waste
 #'
@@ -136,9 +136,8 @@
 #'  - bystate or national.
 #'  The 8 possible combinations are named similarly as
 #'  "Wastewater_sector_total_X_Y_Z.nc".
-#'@references \href{https://doi.org/10.1016/j.isprsjprs.2020.02.019}{Homer et
-#'  al.}
-#'@references \href{https://doi.org/10.1021/acs.est.2c05373}{Moore et al.}
+#'@references Homer et al.; \doi{doi:10.1016/j.isprsjprs.2020.02.019}
+#'@references Moore et al.; \doi{doi:10.1021/acs.est.2c05373}
 #'@seealso [CH4_inventory_build()] Calculates methane inventory using settings
 #'  provided in config.
 #'

@@ -31,7 +31,7 @@ to save figures. Only relevant if \code{verbose} = TRUE.}
 Census Tigerlines} files for visualization. Only relevant if \code{verbose} = TRUE.}
 
 \item{State_CB}{SpatVector. \strong{Optional}.
-\href{https://www.census.gov/geographies/mapping-files/tme-series/geo/cartographic-boundary.html}{US
+\href{https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html}{US
 Census Cartographic Boundary} files for visualization. Only relevant if
 \code{verbose} = TRUE.}
 

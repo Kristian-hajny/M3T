@@ -123,7 +123,7 @@ on \code{Use_Vulcan} and \code{Source_Vulcan}.}
 to save figures. Only relevant if \code{verbose} = TRUE.}
 
 \item{State_CB}{SpatVector. \strong{Optional}.
-\href{https://www.census.gov/geographies/mapping-files/tme-series/geo/cartographic-boundary.html}{US
+\href{https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html}{US
 Census Cartographic Boundary} files for visualization. Only relevant if
 \code{verbose} = TRUE.}
 }
@@ -204,13 +204,13 @@ The NEI is available at
 \url{https://www.epa.gov/air-emissions-inventories/national-emissions-inventory-nei}
 IPCC emission factors are published at
 \url{https://www.ipcc-nggip.iges.or.jp/public/2006gl/vol2.html} ACES is
-available at \url{https://doi.org/10.3334/ORNLDAAC/1943} and Vulcan is
-available at \url{https://doi.org/10.5281/zenodo.15446748}.
+available at \doi{doi:10.3334/ORNLDAAC/1943} and Vulcan is
+available at \doi{doi:10.5281/zenodo.15446748}.
 
 Each fuel-sector-inventory-variation combination is saved separately.
 
-See references \href{https://doi.org/10.1029/2020JD032974}{Vulcan} and
-\href{https://doi.org/10.1002/2017JD027359}{ACES}
+See references for Vulcan at \doi{doi:10.1029/2020JD032974} and ACES at
+\doi{doi:10.1002/2017JD027359}
 }
 \seealso{
 \code{\link[=CH4_inventory_build]{CH4_inventory_build()}} Calculates methane inventory using settings

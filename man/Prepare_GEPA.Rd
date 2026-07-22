@@ -39,7 +39,7 @@ to save figures. Only relevant if \code{verbose} = TRUE.}
 Census Tigerlines} files for visualization. Only relevant if \code{verbose} = TRUE.}
 
 \item{State_CB}{SpatVector. \strong{Optional}.
-\href{https://www.census.gov/geographies/mapping-files/tme-series/geo/cartographic-boundary.html}{US
+\href{https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html}{US
 Census Cartographic Boundary} files for visualization. Only relevant if
 \code{verbose} = TRUE.}
 
@@ -92,13 +92,12 @@ And for non-thermogenic this includes
 \item Field Burning
 }
 
-The data is available at \url{https://doi.org/10.5281/zenodo.8367082}.
+The data is available at \doi{doi:10.5281/zenodo.8367082}.
 
-See reference \href{https://doi.org/10.1021/acs.est.3c05138}{Maasakkers et
-al.}
+See reference Maasakkers et al. at \doi{doi:10.1021/acs.est.3c05138}
 }
 \references{
-\href{https://doi.org/10.1021/acs.est.3c05138}{Maasakkers et al.}
+Maasakkers et al.; \doi{doi:10.1021/acs.est.3c05138}
 }
 \seealso{
 \code{\link[=CH4_inventory_build]{CH4_inventory_build()}} Calculates methane inventory using settings
