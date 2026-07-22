@@ -24,3 +24,4 @@ License: CC BY-NC 4.0
 Depends: 
     R (>= 3.5)
 LazyData: true
+URL: https://github.com/Kristian-hajny/M3T
