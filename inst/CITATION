@@ -1,8 +1,13 @@
 bibentry(
-  bibtype = "unpublished",
-  title = "A Modular Methane Mapping Tool (M3T): Introduction to the M3T R Package",
-  author = "Kristian Hajny, Joseph Pitt, Paul Shepson",
+  bibtype = "Article",
+  title = "A Modular Methane Mapping Tool (M3T): Introduction to the $M3T$ R Package",
+  author = c(person(c("Kristian", "D."), "Hajny"),
+			 person("Joseph", "Pitt"),
+			 person(c("Paul", "B."), "Shepson")),
   year = 2026,
-  note = "Submitted"
+  doi = "10.5194/egusphere-2026-3635",
+  journal = "EGUsphere",
+  pages = "1-34",
+  url = "https://egusphere.copernicus.org/preprints/2026/egusphere-2026-3635/",
+  note = "This is a Preprint and has not been peer reviewed."
 )
-
