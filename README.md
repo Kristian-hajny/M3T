@@ -38,8 +38,9 @@ newer information that could be incorporated using the Github issues
 page.
 
 For a full, detailed explanation of the package at the time of its
-release, you should see the published article that is freely available
-at Earth System Science Data (submitted).
+release, you should see the [preprint
+article](https://doi.org/10.5194/egusphere-2026-3635) that is freely
+available in the EGUsphere.
 
 Other particularly relevant articles for the various sectors are
 mentioned below when describing the functions in this package and within

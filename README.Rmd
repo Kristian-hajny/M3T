@@ -44,8 +44,9 @@ newer information that could be incorporated using the Github issues
 page.
 
 For a full, detailed explanation of the package at the time of its
-release, you should see the published article that is freely available
-at Earth System Science Data (submitted).
+release, you should see the [preprint
+article](https://doi.org/10.5194/egusphere-2026-3635) that is freely
+available in the EGUsphere.
 
 Other particularly relevant articles for the various sectors are
 mentioned below when describing the functions in this package and within
@@ -232,8 +233,8 @@ Sectors and methods
         the carbon cycle (SOCCR) emission factors and national wetland
         inventory (NWI) data to calculate emissions.
 
-        -   The [State Of the Carbon Cycle Report version
-            1 and 2](https://www.carboncyclescience.us/state-carbon-cycle-report-soccr)
+        -   The [State Of the Carbon Cycle Report version 1 and
+            2](https://www.carboncyclescience.us/state-carbon-cycle-report-soccr)
             are publicly available
 
     -   Use_Wetcharts - TRUE/FALSE option to use the WetCHARTs modeled
