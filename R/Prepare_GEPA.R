@@ -30,9 +30,9 @@
 #'   \item Field Burning
 #'   }
 #'
-#'  The data is available at \doi{doi:10.5281/zenodo.8367082}.
+#'  The data is available at \doi{10.5281/zenodo.8367082}.
 #'
-#'  See reference Maasakkers et al. at \doi{doi:10.1021/acs.est.3c05138}
+#'  See reference Maasakkers et al. at \doi{10.1021/acs.est.3c05138}
 #'@inheritParams Municipal_solid_waste
 #'
 #'@param Source_GEPA Character.  Pulled from \code{\link{M3T_config}}.
@@ -44,7 +44,7 @@
 #'  are titled "GEPA_thermo.nc" for gridded EPA thermogenic,
 #'  "GEPA_non_thermo.nc" for non-thermogenic, "GEPA_ind_landfill.nc" for
 #'  industrial landfills.
-#'@references Maasakkers et al.; \doi{doi:10.1021/acs.est.3c05138}
+#'@references Maasakkers et al.; \doi{10.1021/acs.est.3c05138}
 #'@inherit Municipal_solid_waste seealso
 #'@keywords internal
 
@@ -244,6 +244,22 @@ Prepare_GEPA <- function(inventory_year,
     
     #remove the pixel area layer when summing
     Summed_GEPA_saturated <- sum(GEPA[[-grep("grid_cell_area",names(GEPA))]],na.rm=T)
+    #mask/crop as before
+    if(any(domain_res - terra::res(GEPA) <= 1E-5)){
+      Summed_GEPA_saturated <- terra::crop(Summed_GEPA_saturated,terra::ext(domain_trans)*1.1,snap="out")
+      Summed_GEPA_saturated <- suppressWarnings(terra::disagg(Summed_GEPA_saturated,round(terra::res(Summed_GEPA_saturated)/domain_res,3),"near"))
+      Summed_GEPA_saturated <- terra::project(Summed_GEPA_saturated,domain_template,method="near")
+      Summed_GEPA_saturated <- terra::mask(Summed_GEPA_saturated,domain)
+    }else if(any(domain_res - terra::res(GEPA) > 1E-5)){
+      Summed_GEPA_saturated <- terra::crop(Summed_GEPA_saturated,terra::project(domain,Summed_GEPA_saturated),snap="out")
+      Summed_GEPA_saturated <- terra::mask(Summed_GEPA_saturated,terra::project(domain,Summed_GEPA_saturated),touches=T,updatevalue=0)
+      cover <- terra::extract(Summed_GEPA_saturated,terra::project(domain,Summed_GEPA_saturated),weights=T,exact=T,cells=T)
+      Summed_GEPA_saturated[cover[,'cell']] <- Summed_GEPA_saturated[cover[,'cell']]*cover[,'weight']
+      Summed_GEPA_saturated=terra::extend(Summed_GEPA_saturated,fill=0,
+                          terra::ext(Summed_GEPA_saturated)+(terra::res(terra::project(domain_template,terra::crs(Summed_GEPA_saturated)))*5))
+      Summed_GEPA_saturated <- terra::project(Summed_GEPA_saturated,domain_template,method="average")
+      Summed_GEPA_saturated[terra::mask(sum(Summed_GEPA_saturated),domain,inverse=T)==0] <- NA
+    }
     log_plot(Summed_GEPA_saturated,
              "Gridded EPA Inventory - \nAll sectors, saturated colorscale to match sectors used",
              plot_directory=plot_directory,
