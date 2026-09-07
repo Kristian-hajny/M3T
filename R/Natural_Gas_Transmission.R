@@ -266,11 +266,12 @@ Natural_Gas_Transmission <- function(input_directory,
   
   compressors_crop_HIFLD <- terra::crop(terra::project(compressors_HIFLD,terra::crs(domain)), domain)
   #default for all is the national avg
-  compressors_crop_HIFLD$emiss <- compressor_avg_emissions #mol/s
+  if(nrow(compressors_crop_HIFLD)>0){
+    compressors_crop_HIFLD$emiss <- compressor_avg_emissions #mol/s
+  }
   
   #prepare GHGRP compressor data
-  ghgrp_compressors <- terra::vect(ghgrp_compressors,geom=c("longitude","latitude"))
-  terra::crs(ghgrp_compressors) <- "epsg:4326"
+  ghgrp_compressors <- terra::vect(ghgrp_compressors,geom=c("longitude","latitude"),crs="epsg:4326")
   compressors_ghgrp_crop <- terra::crop(terra::project(ghgrp_compressors,terra::crs(domain)),domain)
   compressors_ghgrp_crop$ghg_quantity <- compressors_ghgrp_crop$ghg_quantity*1e6/(16.043*365*24*60*60) #MT CH4/yr to mol/s
   
@@ -290,21 +291,25 @@ Natural_Gas_Transmission <- function(input_directory,
   }
   
   #convert to raster and convert units
-  compressor_rast <- terra::rasterize(compressors_crop_HIFLD, domain_template, "emiss", fun=sum) # in mol/s
-  compressor_flux <- compressor_rast*1e9/(terra::cellSize(compressor_rast,unit="m"))  # Calculate flux in nmol/m2/s
-  compressor_flux[is.na(compressor_flux)]<-0
-  compressor_flux <- terra::mask(compressor_flux,domain)
+  if(nrow(compressors_crop_HIFLD)>0){
+    compressor_rast <- terra::rasterize(compressors_crop_HIFLD, domain_template, "emiss", fun=sum) # in mol/s
+    compressor_flux <- compressor_rast*1e9/(terra::cellSize(compressor_rast,unit="m"))  # Calculate flux in nmol/m2/s
+    compressor_flux[is.na(compressor_flux)]<-0
+    compressor_flux <- terra::mask(compressor_flux,domain)
+  }else{
+    compressor_flux <- domain_template
+  }
+
   ################################################################################
   # And save the output
   
   if(verbose){
     if(nrow(compressors_crop_HIFLD)>0){
-      # Save point sources as csv files - first just the raw dataframe
-      utils::write.csv(compressors_crop_HIFLD, file.path(Transmission_output_directory,"NG_trans_compressors_all.csv"))
-      
-      # Now just the names, coordinates and emissions
-      compressors_output <- data.frame(compressors_crop_HIFLD$NAME,terra::crds(compressors_crop_HIFLD),compressors_crop_HIFLD$emiss)
-      names(compressors_output) <- c('Site_Name','Longitude','Latitude','Emission_mol_per_s')
+      # Save point sources as csv files
+      compressors_output <- data.frame(compressors_crop_HIFLD$`GHGRP ID`,compressors_crop_HIFLD$NAME,
+                                       terra::crds(compressors_crop_HIFLD),compressors_crop_HIFLD$STATE,
+                                       compressors_crop_HIFLD$emiss)
+      names(compressors_output) <- c('GHGRP_ID','Site_Name','Longitude','Latitude',"State",'Emission_mol_per_s')
       utils::write.csv(compressors_output,file.path(Transmission_output_directory,"NG_trans_compressors.csv"),row.names=FALSE)
     }
   }
@@ -330,7 +335,7 @@ Natural_Gas_Transmission <- function(input_directory,
   ################################################################################
   #Create a sector total
   
-  writeCDF_no_newline(pipes_flux+compressor_flux,
+  writeCDF_no_newline(sum(pipes_flux,compressor_flux,na.rm=T),
                       file.path(output_directory,paste0('NG_transmission_sector_total.nc')),
                       force_v4=TRUE,
                       varname='methane_emissions',
@@ -357,7 +362,7 @@ Natural_Gas_Transmission <- function(input_directory,
     
     dir.create("Summed_Sectors",showWarnings = F)
     
-    Summed_NG_transmission = compressor_flux+pipes_flux
+    Summed_NG_transmission = sum(compressor_flux,pipes_flux,na.rm=T)
     log_plot(Summed_NG_transmission,
              "NG Transmission Sector\nEIA for pipelines + HFILD/GHGRP\nfor compressors",
              plot_directory=plot_directory,

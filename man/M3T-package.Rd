@@ -19,6 +19,11 @@ Useful links:
 \author{
 \strong{Maintainer}: Kristian Hajny \email{kris.hajny@gmail.com} (\href{https://orcid.org/0000-0003-3249-7157}{ORCID})
 
+Authors:
+\itemize{
+  \item Kristian Hajny \email{kris.hajny@gmail.com} (\href{https://orcid.org/0000-0003-3249-7157}{ORCID})
+}
+
 Other contributors:
 \itemize{
   \item Joseph Pitt \email{joseph.pitt@bristol.ac.uk} (\href{https://orcid.org/0000-0002-8660-5136}{ORCID}) [contributor]

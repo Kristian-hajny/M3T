@@ -9,7 +9,7 @@
 #'  \code{\link{M3T_config}} to create gridded methane inventories. Internet
 #'  access is required so that the necessary datasets can be downloaded either
 #'  directly from the source or from a companion Zenodo at
-#'  \doi{doi:10.5281/zenodo.17328718} containing pre-processed data unless all
+#'  \doi{10.5281/zenodo.17328718} containing pre-processed data unless all
 #'  "Source_" variables in \code{\link{M3T_config}} are set to filepaths that
 #'  point to local copies of the needed data.
 #'@param domain data.frame or character.  If data.frame, provides the corner
@@ -345,8 +345,8 @@ CH4_inventory_build <- function(run_directory,
         cat("Downloading sectoral Vulcan v4.0 CO2 emissions maps now.\n\n")
         Download_vulcan()
       }else{
-        vulcan_directory <- normalizePath(M3T_config$Source_Vulcan,mustWork = T)
-        invisible(file.copy(list.files(M3T_config$Source_Vulcan,full.names = T),
+        src_vulcan_directory <- normalizePath(M3T_config$Source_Vulcan,mustWork = T)
+        invisible(file.copy(list.files(src_vulcan_directory,full.names = T),
                             vulcan_directory,overwrite=T,recursive=T))
       }
     }
@@ -638,9 +638,9 @@ CH4_inventory_build <- function(run_directory,
         #full name of state
         State_Tigerlines <- State_Tigerlines[State_Tigerlines$NAME %in% domain,]
         domain <- State_Tigerlines[State_Tigerlines$NAME %in% domain,]
-      }else if(test_domain %in% unlist(terra::values(Urban_Tigerlines[,3]))){
+      }else if(test_domain %in% unlist(Urban_Tigerlines$NAME)){
         #full name of an urban area
-        domain <- Urban_Tigerlines[unlist(terra::values(Urban_Tigerlines[,3])) %in% domain,]
+        domain <- Urban_Tigerlines[unlist(Urban_Tigerlines$NAME) %in% domain,]
       }else{
         #assume it's a filepath - otherwise it's been incorrectly supplied
         
