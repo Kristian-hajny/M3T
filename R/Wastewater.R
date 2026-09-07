@@ -89,12 +89,12 @@
 #'  The GHGI is available at
 #'  \url{https://www.epa.gov/ghgemissions/inventory-us-greenhouse-gas-emissions-and-sinks}
 #'  The GHGRP is available at \url{https://www.epa.gov/ghgreporting} The Annual
-#'  NLCD is available at \doi{doi:10.5066/P94UXNTS} The 2011 AK NLCD
-#'  is available at \doi{doi:10.5066/P97S2IID} The 2016 AK NLCD is
-#'  available at \doi{doi:10.5066/P96HHBIE}
+#'  NLCD is available at \doi{10.5066/P94UXNTS} The 2011 AK NLCD
+#'  is available at \doi{10.5066/P97S2IID} The 2016 AK NLCD is
+#'  available at \doi{10.5066/P96HHBIE}
 #'
-#'  See references Homer et al. at \doi{doi:10.1016/j.isprsjprs.2020.02.019} and
-#'  Moore et al. at \doi{doi:10.1021/acs.est.2c05373}.
+#'  See references Homer et al. at \doi{10.1016/j.isprsjprs.2020.02.019} and
+#'  Moore et al. at \doi{10.1021/acs.est.2c05373}.
 #'
 #'@inheritParams Municipal_solid_waste
 #'
@@ -136,8 +136,8 @@
 #'  - bystate or national.
 #'  The 8 possible combinations are named similarly as
 #'  "Wastewater_sector_total_X_Y_Z.nc".
-#'@references Homer et al.; \doi{doi:10.1016/j.isprsjprs.2020.02.019}
-#'@references Moore et al.; \doi{doi:10.1021/acs.est.2c05373}
+#'@references Homer et al.; \doi{10.1016/j.isprsjprs.2020.02.019}
+#'@references Moore et al.; \doi{10.1021/acs.est.2c05373}
 #'@seealso [CH4_inventory_build()] Calculates methane inventory using settings
 #'  provided in config.
 #'
@@ -252,9 +252,8 @@ Wastewater <- function(input_directory,
   
   #vect as lat/long assuming WGS
   #(didn't see one explicitly mentioned, has little impact on location)
-  DMR_Municipal_flow <- terra::vect(DMR,geom=c("Facility_Longitude","Facility_Latitude"))
-  terra::crs(DMR_Municipal_flow) <- "EPSG:4326"
-  
+  DMR_Municipal_flow <- terra::vect(DMR,geom=c("Facility_Longitude","Facility_Latitude"),crs="EPSG:4326")
+
   ################################################################################
   # First load in and prep the flow data
   
@@ -267,14 +266,10 @@ Wastewater <- function(input_directory,
       CWNS_nad27 <- subset(CWNS, CWNS$HORIZONTAL_COORDINATE_DATUM=="North American Datum of 1927")
       CWNS_nad83 <- subset(CWNS, CWNS$HORIZONTAL_COORDINATE_DATUM!="North American Datum of 1927" & CWNS$HORIZONTAL_COORDINATE_DATUM!="World Geodetic System of 1984")
       
-      CWNS_wgs84 <- terra::vect(CWNS_wgs84,geom=c("LONGITUDE","LATITUDE"))
-      CWNS_nad27 <- terra::vect(CWNS_nad27,geom=c("LONGITUDE","LATITUDE"))
-      CWNS_nad83 <- terra::vect(CWNS_nad83,geom=c("LONGITUDE","LATITUDE"))
-      
-      terra::crs(CWNS_wgs84) <- "EPSG:4326"  # WGS84
-      terra::crs(CWNS_nad27) <- "EPSG:4267"  # NAD27
-      terra::crs(CWNS_nad83) <- "EPSG:4269"  # NAD83
-      
+      CWNS_wgs84 <- terra::vect(CWNS_wgs84,geom=c("LONGITUDE","LATITUDE"),crs="EPSG:4326") # WGS84
+      CWNS_nad27 <- terra::vect(CWNS_nad27,geom=c("LONGITUDE","LATITUDE"),crs="EPSG:4267") # NAD27
+      CWNS_nad83 <- terra::vect(CWNS_nad83,geom=c("LONGITUDE","LATITUDE"),crs="EPSG:4269") # NAD83
+
       CWNS_nad27_trans <- terra::project(CWNS_nad27,terra::crs(CWNS_wgs84))
       CWNS_nad83_trans <- terra::project(CWNS_nad83,terra::crs(CWNS_wgs84))
       
@@ -777,8 +772,7 @@ Wastewater <- function(input_directory,
   ################################################################################
   # Now rasterize and save the data
   
-  ghgrp <- terra::vect(ghgrp,geom=c("longitude","latitude"))
-  terra::crs(ghgrp) <- "epsg:4326"
+  ghgrp <- terra::vect(ghgrp,geom=c("longitude","latitude"),crs="epsg:4326")
   ghgrp_crop <- terra::project(ghgrp,domain)
   ghgrp_crop <- terra::crop(ghgrp_crop,domain)
   ghgrp_crop <- terra::mask(ghgrp_crop,domain)

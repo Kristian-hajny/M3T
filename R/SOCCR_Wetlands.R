@@ -27,8 +27,8 @@
 #'  SOCCR1 and SOCCR 2 are available at
 #'  \url{https://www.carboncyclescience.us/state-carbon-cycle-report-soccr}.
 #'
-#'  See references McDonald et al. at \doi{doi:10.4319/lo.2012.57.2.0597} and
-#'  Rosentreter et al. at \doi{doi:10.1038/s41561-021-00715-2}
+#'  See references McDonald et al. at \doi{10.4319/lo.2012.57.2.0597} and
+#'  Rosentreter et al. at \doi{10.1038/s41561-021-00715-2}
 #'@inheritParams Municipal_solid_waste
 #'
 #'@param verbose Logical indicating whether to save additional output.  This
@@ -53,8 +53,8 @@
 #'  plots with consistent axes are saved for the 2 SOCCR emissions and
 #'  freshwater emissions.  They are saved as "SOCCR1.png", "SOCCR2.png", and
 #'  "Freshwater.png".
-#'@references McDonald et al.; \doi{doi:10.4319/lo.2012.57.2.0597}
-#'@references Rosentreter et al.; \doi{doi:10.1038/s41561-021-00715-2}
+#'@references McDonald et al.; \doi{10.4319/lo.2012.57.2.0597}
+#'@references Rosentreter et al.; \doi{10.1038/s41561-021-00715-2}
 #'@seealso [CH4_inventory_build()] Calculates methane inventory using settings
 #'  provided in config.
 #'
