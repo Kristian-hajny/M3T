@@ -283,8 +283,7 @@ Municipal_solid_waste <- function(input_directory,
   #Now convert to spatial.
   
   #convert to a spatial object, crop to domain
-  ghgrp_crop <- terra::vect(ghgrp_updated,geom=c("longitude","latitude"))
-  terra::crs(ghgrp_crop) <- "epsg:4326"
+  ghgrp_crop <- terra::vect(ghgrp_updated,geom=c("longitude","latitude"),crs="epsg:4326")
   ghgrp_crop <- terra::project(ghgrp_crop,terra::crs(domain))
   ghgrp_crop <- terra::crop(ghgrp_crop, domain)
   ghgrp_crop <- terra::mask(ghgrp_crop,domain)
@@ -297,6 +296,18 @@ Municipal_solid_waste <- function(input_directory,
   colnames(ghgrp_latlong) <- c("longitude","latitude")
   csv_data <- as.data.frame(cbind(ghgrp_crop,ghgrp_latlong))
   
+  if(nrow(csv_data)==0){
+    csv_data <- data.frame("GHGRP_ID"="None in domain",
+                           "year"="",
+                           "facility_name"="",
+                           "state"="",
+                           "reported_method_mol_per_s"="",
+                           "generation_first_method_mol_per_s"="",
+                           "collection_first_method_mol_per_s"="",
+                           "longitude"="",
+                           "latitude"="")
+  }
+  
   colnames(csv_data) <- c("GHGRP_ID","year","facility_name",
                           "state",
                           "reported_method_mol_per_s",
@@ -305,6 +316,8 @@ Municipal_solid_waste <- function(input_directory,
                           "longitude","latitude")
   
   csv_data <- csv_data[order(csv_data$year,csv_data$facility_name),]
+  
+  
   
   utils::write.csv(csv_data,file.path(Landfill_output_directory,"GHGRP_MSW_Landfills.csv"),
                    row.names = F)
@@ -329,15 +342,50 @@ Municipal_solid_waste <- function(input_directory,
     return(ghgrp_flux)
   }
   
-  if(landfill_ghgrp_reported){
-    ghgrp_reported <- landfill_rasterize(emission_var="reported_method",outname="MSW_GHGRP_reported.nc",longname='Methane emissions from municipal solid waste landfills that report to GHGRP')
-  }
-  if(landfill_ghgrp_generation_first){
-    ghgrp_generation_first <- landfill_rasterize(emission_var="generation_first_method",outname="MSW_GHGRP_generation_first.nc",longname='Methane emissions from municipal solid waste landfills that report to GHGRP - forcing the method to the first order decay method for facilities with gas collection systems')
-  }
+  if(nrow(ghgrp_crop)>0){
+    
+    if(landfill_ghgrp_reported){
+      ghgrp_reported <- landfill_rasterize(emission_var="reported_method",outname="MSW_GHGRP_reported.nc",longname='Methane emissions from municipal solid waste landfills that report to GHGRP')
+    }
+    if(landfill_ghgrp_generation_first){
+      ghgrp_generation_first <- landfill_rasterize(emission_var="generation_first_method",outname="MSW_GHGRP_generation_first.nc",longname='Methane emissions from municipal solid waste landfills that report to GHGRP - forcing the method to the first order decay method for facilities with gas collection systems')
+    }
     if(landfill_ghgrp_collection_first){
-    ghgrp_collection_first <- landfill_rasterize(emission_var="collection_first_method",outname="MSW_GHGRP_collection_first.nc",longname='Methane emissions from municipal solid waste landfills that report to GHGRP - forcing the method to the collection efficiency based method for facilities with gas collection systems')
-  }  
+      ghgrp_collection_first <- landfill_rasterize(emission_var="collection_first_method",outname="MSW_GHGRP_collection_first.nc",longname='Methane emissions from municipal solid waste landfills that report to GHGRP - forcing the method to the collection efficiency based method for facilities with gas collection systems')
+    }
+  }else{
+    ghgrp_collection_first <- ghgrp_generation_first <- ghgrp_reported <- domain_template
+    if(landfill_ghgrp_reported){
+      writeCDF_no_newline(ghgrp_reported,
+                          file.path(Landfill_output_directory,"MSW_GHGRP_reported.nc"),
+                          force_v4=TRUE,
+                          varname='methane_emissions',
+                          unit='nmol/m2/s',
+                          longname="Methane emissions from municipal solid waste landfills that report to GHGRP",
+                          missval=-9999,
+                          overwrite=TRUE)
+    }
+    if(landfill_ghgrp_generation_first){
+      writeCDF_no_newline(ghgrp_reported,
+                          file.path(Landfill_output_directory,"MSW_GHGRP_generation_first.nc"),
+                          force_v4=TRUE,
+                          varname='methane_emissions',
+                          unit='nmol/m2/s',
+                          longname="Methane emissions from municipal solid waste landfills that report to GHGRP - forcing the method to the first order decay method for facilities with gas collection systems",
+                          missval=-9999,
+                          overwrite=TRUE)
+    }
+    if(landfill_ghgrp_collection_first){
+      writeCDF_no_newline(ghgrp_reported,
+                          file.path(Landfill_output_directory,"MSW_GHGRP_collection_first.nc"),
+                          force_v4=TRUE,
+                          varname='methane_emissions',
+                          unit='nmol/m2/s',
+                          longname="Methane emissions from municipal solid waste landfills that report to GHGRP - forcing the method to the collection efficiency based method for facilities with gas collection systems",
+                          missval=-9999,
+                          overwrite=TRUE)
+    }
+  }
   
   rm(ghgrp_all_data,nonreporting_facilities,nonreporting_landfills)
   ################################################################################
@@ -392,8 +440,7 @@ Municipal_solid_waste <- function(input_directory,
   LMOP_non_ghgrp <- LMOP[!(LMOP$`GHGRP ID` %in% ghgrp$facility_id),]
   
   #Make spatial
-  LMOP_non_ghgrp <- terra::vect(LMOP_non_ghgrp,geom=c("Longitude","Latitude"))
-  terra::crs(LMOP_non_ghgrp) <- "epsg:4326"
+  LMOP_non_ghgrp <- terra::vect(LMOP_non_ghgrp,geom=c("Longitude","Latitude"),crs="epsg:4326")
   LMOP_non_ghgrp <- terra::project(LMOP_non_ghgrp,terra::crs(domain))
   
   #Exclude those we already handled as they stopped reporting without a valid
@@ -411,14 +458,15 @@ Municipal_solid_waste <- function(input_directory,
   LMOP_crop <- terra::crop(LMOP_non_ghgrp, domain)
   LMOP_crop <- terra::mask(LMOP_crop,domain)
   
-  # Find avg emission per non-GHGRP LMOP landfill (including the ones with no coordinates)
-  avg_non_ghgrp <- non_ghgrp_total/nrow(LMOP_non_ghgrp)
-  # For comparison, calculate avg ghgrp
-  avg_ghgrp <- ghgrp_national/nrow(ghgrp)
-  # Assign the avg emissions to LMOP landfills
-  LMOP_crop$emiss <- avg_non_ghgrp*1e9/(16.043*365*24*60*60)   
-  #Gg CH4/yr to mol/s of CH4
-  
+  if(nrow(LMOP_crop)>0){
+    # Find avg emission per non-GHGRP LMOP landfill (including the ones with no coordinates)
+    avg_non_ghgrp <- non_ghgrp_total/nrow(LMOP_non_ghgrp)
+    # For comparison, calculate avg ghgrp
+    avg_ghgrp <- ghgrp_national/nrow(ghgrp)
+    # Assign the avg emissions to LMOP landfills
+    LMOP_crop$emiss <- avg_non_ghgrp*1e9/(16.043*365*24*60*60)   
+    #Gg CH4/yr to mol/s of CH4
+  }
   ##############################################################################
   #save a csv for easy understanding of the filtered input data
   
@@ -426,6 +474,15 @@ Municipal_solid_waste <- function(input_directory,
   LMOP_latlong <- terra::crds(terra::project(LMOP_crop,"epsg:4326"))
   colnames(LMOP_latlong) <- c("longitude","latitude")
   csv_data <- as.data.frame(cbind(LMOP_crop,LMOP_latlong))
+  
+  if(nrow(csv_data)==0){
+    csv_data <- data.frame("GHGRP_ID"="None in domain",
+                           "Landfill_Name"="",
+                           "Landfill_Opened"="",
+                           "Emissions_mol_per_s"="",
+                           "longitude"="",
+                           "latitude"="")
+  }
   
   colnames(csv_data) <- c("GHGRP_ID","Landfill_Name","Landfill_Opened",
                           "Emissions_mol_per_s","longitude","latitude")
@@ -435,10 +492,16 @@ Municipal_solid_waste <- function(input_directory,
   ################################################################################
   # Now rasterise and save
   
-  LMOP_rast <- terra::rasterize(LMOP_crop, domain_template, field="emiss", fun=sum)
-  # Calculate flux, mol/s to nmol/m2/s
-  LMOP_flux <- LMOP_rast*1e9/(terra::cellSize(LMOP_rast,unit="m"))
-  LMOP_flux[is.na(LMOP_flux)]<-0
+  if(nrow(LMOP_crop)>0){
+    
+    LMOP_rast <- terra::rasterize(LMOP_crop, domain_template, field="emiss", fun=sum)
+    # Calculate flux, mol/s to nmol/m2/s
+    LMOP_flux <- LMOP_rast*1e9/(terra::cellSize(LMOP_rast,unit="m"))
+    LMOP_flux[is.na(LMOP_flux)]<-0
+    
+  }else{
+    LMOP_flux <- domain_template
+  }
   
   writeCDF_no_newline(LMOP_flux,
                       file.path(Landfill_output_directory,'MSW_LMOP.nc'),
@@ -454,7 +517,7 @@ Municipal_solid_waste <- function(input_directory,
   #Create a sector total, 1 per variant
   
   if(landfill_ghgrp_reported){
-    writeCDF_no_newline(LMOP_flux+ghgrp_reported,
+    writeCDF_no_newline(sum(LMOP_flux,ghgrp_reported,na.rm=T),
                         file.path(output_directory,paste0('Landfill_sector_total_GHGRP_reported.nc')),
                         force_v4=TRUE,
                         varname='methane_emissions',
@@ -465,7 +528,7 @@ Municipal_solid_waste <- function(input_directory,
   }
   
   if(landfill_ghgrp_generation_first){
-    writeCDF_no_newline(LMOP_flux+ghgrp_generation_first,
+    writeCDF_no_newline(sum(LMOP_flux,ghgrp_generation_first,na.rm=T),
                         file.path(output_directory,paste0('Landfill_sector_total_GHGRP_generation_first.nc')),
                         force_v4=TRUE,
                         varname='methane_emissions',
@@ -476,7 +539,7 @@ Municipal_solid_waste <- function(input_directory,
   }
   
   if(landfill_ghgrp_collection_first){
-    writeCDF_no_newline(LMOP_flux+ghgrp_collection_first,
+    writeCDF_no_newline(sum(LMOP_flux,ghgrp_collection_first,na.rm=T),
                         file.path(output_directory,paste0('Landfill_sector_total_GHGRP_collection_first.nc')),
                         force_v4=TRUE,
                         varname='methane_emissions',
